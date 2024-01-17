@@ -14,6 +14,24 @@ const main = async () => {
       JSON.parse(readFileSync(join(outDir, filename)).toString())
     );
   });
+
+  const assessTransparency = (logfile: Logfile): string => {
+    const { chromium1, chromium2 } = logfile;
+
+    if (chromium1.status !== "success" || chromium2.status !== "success") {
+      return "failure";
+    }
+
+    if (chromium1.featureSet.equals(chromium2.featureSet)) {
+      return "TRANSPARENT";
+    } else {
+      return "NON-transparent";
+    }
+  };
+
+  console.table(
+    logfiles.map((logfile) => [logfile.site, assessTransparency(logfile)])
+  );
 };
 
 main();
