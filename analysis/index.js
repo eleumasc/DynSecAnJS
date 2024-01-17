@@ -2,6 +2,7 @@ var JSMethods = require("./JSMethods.json");
 var $ = require("./lib/builtin");
 var ArraySet = require("./lib/ArraySet");
 var ArrayMap = require("./lib/ArrayMap");
+var Arr = require("./lib/Arr");
 
 function setupAnalysis() {
   var global = $.global;
@@ -50,24 +51,23 @@ function setupAnalysis() {
       return wrapper;
     }
 
-    function extendPath(path, step) {
-      return path.length !== 0 ? path + "." + step : step;
+    function extendPath(path, name) {
+      return path.length !== 0 ? path + "." + name : name;
     }
 
     function instrumentBuiltinMethods(object, propList, path) {
-      var propListLength = propList.length;
-      for (var i = 0; i < propListLength; i += 1) {
-        var p = propList[i];
-        if (typeof p === "object") {
+      for (var it = Arr.iterate(propList), step; !(step = it()).done; ) {
+        var prop = step.value;
+        if (typeof prop === "object") {
           // nested object
-          var k = p.key;
+          var k = prop.key;
           var d = GetOwnPropertyDescriptor(object, k);
           if (!d) {
             continue;
           }
-          instrumentBuiltinMethods(d.value, p.props, extendPath(path, k));
-        } else if (typeof p === "string") {
-          var d = GetOwnPropertyDescriptor(object, p);
+          instrumentBuiltinMethods(d.value, prop.props, extendPath(path, k));
+        } else if (typeof prop === "string") {
+          var d = GetOwnPropertyDescriptor(object, prop);
           if (!d) {
             continue;
           }
@@ -80,20 +80,20 @@ function setupAnalysis() {
           }
           if (get || set) {
             // accessor property
-            DefineProperty(object, p, {
+            DefineProperty(object, prop, {
               configurable: configurable,
               enumerable: enumerable,
-              get: get && createWrapper(get, "get " + extendPath(path, p)),
-              set: set && createWrapper(set, "set " + extendPath(path, p)),
+              get: get && createWrapper(get, "get " + extendPath(path, prop)),
+              set: set && createWrapper(set, "set " + extendPath(path, prop)),
             });
           } else {
             // method property
             var value = d.value;
             var writable = d.writable;
-            DefineProperty(object, p, {
+            DefineProperty(object, prop, {
               configurable: configurable,
               enumerable: enumerable,
-              value: createWrapper(value, extendPath(path, p)),
+              value: createWrapper(value, extendPath(path, prop)),
               writable: writable,
             });
           }
@@ -113,9 +113,8 @@ function setupAnalysis() {
     }
     var cookieKeys = [];
     var tokens = Apply($.String_prototype_split, cookieString, ["; "]);
-    var tokensLength = tokens.length;
-    for (var i = 0; i < tokensLength; i += 1) {
-      var token = tokens[i];
+    for (var it = Arr.iterate(tokens), step; !(step = it()).done; ) {
+      var token = step.value;
       var index = Apply($.String_prototype_indexOf, token, ["="]);
       var key = Apply($.String_prototype_substring, token, [0, index]);
       Apply($.Array_prototype_push, cookieKeys, [key]);

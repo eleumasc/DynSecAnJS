@@ -1,6 +1,4 @@
-var push = require("./push");
-var includes = require("./includes");
-var copyArray = require("./copyArray");
+var Arr = require("./Arr");
 
 function ArraySet() {
   this.array = [];
@@ -8,18 +6,18 @@ function ArraySet() {
 
 ArraySet.prototype = {
   has: function (element) {
-    return includes(this.array, element);
+    return Arr.includes(this.array, element);
   },
   add: function (element) {
     if (!this.has(element)) {
-      push(this.array, element);
+      Arr.push(this.array, element);
     }
   },
   values: function () {
-    return copyArray(this.array);
+    return Arr.copy(this.array);
   },
   clear: function () {
-    this.array.length = 0;
+    Arr.clear(this.array);
   },
 };
 
