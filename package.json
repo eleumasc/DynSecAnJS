@@ -1,11 +1,9 @@
 {
   "name": "dynsecanjs-transparency",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "scripts": {
     "build": "rimraf build && tsc",
-    "start": "npm run build && node build/index.js"
+    "analysis": "npm run build && node build/analysis.js"
   },
   "keywords": [],
   "author": "",
