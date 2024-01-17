@@ -150,6 +150,6 @@ $.addEventListener("load", function () {
   if ($.global !== $.global.top) {
     return;
   }
-  // $.log($.toJSON(analysis()));
-  $.log(analysis());
+  // $.log(analysis());
+  $.global["$__report"](analysis());
 });
