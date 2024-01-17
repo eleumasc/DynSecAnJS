@@ -12,7 +12,7 @@ function setupAnalysis() {
   var Apply = $.Apply;
 
   var uncaughtErrors = new ArraySet();
-  $.addEventListener("error", function (event) {
+  $.addEventListener($.global, "error", function (event) {
     var message = Apply($.ErrorEvent_prototype_message, event);
     uncaughtErrors.add(message);
   });
@@ -146,7 +146,7 @@ function setupAnalysis() {
 
 var analysis = setupAnalysis();
 
-$.addEventListener("load", function () {
+$.addEventListener($.global.document, "DOMContentLoaded", function () {
   if ($.global !== $.global.top) {
     return;
   }

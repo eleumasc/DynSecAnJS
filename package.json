@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "build": "rimraf build && tsc",
-    "analysis": "npm run build && node build/analysis.js"
+    "analysis": "npm run build && node build/analysis.js",
+    "measurement": "npm run build && node build/measurement.js"
   },
   "keywords": [],
   "author": "",

@@ -1,4 +1,4 @@
-import { DefaultFeatureSet } from "./DefaultFeatureSet";
+import { DefaultFeatureSet } from "./lib/DefaultFeatureSet";
 
 export interface GatheringReport {
   uncaughtErrors: string[];
@@ -11,7 +11,7 @@ export interface GatheringReport {
 
 export interface FeatureSet {
   equals(that: FeatureSet): boolean;
-  toJsonSerializable(): any;
+  toData(): any;
 }
 
 export interface BaseAnalysisResult {
@@ -30,3 +30,9 @@ export interface FailureAnalysisResult extends BaseAnalysisResult {
 }
 
 export type AnalysisResult = SuccessAnalysisResult | FailureAnalysisResult;
+
+export interface Logfile {
+  site: string;
+  chromium1: AnalysisResult;
+  chromium2: AnalysisResult;
+}

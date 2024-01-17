@@ -1,4 +1,4 @@
-import { FeatureSet } from "./model";
+import { FeatureSet } from "../model";
 import { equalsSet } from "./util/set";
 
 export class DefaultFeatureSet implements FeatureSet {
@@ -28,7 +28,7 @@ export class DefaultFeatureSet implements FeatureSet {
     );
   }
 
-  toJsonSerializable(): any {
+  toData(): any {
     return {
       uncaughtErrors: [...this.uncaughtErrors],
       consoleMessages: [...this.consoleMessages],
@@ -38,5 +38,26 @@ export class DefaultFeatureSet implements FeatureSet {
       sessionStorageKeys: [...this.sessionStorageKeys],
       targetSites: [...this.targetSites],
     };
+  }
+
+  static fromData(data: any) {
+    const {
+      uncaughtErrors,
+      consoleMessages,
+      calledNativeMethods,
+      cookieKeys,
+      localStorageKeys,
+      sessionStorageKeys,
+      targetSites,
+    } = data;
+    return new DefaultFeatureSet(
+      new Set(uncaughtErrors),
+      new Set(consoleMessages),
+      new Set(calledNativeMethods),
+      new Set(cookieKeys),
+      new Set(localStorageKeys),
+      new Set(sessionStorageKeys),
+      new Set(targetSites)
+    );
   }
 }

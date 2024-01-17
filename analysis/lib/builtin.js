@@ -16,6 +16,9 @@ function __getGetter(object, key) {
   }
 }
 
+var EventTarget_prototype_addEventListener =
+  EventTarget.prototype.addEventListener;
+
 module.exports = {
   global: global,
   GetPrototypeOf: GetPrototypeOf,
@@ -29,7 +32,9 @@ module.exports = {
   String_prototype_substring: String.prototype.substring,
   toJSON: JSON.stringify,
   log: console.log,
-  addEventListener: EventTarget.prototype.addEventListener.bind(global),
+  addEventListener: function (thisArg, name, callback) {
+    Apply(EventTarget_prototype_addEventListener, thisArg, [name, callback]);
+  },
   ErrorEvent_prototype_message: __getGetter(ErrorEvent.prototype, "message"),
   getCookie: __getGetter(Document.prototype, "cookie").bind(global.document),
   localStorage: global.localStorage,
