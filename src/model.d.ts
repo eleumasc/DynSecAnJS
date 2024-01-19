@@ -1,16 +1,8 @@
 import { DefaultFeatureSet } from "./lib/DefaultFeatureSet";
 
-export interface GatheringReport {
-  uncaughtErrors: string[];
-  consoleMessages: string[];
-  calledNativeMethods: string[];
-  cookieKeys: string[];
-  localStorageKeys: string[];
-  sessionStorageKeys: string[];
-}
-
 export interface FeatureSet {
   equals(that: FeatureSet): boolean;
+  broken(that: FeatureSet): string[];
   toData(): any;
 }
 

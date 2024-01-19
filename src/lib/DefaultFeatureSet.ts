@@ -28,6 +28,37 @@ export class DefaultFeatureSet implements FeatureSet {
     );
   }
 
+  broken(that: FeatureSet): string[] {
+    if (!(that instanceof DefaultFeatureSet)) {
+      throw new Error('Cannot compare with a FeatureSet different');
+    }
+
+    let brokenArray: string[] = [];
+    if (!equalsSet(this.uncaughtErrors, that.uncaughtErrors)) {
+      brokenArray = [...brokenArray, "uncaughtErrors"];
+    }
+    if (!equalsSet(this.consoleMessages, that.consoleMessages)) {
+      brokenArray = [...brokenArray, "consoleMessages"];
+    }
+    if (!equalsSet(this.calledNativeMethods, that.calledNativeMethods)) {
+      brokenArray = [...brokenArray, "calledNativeMethods"];
+    }
+    if (!equalsSet(this.cookieKeys, that.cookieKeys)) {
+      brokenArray = [...brokenArray, "cookieKeys"];
+    }
+    if (!equalsSet(this.localStorageKeys, that.localStorageKeys)) {
+      brokenArray = [...brokenArray, "localStorageKeys"];
+    }
+    if (!equalsSet(this.sessionStorageKeys, that.sessionStorageKeys)) {
+      brokenArray = [...brokenArray, "sessionStorageKeys"];
+    }
+    if (!equalsSet(this.targetSites, that.targetSites)) {
+      brokenArray = [...brokenArray, "targetSites"];
+    }
+
+    return brokenArray;
+  }
+
   toData(): any {
     return {
       uncaughtErrors: [...this.uncaughtErrors],

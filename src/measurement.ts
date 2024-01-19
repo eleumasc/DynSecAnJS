@@ -15,7 +15,7 @@ const main = async () => {
     );
   });
 
-  const assessTransparency = (logfile: Logfile): string => {
+  const assessTransparency = (logfile: Logfile): string | string[] => {
     const { chromium1, chromium2 } = logfile;
 
     if (chromium1.status !== "success" || chromium2.status !== "success") {
@@ -25,7 +25,10 @@ const main = async () => {
     if (chromium1.featureSet.equals(chromium2.featureSet)) {
       return "TRANSPARENT";
     } else {
-      return "NON-transparent";
+      return (
+        "NON-transparent: " +
+        JSON.stringify(chromium1.featureSet.broken(chromium2.featureSet))
+      );
     }
   };
 

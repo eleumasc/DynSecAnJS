@@ -5,9 +5,17 @@ import { timeBomb } from "./util/async";
 import {
   AnalysisResult,
   FailureAnalysisResult,
-  GatheringReport,
   SuccessAnalysisResult,
 } from "../model";
+
+interface PageReport {
+  uncaughtErrors: string[];
+  consoleMessages: string[];
+  calledNativeMethods: string[];
+  cookieKeys: string[];
+  localStorageKeys: string[];
+  sessionStorageKeys: string[];
+}
 
 export class AnalysisRunner {
   constructor(readonly analysisCode: string) {}
@@ -15,13 +23,10 @@ export class AnalysisRunner {
   async runAnalysis(browser: Browser, site: string): Promise<AnalysisResult> {
     const page = await browser.newPage();
 
-    const willReceiveGatheringReport = new Completer<GatheringReport>();
-    await page.exposeFunction(
-      "$__report",
-      (gatheringReport: GatheringReport) => {
-        willReceiveGatheringReport.complete(gatheringReport);
-      }
-    );
+    const willReceivePageReport = new Completer<PageReport>();
+    await page.exposeFunction("$__report", (pageReport: PageReport) => {
+      willReceivePageReport.complete(pageReport);
+    });
     await page.evaluateOnNewDocument(this.analysisCode);
 
     const targetSites = new Set<string>();
@@ -41,10 +46,7 @@ export class AnalysisRunner {
     try {
       await page.goto(`http://${site}/`, { timeout: 60000 });
       const pageUrl = page.url();
-      const gatheringReport = await timeBomb(
-        willReceiveGatheringReport.promise,
-        15000
-      );
+      const pageReport = await timeBomb(willReceivePageReport.promise, 15000);
       const {
         uncaughtErrors,
         consoleMessages,
@@ -52,7 +54,7 @@ export class AnalysisRunner {
         cookieKeys,
         localStorageKeys,
         sessionStorageKeys,
-      } = gatheringReport;
+      } = pageReport;
       return {
         status: "success",
         pageUrl,
