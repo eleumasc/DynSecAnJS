@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
 import { AnalysisResult, Logfile } from "./model";
 import { AnalysisRunner } from "./lib/AnalysisRunner";
-import { useTwoBrowsers } from "./lib/useBrowser";
+import { useBrowser } from "./lib/useBrowser";
 import { serializeLogfile } from "./lib/serialize";
 
 const main = async () => {
@@ -111,12 +111,12 @@ const main = async () => {
   ];
   const analysisId = (+new Date()).toString();
 
-  await useTwoBrowsers(
+  await useBrowser(
     {
       headless: "new", // false
       defaultViewport: { width: 1280, height: 720 },
     },
-    async ([browser1, browser2]) => {
+    async (browser) => {
       const analysisCode = await new Promise<string>((resolve, reject) => {
         browserify({ basedir: "analysis" })
           .add("./index.js")
@@ -131,20 +131,28 @@ const main = async () => {
 
       const analysisRunner = new AnalysisRunner(analysisCode);
 
-      const logIfFailure = (analysisResult: AnalysisResult) => {
-        if (analysisResult.status === "failure") {
-          console.log(analysisResult.reason);
-        }
-      };
-
       for (const [siteIndex, site] of Object.entries(siteList)) {
         console.log(`begin analysis ${site} [${siteIndex}]`);
 
-        const chromium1 = await analysisRunner.runAnalysis(browser1, site);
-        logIfFailure(chromium1);
+        const url = `http://${site}/`;
+        let analysisResults: AnalysisResult[] = [];
+        for (let i = 0; i < 6; i += 1) {
+          const browserContext = await browser.createIncognitoBrowserContext();
+          try {
+            const analysisResult = await analysisRunner.runAnalysis(
+              browserContext,
+              url
+            );
 
-        const chromium2 = await analysisRunner.runAnalysis(browser2, site);
-        logIfFailure(chromium2);
+            analysisResults = [...analysisResults, analysisResult];
+
+            if (analysisResult.status === "failure") {
+              console.log(analysisResult.reason);
+            }
+          } finally {
+            await browserContext.close();
+          }
+        }
 
         const outDir = join("results", analysisId);
         mkdirSync(outDir, { recursive: true });
@@ -153,8 +161,7 @@ const main = async () => {
           JSON.stringify(
             serializeLogfile({
               site,
-              chromium1,
-              chromium2,
+              analysisResults,
             } satisfies Logfile)
           )
         );

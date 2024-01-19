@@ -30,16 +30,16 @@ type AnalysisResultData = SuccessAnalysisResultData | FailureAnalysisResultData;
 
 export interface LogfileData {
   site: string;
-  chromium1: AnalysisResultData;
-  chromium2: AnalysisResultData;
+  analysisResults: AnalysisResultData[];
 }
 
 export const serializeLogfile = (concrete: Logfile): LogfileData => {
-  const { site, chromium1, chromium2 } = concrete;
+  const { site, analysisResults } = concrete;
   return {
     site,
-    chromium1: serializeAnalysisResult(chromium1),
-    chromium2: serializeAnalysisResult(chromium2),
+    analysisResults: analysisResults.map((analysisResult) =>
+      serializeAnalysisResult(analysisResult)
+    ),
   };
 };
 
@@ -68,11 +68,12 @@ const serializeFeatureSet = (concrete: FeatureSet): FeatureSetData => {
 };
 
 export const deserializeLogfile = (data: LogfileData): Logfile => {
-  const { site, chromium1, chromium2 } = data;
+  const { site, analysisResults } = data;
   return {
     site,
-    chromium1: deserializeAnalysisResult(chromium1),
-    chromium2: deserializeAnalysisResult(chromium2),
+    analysisResults: analysisResults.map((analysisResult) =>
+      deserializeAnalysisResult(analysisResult)
+    ),
   };
 };
 

@@ -1,4 +1,4 @@
-import { Browser } from "puppeteer";
+import { BrowserContext } from "puppeteer";
 import Completer from "./util/Completer";
 import { DefaultFeatureSet } from "./DefaultFeatureSet";
 import { timeBomb } from "./util/async";
@@ -20,8 +20,11 @@ interface PageReport {
 export class AnalysisRunner {
   constructor(readonly analysisCode: string) {}
 
-  async runAnalysis(browser: Browser, site: string): Promise<AnalysisResult> {
-    const page = await browser.newPage();
+  async runAnalysis(
+    browserContext: BrowserContext,
+    url: string
+  ): Promise<AnalysisResult> {
+    const page = await browserContext.newPage();
 
     const willReceivePageReport = new Completer<PageReport>();
     await page.exposeFunction("$__report", (pageReport: PageReport) => {
@@ -44,9 +47,9 @@ export class AnalysisRunner {
     });
 
     try {
-      await page.goto(`http://${site}/`, { timeout: 60000 });
+      await page.goto(url, { timeout: 60_000 });
       const pageUrl = page.url();
-      const pageReport = await timeBomb(willReceivePageReport.promise, 15000);
+      const pageReport = await timeBomb(willReceivePageReport.promise, 15_000);
       const {
         uncaughtErrors,
         consoleMessages,

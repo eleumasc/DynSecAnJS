@@ -11,16 +11,3 @@ export const useBrowser = async <T>(
     await browser.close();
   }
 };
-
-export const useTwoBrowsers = async <T>(
-  options: PuppeteerLaunchOptions | undefined,
-  cb: (browsers: Browser[]) => Promise<T>
-) =>
-  await useBrowser(
-    options,
-    async (browser1) =>
-      await useBrowser(
-        options,
-        async (browser2) => await cb([browser1, browser2])
-      )
-  );

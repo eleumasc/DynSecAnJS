@@ -25,6 +25,5 @@ export type AnalysisResult = SuccessAnalysisResult | FailureAnalysisResult;
 
 export interface Logfile {
   site: string;
-  chromium1: AnalysisResult;
-  chromium2: AnalysisResult;
+  analysisResults: AnalysisResult[];
 }
