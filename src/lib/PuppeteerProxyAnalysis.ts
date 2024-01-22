@@ -14,11 +14,22 @@ import {
   FailureAnalysisResult,
   SuccessAnalysisResult,
 } from "./Analysis";
+import { useVirusProxy } from "./VirusProxy";
+import {
+  Mockttp as MockttpServer,
+  generateCACertificate,
+  generateSPKIFingerprint,
+  getLocal,
+} from "mockttp";
 
 const REPORTER_FUNCTION_NAME = "$__report";
 
-export class DebugAnalysis implements Analysis {
-  constructor(readonly browser: Browser, readonly monitor: string) {}
+export class PuppeteerProxyAnalysis implements Analysis {
+  constructor(
+    readonly browser: Browser,
+    readonly server: MockttpServer,
+    readonly monitor: string
+  ) {}
 
   async run(url: string): Promise<AnalysisResult> {
     const runInPage = async (page: Page): Promise<AnalysisResult> => {
@@ -29,7 +40,6 @@ export class DebugAnalysis implements Analysis {
           willReceiveMonitorReport.complete(monitorReport);
         }
       );
-      await page.evaluateOnNewDocument(this.monitor);
 
       const targetSites = new Set<string>();
       await page.setRequestInterception(true);
@@ -74,11 +84,25 @@ export class DebugAnalysis implements Analysis {
       } satisfies SuccessAnalysisResult;
     };
 
+    const transformer = async (body: string): Promise<string> => {
+      const index = body.indexOf("<script "); // TODO: fix
+      if (index !== -1) {
+        return (
+          body.substring(0, index) +
+          `<script>${this.monitor}</script>` +
+          body.substring(index)
+        );
+      }
+      return body;
+    };
+
     try {
-      return await useIncognitoBrowserContext(
-        this.browser,
-        undefined,
-        (browserContext) => usePage(browserContext, runInPage)
+      return await useVirusProxy(this.server, transformer, (virusProxy) =>
+        useIncognitoBrowserContext(
+          this.browser,
+          { proxyServer: `http://127.0.0.1:${virusProxy.port()}` },
+          (browserContext) => usePage(browserContext, runInPage)
+        )
       );
     } catch (e) {
       return {
@@ -94,12 +118,26 @@ export class DebugAnalysis implements Analysis {
 
   static async create(
     pptrLaunchOptions?: PuppeteerLaunchOptions
-  ): Promise<DebugAnalysis> {
-    const browser = await puppeteer.launch(pptrLaunchOptions);
+  ): Promise<PuppeteerProxyAnalysis> {
+    const httpsOptions = await generateCACertificate();
+    const server = getLocal({ https: httpsOptions });
+
+    const browser = await puppeteer.launch({
+      ...pptrLaunchOptions,
+      args: [
+        ...(pptrLaunchOptions?.args ?? []),
+        `--proxy-server=per-context`,
+        `--ignore-certificate-errors-spki-list=${generateSPKIFingerprint(
+          httpsOptions.cert
+        )}`,
+      ],
+    });
+
     const monitor = await bundleMonitor(<ExposedFunctionReporter>{
       type: "ExposedFunctionReporter",
       functionName: REPORTER_FUNCTION_NAME,
     });
-    return new DebugAnalysis(browser, monitor);
+
+    return new PuppeteerProxyAnalysis(browser, server, monitor);
   }
 }

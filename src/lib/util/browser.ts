@@ -1,10 +1,16 @@
-import { Browser, BrowserContext, Page } from "puppeteer";
+import {
+  Browser,
+  BrowserContext,
+  BrowserContextOptions,
+  Page,
+} from "puppeteer";
 
 export const useIncognitoBrowserContext = async <T>(
   browser: Browser,
+  options: BrowserContextOptions | undefined,
   cb: (browserContext: BrowserContext) => Promise<T>
 ) => {
-  const browserContext = await browser.createIncognitoBrowserContext();
+  const browserContext = await browser.createIncognitoBrowserContext(options);
   try {
     return await cb(browserContext);
   } finally {

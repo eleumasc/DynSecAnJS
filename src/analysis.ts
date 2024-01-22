@@ -3,6 +3,7 @@ import { join } from "path";
 import { DebugAnalysis } from "./lib/DebugAnalysis";
 import { serializeLogfile } from "./lib/serialize";
 import { AnalysisResult, Logfile } from "./lib/Analysis";
+import { PuppeteerProxyAnalysis } from "./lib/PuppeteerProxyAnalysis";
 
 const ANALYSIS_RUNS_PER_SITE = 6;
 
@@ -111,8 +112,12 @@ const main = async () => {
   ];
   const analysisId = (+new Date()).toString();
 
-  const analysis = await DebugAnalysis.create({
-    headless: "new", // false
+  // const analysis = await DebugAnalysis.create({
+  //   headless: "new", // false
+  //   defaultViewport: { width: 1280, height: 720 },
+  // });
+  const analysis = await PuppeteerProxyAnalysis.create({
+    headless: false, // "new",
     defaultViewport: { width: 1280, height: 720 },
   });
 
