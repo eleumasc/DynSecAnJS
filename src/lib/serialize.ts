@@ -1,16 +1,6 @@
 import { AnalysisResult, FeatureSet, Logfile } from "../model";
 import { DefaultFeatureSet } from "./DefaultFeatureSet";
 
-interface FeatureSetData {
-  uncaughtErrors: string[];
-  consoleMessages: string[];
-  calledNativeMethods: string[];
-  cookieKeys: string[];
-  localStorageKeys: string[];
-  sessionStorageKeys: string[];
-  targetSites: string[];
-}
-
 interface BaseAnalysisResultData {
   status: string;
 }
@@ -18,7 +8,7 @@ interface BaseAnalysisResultData {
 interface SuccessAnalysisResultData extends BaseAnalysisResultData {
   status: "success";
   pageUrl: string;
-  featureSet: FeatureSetData;
+  featureSet: any;
 }
 
 interface FailureAnalysisResultData extends BaseAnalysisResultData {
@@ -63,7 +53,7 @@ const serializeAnalysisResult = (
   }
 };
 
-const serializeFeatureSet = (concrete: FeatureSet): FeatureSetData => {
+const serializeFeatureSet = (concrete: FeatureSet): any => {
   return concrete.toData();
 };
 
@@ -99,6 +89,6 @@ const deserializeAnalysisResult = (
   }
 };
 
-const deserializeFeatureSet = (data: FeatureSetData): FeatureSet => {
+const deserializeFeatureSet = (data: any): FeatureSet => {
   return DefaultFeatureSet.fromData(data);
 };
