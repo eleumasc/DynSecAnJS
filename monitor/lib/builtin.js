@@ -30,7 +30,8 @@ module.exports = {
   String_prototype_indexOf: String.prototype.indexOf,
   String_prototype_split: String.prototype.split,
   String_prototype_substring: String.prototype.substring,
-  toJSON: JSON.stringify,
+  fromJson: JSON.parse,
+  toJson: JSON.stringify,
   log: console.log,
   addEventListener: function (thisArg, name, callback) {
     Apply(EventTarget_prototype_addEventListener, thisArg, [name, callback]);

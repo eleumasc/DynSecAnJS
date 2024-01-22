@@ -3,6 +3,7 @@ var $ = require("./lib/builtin");
 var ArraySet = require("./lib/ArraySet");
 var ArrayMap = require("./lib/ArrayMap");
 var Arr = require("./lib/Arr");
+var report = require("./lib/report");
 
 function setupAnalysis() {
   var global = $.global;
@@ -33,7 +34,7 @@ function setupAnalysis() {
       switch (path) {
         case "console.log":
           report = function (thisArg, argsArray) {
-            consoleMessages.add($.toJSON(argsArray[0]));
+            consoleMessages.add($.toJson(argsArray[0]));
             defaultReport(thisArg, argsArray);
           };
           break;
@@ -150,6 +151,5 @@ $.addEventListener($.global.document, "DOMContentLoaded", function () {
   if ($.global !== $.global.top) {
     return;
   }
-  // $.log(analysis());
-  $.global["$__report"](analysis());
+  report(analysis());
 });

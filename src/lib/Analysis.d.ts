@@ -1,9 +1,8 @@
-import { DefaultFeatureSet } from "./lib/DefaultFeatureSet";
+import { FeatureSet } from "./FeatureSet";
 
-export interface FeatureSet {
-  equals(that: FeatureSet): boolean;
-  broken(that: FeatureSet): string[];
-  toData(): any;
+export interface Analysis {
+  run(url: string): Promise<AnalysisResult>;
+  terminate(): Promise<void>;
 }
 
 export interface BaseAnalysisResult {
@@ -21,9 +20,8 @@ export interface FailureAnalysisResult extends BaseAnalysisResult {
   reason: string;
 }
 
-export type AnalysisResult = SuccessAnalysisResult | FailureAnalysisResult;
-
-export interface Logfile {
+export type AnalysisResult = SuccessAnalysisResult | FailureAnalysisResult;export interface Logfile {
   site: string;
   analysisResults: AnalysisResult[];
 }
+

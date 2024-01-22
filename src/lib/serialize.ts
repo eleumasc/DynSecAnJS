@@ -1,5 +1,6 @@
-import { AnalysisResult, FeatureSet, Logfile } from "../model";
+import { AnalysisResult, Logfile } from "./Analysis";
 import { DefaultFeatureSet } from "./DefaultFeatureSet";
+import { FeatureSet } from "./FeatureSet";
 
 interface BaseAnalysisResultData {
   status: string;

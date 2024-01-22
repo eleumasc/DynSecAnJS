@@ -1,10 +1,10 @@
-import browserify from "browserify";
 import { mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
-import { AnalysisResult, Logfile } from "./model";
-import { AnalysisRunner } from "./lib/AnalysisRunner";
-import { useBrowser } from "./lib/useBrowser";
+import { DebugAnalysis } from "./lib/DebugAnalysis";
 import { serializeLogfile } from "./lib/serialize";
+import { AnalysisResult, Logfile } from "./lib/Analysis";
+
+const ANALYSIS_RUNS_PER_SITE = 6;
 
 const main = async () => {
   const siteList = [
@@ -111,65 +111,42 @@ const main = async () => {
   ];
   const analysisId = (+new Date()).toString();
 
-  await useBrowser(
-    {
-      headless: "new", // false
-      defaultViewport: { width: 1280, height: 720 },
-    },
-    async (browser) => {
-      const analysisCode = await new Promise<string>((resolve, reject) => {
-        browserify({ basedir: "analysis" })
-          .add("./index.js")
-          .bundle((err, buf) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(buf.toString());
-            }
-          });
-      });
+  const analysis = await DebugAnalysis.create({
+    headless: "new", // false
+    defaultViewport: { width: 1280, height: 720 },
+  });
 
-      const analysisRunner = new AnalysisRunner(analysisCode);
+  for (const [siteIndex, site] of Object.entries(siteList)) {
+    console.log(`begin analysis ${site} [${siteIndex}]`);
 
-      for (const [siteIndex, site] of Object.entries(siteList)) {
-        console.log(`begin analysis ${site} [${siteIndex}]`);
+    const url = `http://${site}/`;
+    let analysisResults: AnalysisResult[] = [];
+    for (let i = 0; i < ANALYSIS_RUNS_PER_SITE; i += 1) {
+      const analysisResult = await analysis.run(url);
 
-        const url = `http://${site}/`;
-        let analysisResults: AnalysisResult[] = [];
-        for (let i = 0; i < 6; i += 1) {
-          const browserContext = await browser.createIncognitoBrowserContext();
-          try {
-            const analysisResult = await analysisRunner.runAnalysis(
-              browserContext,
-              url
-            );
+      analysisResults = [...analysisResults, analysisResult];
 
-            analysisResults = [...analysisResults, analysisResult];
-
-            if (analysisResult.status === "failure") {
-              console.log(analysisResult.reason);
-            }
-          } finally {
-            await browserContext.close();
-          }
-        }
-
-        const outDir = join("results", analysisId);
-        mkdirSync(outDir, { recursive: true });
-        writeFileSync(
-          join(outDir, `${site}.json`),
-          JSON.stringify(
-            serializeLogfile({
-              site,
-              analysisResults,
-            } satisfies Logfile)
-          )
-        );
-
-        console.log(`end analysis ${site}`);
+      if (analysisResult.status === "failure") {
+        console.log(analysisResult.reason);
       }
     }
-  );
+
+    const outDir = join("results", analysisId);
+    mkdirSync(outDir, { recursive: true });
+    writeFileSync(
+      join(outDir, `${site}.json`),
+      JSON.stringify(
+        serializeLogfile({
+          site,
+          analysisResults,
+        } satisfies Logfile)
+      )
+    );
+
+    console.log(`end analysis ${site}`);
+  }
+
+  await analysis.terminate();
 };
 
 main();

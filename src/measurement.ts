@@ -1,9 +1,9 @@
+import assert from "assert";
 import { readFileSync, readdirSync } from "fs";
 import { join } from "path";
-import { Logfile, SuccessAnalysisResult } from "./model";
 import { deserializeLogfile } from "./lib/serialize";
-import assert from "assert";
 import { intersect } from "./lib/util/array";
+import { Logfile, SuccessAnalysisResult } from "./lib/Analysis";
 
 const main = async () => {
   const analysisId = process.argv[2];

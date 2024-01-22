@@ -1,4 +1,4 @@
-import { FeatureSet } from "../model";
+import { FeatureSet } from "./FeatureSet";
 import { equalsSet } from "./util/set";
 
 export class DefaultFeatureSet implements FeatureSet {
@@ -30,7 +30,7 @@ export class DefaultFeatureSet implements FeatureSet {
 
   broken(that: FeatureSet): string[] {
     if (!(that instanceof DefaultFeatureSet)) {
-      throw new Error('Cannot compare with a FeatureSet different');
+      throw new Error("Cannot compare with FeatureSet of different type");
     }
 
     let brokenArray: string[] = [];
