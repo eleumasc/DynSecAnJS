@@ -17,31 +17,26 @@ const main = async () => {
   });
 
   const assessTransparency = (logfile: Logfile): string | string[] => {
-    const { analysisResults } = logfile;
+    const { analysisResults: results } = logfile;
 
     if (
-      !analysisResults.every(
-        (analysisResult): analysisResult is SuccessAnalysisResult =>
-          analysisResult.status === "success"
+      !results.every(
+        (result): result is SuccessAnalysisResult => result.status === "success"
       )
     ) {
       return "failure";
     }
 
-    const half = analysisResults.length >> 1;
-    const fstGroup = analysisResults.slice(0, half);
-    const sndGroup = analysisResults.slice(half);
-
     if (
-      fstGroup.some((fst) =>
-        sndGroup.some((snd) => fst.featureSet.equals(snd.featureSet))
+      results.some((x, i) =>
+        results.slice(i + 1).some((y) => x.featureSet.equals(y.featureSet))
       )
     ) {
       return "TRANSPARENT";
     } else {
-      const commonBroken = fstGroup
-        .flatMap((fst) =>
-          sndGroup.map((snd) => fst.featureSet.broken(snd.featureSet))
+      const commonBroken = results
+        .flatMap((x, i) =>
+          results.slice(i + 1).map((y) => x.featureSet.broken(y.featureSet))
         )
         .reduce((acc: string[] | null, cur: string[]): string[] => {
           if (!acc) {
