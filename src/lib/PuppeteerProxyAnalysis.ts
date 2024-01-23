@@ -10,6 +10,8 @@ import AnalysisProxy, { useAnalysisProxy } from "./AnalysisProxy";
 import { timeBomb } from "./util/async";
 import { useIncognitoBrowserContext, usePage } from "./util/browser";
 
+const TOP_NAVIGATION_REQUEST_HEADER = "x-top-navigation-request";
+
 export class PuppeteerProxyAnalysis implements Analysis {
   constructor(readonly browser: Browser, readonly server: MockttpServer) {}
 
@@ -18,6 +20,20 @@ export class PuppeteerProxyAnalysis implements Analysis {
       page: Page,
       analysisProxy: AnalysisProxy
     ): Promise<AnalysisResult> => {
+      await page.setRequestInterception(true);
+      page.on("request", (request) => {
+        request.continue({
+          headers: {
+            ...request.headers(),
+            [TOP_NAVIGATION_REQUEST_HEADER]:
+              request.resourceType() === "document" &&
+              request.frame() === page.mainFrame()
+                ? "1"
+                : "0",
+          },
+        });
+      });
+
       await page.goto(url, { timeout: 60_000 });
       return await timeBomb(analysisProxy.waitForCompleteAnalysis(), 15_000);
     };
@@ -25,7 +41,12 @@ export class PuppeteerProxyAnalysis implements Analysis {
     try {
       return await useAnalysisProxy(
         this.server,
-        { isTopNavigationRequest: () => false, transform: async (x) => x },
+        {
+          isTopNavigationRequest: (req) => {
+            return req.headers[TOP_NAVIGATION_REQUEST_HEADER] === "1";
+          },
+          transform: async (x) => x,
+        },
         (analysisProxy) =>
           useIncognitoBrowserContext(
             this.browser,

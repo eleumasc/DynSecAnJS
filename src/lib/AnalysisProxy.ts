@@ -4,7 +4,7 @@ import { CompletedRequest, Mockttp as MockttpServer } from "mockttp";
 import { AnalysisResult, SuccessAnalysisResult } from "./Analysis";
 import { DefaultFeatureSet } from "./DefaultFeatureSet";
 import { MonitorReport, SendReporter, bundleMonitor } from "./monitor";
-import Completer from "./util/Completer";
+import Deferred from "./util/Deferred";
 
 export interface AnalysisProxyOptions {
   isTopNavigationRequest: (req: CompletedRequest) => boolean;
@@ -21,7 +21,7 @@ export type TransformerContentType = "html" | "javascript";
 export default class AnalysisProxy {
   constructor(
     readonly server: MockttpServer,
-    readonly willCompleteAnalysis: Completer<AnalysisResult>
+    readonly willCompleteAnalysis: Deferred<AnalysisResult>
   ) {}
 
   getPort(): number {
@@ -51,8 +51,10 @@ export default class AnalysisProxy {
 const configureServer = async (
   server: MockttpServer,
   options: AnalysisProxyOptions
-): Promise<Completer<AnalysisResult>> => {
-  const { transform } = options;
+): Promise<Deferred<AnalysisResult>> => {
+  const { isTopNavigationRequest, transform } = options;
+
+  const willCompleteAnalysis = new Deferred<AnalysisResult>();
 
   const getMonitorUrl = `/${crypto.randomUUID()}`;
   const reportUrl = `/${crypto.randomUUID()}`;
@@ -90,7 +92,9 @@ const configureServer = async (
       try {
         await dnsLookup(hostname);
       } catch (e) {
-        // TODO: failure if request if TOP NAVIGATION request (options.isTopNavigationRequest)
+        if (isTopNavigationRequest(req)) {
+          willCompleteAnalysis.reject(e);
+        }
         return {
           response: {
             statusCode: 599,
@@ -140,7 +144,6 @@ const configureServer = async (
   });
   server.forGet(getMonitorUrl).thenReply(200, monitor);
 
-  const willCompleteAnalysis = new Completer<AnalysisResult>();
   server.forPost(reportUrl).thenCallback(async (req) => {
     const { body } = req;
 
@@ -154,7 +157,7 @@ const configureServer = async (
       localStorageKeys,
       sessionStorageKeys,
     } = monitorReport;
-    willCompleteAnalysis.complete({
+    willCompleteAnalysis.resolve({
       status: "success",
       pageUrl,
       featureSet: new DefaultFeatureSet(

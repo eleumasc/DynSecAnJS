@@ -13,7 +13,7 @@ import {
 } from "./monitor";
 import { timeBomb } from "./util/async";
 import { useIncognitoBrowserContext, usePage } from "./util/browser";
-import Completer from "./util/Completer";
+import Deferred from "./util/Deferred";
 
 const REPORTER_FUNCTION_NAME = "$__report";
 
@@ -22,11 +22,11 @@ export class DebugAnalysis implements Analysis {
 
   async run(url: string): Promise<AnalysisResult> {
     const runInPage = async (page: Page): Promise<AnalysisResult> => {
-      const willReceiveMonitorReport = new Completer<MonitorReport>();
+      const willReceiveMonitorReport = new Deferred<MonitorReport>();
       await page.exposeFunction(
         REPORTER_FUNCTION_NAME,
         (monitorReport: MonitorReport) => {
-          willReceiveMonitorReport.complete(monitorReport);
+          willReceiveMonitorReport.resolve(monitorReport);
         }
       );
       await page.evaluateOnNewDocument(this.monitor);
