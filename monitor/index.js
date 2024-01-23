@@ -43,7 +43,7 @@ function setupAnalysis() {
       var wrapper = function wrapper() {
         report(this, arguments);
         if (GetPrototypeOf(this) === wrapper.prototype) {
-          throw new Error("Cannot invoke wrapper as a constructor");
+          throw "Cannot invoke wrapper as a constructor";
         }
         return Apply(builtin, this, arguments);
       };
