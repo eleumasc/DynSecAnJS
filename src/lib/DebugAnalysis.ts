@@ -1,19 +1,19 @@
 import puppeteer, { Browser, Page, PuppeteerLaunchOptions } from "puppeteer";
-import Completer from "./util/Completer";
-import { DefaultFeatureSet } from "./DefaultFeatureSet";
-import { timeBomb } from "./util/async";
-import { useIncognitoBrowserContext, usePage } from "./util/browser";
-import {
-  ExposedFunctionReporter,
-  MonitorReport,
-  bundleMonitor,
-} from "./monitor";
 import {
   Analysis,
   AnalysisResult,
   FailureAnalysisResult,
   SuccessAnalysisResult,
 } from "./Analysis";
+import { DefaultFeatureSet } from "./DefaultFeatureSet";
+import {
+  ExposedFunctionReporter,
+  MonitorReport,
+  bundleMonitor,
+} from "./monitor";
+import { timeBomb } from "./util/async";
+import { useIncognitoBrowserContext, usePage } from "./util/browser";
+import Completer from "./util/Completer";
 
 const REPORTER_FUNCTION_NAME = "$__report";
 
@@ -46,12 +46,12 @@ export class DebugAnalysis implements Analysis {
       });
 
       await page.goto(url, { timeout: 60_000 });
-      const pageUrl = page.url();
       const monitorReport = await timeBomb(
         willReceiveMonitorReport.promise,
         15_000
       );
       const {
+        pageUrl,
         uncaughtErrors,
         consoleMessages,
         calledNativeMethods,
@@ -78,7 +78,7 @@ export class DebugAnalysis implements Analysis {
       return await useIncognitoBrowserContext(
         this.browser,
         undefined,
-        (browserContext) => usePage(browserContext, runInPage)
+        (browserContext) => usePage(browserContext, (page) => runInPage(page))
       );
     } catch (e) {
       return {

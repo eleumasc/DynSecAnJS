@@ -1,6 +1,7 @@
 import browserify from "browserify";
 
 export interface MonitorReport {
+  pageUrl: string;
   uncaughtErrors: string[];
   consoleMessages: string[];
   calledNativeMethods: string[];
@@ -20,6 +21,11 @@ export interface LogReporter extends Reporter {
 export interface ExposedFunctionReporter extends Reporter {
   type: "ExposedFunctionReporter";
   functionName: string;
+}
+
+export interface SendReporter extends Reporter {
+  type: "SendReporter";
+  url: string;
 }
 
 export const bundleMonitor = (reporter: Reporter): Promise<string> => {

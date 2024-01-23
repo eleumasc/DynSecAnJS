@@ -135,6 +135,7 @@ function setupAnalysis() {
 
   return function () {
     return {
+      pageUrl: $.global.location.href,
       uncaughtErrors: uncaughtErrors.values(),
       consoleMessages: consoleMessages.values(),
       calledNativeMethods: calledBuiltinMethods.values(),

@@ -42,4 +42,9 @@ module.exports = {
   sessionStorage: global.sessionStorage,
   Storage_prototype_length: __getGetter(Storage.prototype, "length"),
   Storage_prototype_key: Storage.prototype.key,
+  XMLHttpRequest: XMLHttpRequest,
+  XMLHttpRequest_prototype_open: XMLHttpRequest.prototype.open,
+  XMLHttpRequest_prototype_setRequestHeader:
+    XMLHttpRequest.prototype.setRequestHeader,
+  XMLHttpRequest_prototype_send: XMLHttpRequest.prototype.send,
 };

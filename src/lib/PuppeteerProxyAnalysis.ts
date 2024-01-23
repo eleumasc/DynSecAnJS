@@ -1,108 +1,38 @@
-import puppeteer, { Browser, Page, PuppeteerLaunchOptions } from "puppeteer";
-import Completer from "./util/Completer";
-import { DefaultFeatureSet } from "./DefaultFeatureSet";
-import { timeBomb } from "./util/async";
-import { useIncognitoBrowserContext, usePage } from "./util/browser";
-import {
-  ExposedFunctionReporter,
-  MonitorReport,
-  bundleMonitor,
-} from "./monitor";
-import {
-  Analysis,
-  AnalysisResult,
-  FailureAnalysisResult,
-  SuccessAnalysisResult,
-} from "./Analysis";
-import { useVirusProxy } from "./VirusProxy";
 import {
   Mockttp as MockttpServer,
   generateCACertificate,
   generateSPKIFingerprint,
   getLocal,
 } from "mockttp";
-
-const REPORTER_FUNCTION_NAME = "$__report";
+import puppeteer, { Browser, Page, PuppeteerLaunchOptions } from "puppeteer";
+import { Analysis, AnalysisResult, FailureAnalysisResult } from "./Analysis";
+import AnalysisProxy, { useAnalysisProxy } from "./AnalysisProxy";
+import { timeBomb } from "./util/async";
+import { useIncognitoBrowserContext, usePage } from "./util/browser";
 
 export class PuppeteerProxyAnalysis implements Analysis {
-  constructor(
-    readonly browser: Browser,
-    readonly server: MockttpServer,
-    readonly monitor: string
-  ) {}
+  constructor(readonly browser: Browser, readonly server: MockttpServer) {}
 
   async run(url: string): Promise<AnalysisResult> {
-    const runInPage = async (page: Page): Promise<AnalysisResult> => {
-      const willReceiveMonitorReport = new Completer<MonitorReport>();
-      await page.exposeFunction(
-        REPORTER_FUNCTION_NAME,
-        (monitorReport: MonitorReport) => {
-          willReceiveMonitorReport.complete(monitorReport);
-        }
-      );
-
-      const targetSites = new Set<string>();
-      await page.setRequestInterception(true);
-      page.on("request", (request) => {
-        try {
-          const url = new URL(request.url());
-          const { protocol, hostname } = url;
-          if (protocol === "http:" || protocol === "https:") {
-            targetSites.add(hostname);
-          }
-        } finally {
-          request.continue();
-        }
-      });
-
+    const runInPage = async (
+      page: Page,
+      analysisProxy: AnalysisProxy
+    ): Promise<AnalysisResult> => {
       await page.goto(url, { timeout: 60_000 });
-      const pageUrl = page.url();
-      const monitorReport = await timeBomb(
-        willReceiveMonitorReport.promise,
-        15_000
-      );
-      const {
-        uncaughtErrors,
-        consoleMessages,
-        calledNativeMethods,
-        cookieKeys,
-        localStorageKeys,
-        sessionStorageKeys,
-      } = monitorReport;
-      return {
-        status: "success",
-        pageUrl,
-        featureSet: new DefaultFeatureSet(
-          new Set(uncaughtErrors),
-          new Set(consoleMessages),
-          new Set(calledNativeMethods),
-          new Set(cookieKeys),
-          new Set(localStorageKeys),
-          new Set(sessionStorageKeys),
-          new Set(targetSites)
-        ),
-      } satisfies SuccessAnalysisResult;
-    };
-
-    const transformer = async (body: string): Promise<string> => {
-      const index = body.indexOf("<script "); // TODO: fix
-      if (index !== -1) {
-        return (
-          body.substring(0, index) +
-          `<script>${this.monitor}</script>` +
-          body.substring(index)
-        );
-      }
-      return body;
+      return await timeBomb(analysisProxy.waitForCompleteAnalysis(), 15_000);
     };
 
     try {
-      return await useVirusProxy(this.server, transformer, (virusProxy) =>
-        useIncognitoBrowserContext(
-          this.browser,
-          { proxyServer: `http://127.0.0.1:${virusProxy.port()}` },
-          (browserContext) => usePage(browserContext, runInPage)
-        )
+      return await useAnalysisProxy(
+        this.server,
+        { isTopNavigationRequest: () => false, transform: async (x) => x },
+        (analysisProxy) =>
+          useIncognitoBrowserContext(
+            this.browser,
+            { proxyServer: `http://127.0.0.1:${analysisProxy.getPort()}` },
+            (browserContext) =>
+              usePage(browserContext, (page) => runInPage(page, analysisProxy))
+          )
       );
     } catch (e) {
       return {
@@ -133,11 +63,6 @@ export class PuppeteerProxyAnalysis implements Analysis {
       ],
     });
 
-    const monitor = await bundleMonitor(<ExposedFunctionReporter>{
-      type: "ExposedFunctionReporter",
-      functionName: REPORTER_FUNCTION_NAME,
-    });
-
-    return new PuppeteerProxyAnalysis(browser, server, monitor);
+    return new PuppeteerProxyAnalysis(browser, server);
   }
 }
