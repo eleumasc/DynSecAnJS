@@ -1,9 +1,9 @@
-import assert from "assert";
-import childProcess from "child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
-import os from "os";
-import path from "path";
 import "dotenv/config";
+import assert from "assert";
+import { spawn } from "child_process";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 
 export const esnstrument = async (
   code: string,
@@ -12,45 +12,48 @@ export const esnstrument = async (
   const jalangiPath = process.env.JALANGI_PATH as string | undefined;
   assert(typeof jalangiPath !== "undefined");
 
-  const outDir = mkdtempSync(path.join(os.tmpdir(), "jal-"));
-  const originalFile = `index.${extension}`;
-  const instrumentedFile = `index-jal.${extension}`;
+  const outDir = mkdtempSync(join(tmpdir(), "jal-"));
+  const originalPath = join(outDir, `index.${extension}`);
+  const instrumentedPath = join(outDir, `index-jal.${extension}`);
 
-  writeFileSync(path.join(outDir, originalFile), code);
+  try {
+    writeFileSync(originalPath, code);
 
-  const proc = childProcess.spawn(
-    "node",
-    [
-      path.join(jalangiPath, "src", "js", "commands", "esnstrument_cli.js"),
-      "--inlineIID",
-      "--inlineSource",
-      "--noResultsGUI",
-      "--outDir",
-      outDir,
-      "--out",
-      path.join(outDir, instrumentedFile),
-      path.join(outDir, originalFile),
-    ],
-    {
-      env: {},
-      stdio: "ignore",
-    }
-  );
+    const proc = spawn(
+      "node",
+      [
+        join(jalangiPath, "src", "js", "commands", "esnstrument_cli.js"),
+        "--inlineIID",
+        "--inlineSource",
+        "--noResultsGUI",
+        "--outDir",
+        outDir,
+        "--out",
+        instrumentedPath,
+        originalPath,
+      ],
+      {
+        env: {},
+        stdio: "ignore",
+      }
+    );
 
-  await new Promise((resolve, reject) => {
-    proc.on("exit", function (code, signal) {
-      resolve({ code: code, signal: signal });
+    await new Promise((resolve, reject) => {
+      proc.on("exit", function (code, signal) {
+        resolve({ code: code, signal: signal });
+      });
+
+      proc.on("error", function (err) {
+        reject(err);
+      });
     });
-    proc.on("error", function (err) {
-      reject(err);
+
+    const instrumented = readFileSync(instrumentedPath, {
+      encoding: "utf8",
     });
-  });
 
-  const instrumented = readFileSync(path.join(outDir, instrumentedFile), {
-    encoding: "utf8",
-  });
-
-  rmSync(outDir, { force: true, recursive: true });
-
-  return instrumented;
+    return instrumented;
+  } finally {
+    rmSync(outDir, { force: true, recursive: true });
+  }
 };
