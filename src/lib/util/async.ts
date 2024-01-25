@@ -1,11 +1,3 @@
-export const asyncDelay = (timeoutMs: number): Promise<void> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve();
-    }, timeoutMs);
-  });
-};
-
 export const timeBomb = async <T>(
   promise: Promise<T>,
   timeoutMs: number

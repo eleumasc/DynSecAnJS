@@ -1,4 +1,4 @@
-import { equalsSet } from "./util/set";
+import { equalSets } from "./util/set";
 
 export interface FeatureSetData {
   type: "DefaultFeatureSet";
@@ -24,37 +24,37 @@ export default class FeatureSet {
 
   equals(that: FeatureSet): boolean {
     return (
-      equalsSet(this.uncaughtErrors, that.uncaughtErrors) &&
-      equalsSet(this.consoleMessages, that.consoleMessages) &&
-      equalsSet(this.calledNativeMethods, that.calledNativeMethods) &&
-      equalsSet(this.cookieKeys, that.cookieKeys) &&
-      equalsSet(this.localStorageKeys, that.localStorageKeys) &&
-      equalsSet(this.sessionStorageKeys, that.sessionStorageKeys) &&
-      equalsSet(this.targetSites, that.targetSites)
+      equalSets(this.uncaughtErrors, that.uncaughtErrors) &&
+      equalSets(this.consoleMessages, that.consoleMessages) &&
+      equalSets(this.calledNativeMethods, that.calledNativeMethods) &&
+      equalSets(this.cookieKeys, that.cookieKeys) &&
+      equalSets(this.localStorageKeys, that.localStorageKeys) &&
+      equalSets(this.sessionStorageKeys, that.sessionStorageKeys) &&
+      equalSets(this.targetSites, that.targetSites)
     );
   }
 
   broken(that: FeatureSet): string[] {
     let brokenArray: string[] = [];
-    if (!equalsSet(this.uncaughtErrors, that.uncaughtErrors)) {
+    if (!equalSets(this.uncaughtErrors, that.uncaughtErrors)) {
       brokenArray = [...brokenArray, "uncaughtErrors"];
     }
-    if (!equalsSet(this.consoleMessages, that.consoleMessages)) {
+    if (!equalSets(this.consoleMessages, that.consoleMessages)) {
       brokenArray = [...brokenArray, "consoleMessages"];
     }
-    if (!equalsSet(this.calledNativeMethods, that.calledNativeMethods)) {
+    if (!equalSets(this.calledNativeMethods, that.calledNativeMethods)) {
       brokenArray = [...brokenArray, "calledNativeMethods"];
     }
-    if (!equalsSet(this.cookieKeys, that.cookieKeys)) {
+    if (!equalSets(this.cookieKeys, that.cookieKeys)) {
       brokenArray = [...brokenArray, "cookieKeys"];
     }
-    if (!equalsSet(this.localStorageKeys, that.localStorageKeys)) {
+    if (!equalSets(this.localStorageKeys, that.localStorageKeys)) {
       brokenArray = [...brokenArray, "localStorageKeys"];
     }
-    if (!equalsSet(this.sessionStorageKeys, that.sessionStorageKeys)) {
+    if (!equalSets(this.sessionStorageKeys, that.sessionStorageKeys)) {
       brokenArray = [...brokenArray, "sessionStorageKeys"];
     }
-    if (!equalsSet(this.targetSites, that.targetSites)) {
+    if (!equalSets(this.targetSites, that.targetSites)) {
       brokenArray = [...brokenArray, "targetSites"];
     }
 

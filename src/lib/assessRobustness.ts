@@ -1,4 +1,4 @@
-import { intersect } from "./util/array";
+import { intersectArrays } from "./util/array";
 import { AnalysisResult, SuccessAnalysisResult } from "./AnalysisResult";
 
 export const assessRobustness = (results: AnalysisResult[]): string => {
@@ -25,7 +25,7 @@ export const assessRobustness = (results: AnalysisResult[]): string => {
         if (!acc) {
           return cur;
         }
-        return intersect(acc, cur);
+        return intersectArrays(acc, cur);
       }, null);
     return "NON-robust: " + JSON.stringify(commonBroken);
   }
