@@ -1,7 +1,17 @@
-import { FeatureSet } from "./FeatureSet";
 import { equalsSet } from "./util/set";
 
-export class DefaultFeatureSet implements FeatureSet {
+export interface FeatureSetData {
+  type: "DefaultFeatureSet";
+  uncaughtErrors: string[];
+  consoleMessages: string[];
+  calledNativeMethods: string[];
+  cookieKeys: string[];
+  localStorageKeys: string[];
+  sessionStorageKeys: string[];
+  targetSites: string[];
+}
+
+export default class FeatureSet {
   constructor(
     readonly uncaughtErrors: Set<string>,
     readonly consoleMessages: Set<string>,
@@ -13,10 +23,6 @@ export class DefaultFeatureSet implements FeatureSet {
   ) {}
 
   equals(that: FeatureSet): boolean {
-    if (!(that instanceof DefaultFeatureSet)) {
-      return false;
-    }
-
     return (
       equalsSet(this.uncaughtErrors, that.uncaughtErrors) &&
       equalsSet(this.consoleMessages, that.consoleMessages) &&
@@ -29,10 +35,6 @@ export class DefaultFeatureSet implements FeatureSet {
   }
 
   broken(that: FeatureSet): string[] {
-    if (!(that instanceof DefaultFeatureSet)) {
-      throw new Error("Cannot compare with FeatureSet of different type");
-    }
-
     let brokenArray: string[] = [];
     if (!equalsSet(this.uncaughtErrors, that.uncaughtErrors)) {
       brokenArray = [...brokenArray, "uncaughtErrors"];
@@ -59,8 +61,9 @@ export class DefaultFeatureSet implements FeatureSet {
     return brokenArray;
   }
 
-  toData(): any {
+  serialize(): FeatureSetData {
     return {
+      type: "DefaultFeatureSet",
       uncaughtErrors: [...this.uncaughtErrors],
       consoleMessages: [...this.consoleMessages],
       calledNativeMethods: [...this.calledNativeMethods],
@@ -71,7 +74,7 @@ export class DefaultFeatureSet implements FeatureSet {
     };
   }
 
-  static fromData(data: any) {
+  static deserialize(data: FeatureSetData): FeatureSet {
     const {
       uncaughtErrors,
       consoleMessages,
@@ -81,7 +84,7 @@ export class DefaultFeatureSet implements FeatureSet {
       sessionStorageKeys,
       targetSites,
     } = data;
-    return new DefaultFeatureSet(
+    return new FeatureSet(
       new Set(uncaughtErrors),
       new Set(consoleMessages),
       new Set(calledNativeMethods),

@@ -1,27 +1,8 @@
-import { FeatureSet } from "./FeatureSet";
+import { AnalysisResult } from "./AnalysisResult";
 
 export interface Analysis {
   run(url: string): Promise<AnalysisResult>;
   terminate(): Promise<void>;
 }
 
-export interface BaseAnalysisResult {
-  status: string;
-}
-
-export interface SuccessAnalysisResult extends BaseAnalysisResult {
-  status: "success";
-  pageUrl: string;
-  featureSet: FeatureSet;
-}
-
-export interface FailureAnalysisResult extends BaseAnalysisResult {
-  status: "failure";
-  reason: string;
-}
-
-export type AnalysisResult = SuccessAnalysisResult | FailureAnalysisResult;export interface Logfile {
-  site: string;
-  analysisResults: AnalysisResult[];
-}
-
+export type AnalysisFactory = () => Promise<Analysis>;

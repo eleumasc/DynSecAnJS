@@ -1,8 +1,8 @@
 import crypto from "crypto";
 import { lookup as dnsLookup } from "dns/promises";
 import { CompletedRequest, Mockttp as MockttpServer } from "mockttp";
-import { AnalysisResult, SuccessAnalysisResult } from "./Analysis";
-import { DefaultFeatureSet } from "./DefaultFeatureSet";
+import { AnalysisResult, SuccessAnalysisResult } from "./AnalysisResult";
+import FeatureSet from "./FeatureSet";
 import { MonitorReport, SendReporter, bundleMonitor } from "./monitor";
 import Deferred from "./util/Deferred";
 
@@ -117,13 +117,13 @@ const configureServer = async (
         return;
       }
 
-      const originalBodyText = await body.getText();
-      if (!originalBodyText) {
+      const originalBody = await body.getText();
+      if (!originalBody) {
         return;
       }
 
-      const transformedBodyText = await compositeTransform(
-        originalBodyText,
+      const transformedBody = await compositeTransform(
+        originalBody,
         contentType
       );
       return {
@@ -133,7 +133,7 @@ const configureServer = async (
           ...headers,
           "content-length": undefined,
         },
-        body: transformedBodyText,
+        body: transformedBody,
       };
     },
   });
@@ -160,7 +160,7 @@ const configureServer = async (
     willCompleteAnalysis.resolve({
       status: "success",
       pageUrl,
-      featureSet: new DefaultFeatureSet(
+      featureSet: new FeatureSet(
         new Set(uncaughtErrors),
         new Set(consoleMessages),
         new Set(calledNativeMethods),

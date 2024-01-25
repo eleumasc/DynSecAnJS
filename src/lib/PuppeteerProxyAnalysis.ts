@@ -5,17 +5,28 @@ import {
   getLocal,
 } from "mockttp";
 import puppeteer, { Browser, Page, PuppeteerLaunchOptions } from "puppeteer";
-import { Analysis, AnalysisResult, FailureAnalysisResult } from "./Analysis";
-import AnalysisProxy, { useAnalysisProxy } from "./AnalysisProxy";
+import { Analysis } from "./Analysis";
+import { AnalysisResult, FailureAnalysisResult } from "./AnalysisResult";
+import AnalysisProxy, { Transformer, useAnalysisProxy } from "./AnalysisProxy";
 import { timeBomb } from "./util/async";
 import { useIncognitoBrowserContext, usePage } from "./util/browser";
 
 const TOP_NAVIGATION_REQUEST_HEADER = "x-top-navigation-request";
 
+export interface PuppeteerProxyAnalysisOptions {
+  transform: Transformer;
+}
+
 export class PuppeteerProxyAnalysis implements Analysis {
-  constructor(readonly browser: Browser, readonly server: MockttpServer) {}
+  constructor(
+    readonly browser: Browser,
+    readonly server: MockttpServer,
+    readonly options: PuppeteerProxyAnalysisOptions
+  ) {}
 
   async run(url: string): Promise<AnalysisResult> {
+    const { transform } = this.options;
+
     const runInPage = async (
       page: Page,
       analysisProxy: AnalysisProxy
@@ -45,7 +56,7 @@ export class PuppeteerProxyAnalysis implements Analysis {
           isTopNavigationRequest: (req) => {
             return req.headers[TOP_NAVIGATION_REQUEST_HEADER] === "1";
           },
-          transform: async (x) => x,
+          transform,
         },
         (analysisProxy) =>
           useIncognitoBrowserContext(
@@ -68,6 +79,7 @@ export class PuppeteerProxyAnalysis implements Analysis {
   }
 
   static async create(
+    analysisOptions: PuppeteerProxyAnalysisOptions,
     pptrLaunchOptions?: PuppeteerLaunchOptions
   ): Promise<PuppeteerProxyAnalysis> {
     const httpsOptions = await generateCACertificate();
@@ -84,6 +96,6 @@ export class PuppeteerProxyAnalysis implements Analysis {
       ],
     });
 
-    return new PuppeteerProxyAnalysis(browser, server);
+    return new PuppeteerProxyAnalysis(browser, server, analysisOptions);
   }
 }

@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "build": "rimraf build && tsc",
-    "analysis": "npm run build && node build/analysis.js",
-    "measurement": "npm run build && node build/measurement.js"
+    "start": "npm run build && node build/index.js"
   },
   "keywords": [],
   "author": "",
@@ -13,13 +12,16 @@
     "@tsconfig/recommended": "^1.0.3",
     "@types/browserify": "^12.0.40",
     "@types/node": "^20.10.8",
+    "@types/yargs": "^17.0.32",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3"
   },
   "dependencies": {
     "@browserify/envify": "^6.0.0",
     "browserify": "^17.0.0",
+    "dotenv": "^16.4.0",
     "mockttp": "^3.10.1",
-    "puppeteer": "^21.7.0"
+    "puppeteer": "^21.7.0",
+    "yargs": "^17.7.2"
   }
 }

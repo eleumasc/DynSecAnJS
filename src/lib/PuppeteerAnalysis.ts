@@ -1,11 +1,11 @@
 import puppeteer, { Browser, Page, PuppeteerLaunchOptions } from "puppeteer";
+import { Analysis } from "./Analysis";
 import {
-  Analysis,
   AnalysisResult,
   FailureAnalysisResult,
   SuccessAnalysisResult,
-} from "./Analysis";
-import { DefaultFeatureSet } from "./DefaultFeatureSet";
+} from "./AnalysisResult";
+import FeatureSet from "./FeatureSet";
 import {
   ExposedFunctionReporter,
   MonitorReport,
@@ -17,7 +17,7 @@ import Deferred from "./util/Deferred";
 
 const REPORTER_FUNCTION_NAME = "$__report";
 
-export class DebugAnalysis implements Analysis {
+export class PuppeteerAnalysis implements Analysis {
   constructor(readonly browser: Browser, readonly monitor: string) {}
 
   async run(url: string): Promise<AnalysisResult> {
@@ -62,7 +62,7 @@ export class DebugAnalysis implements Analysis {
       return {
         status: "success",
         pageUrl,
-        featureSet: new DefaultFeatureSet(
+        featureSet: new FeatureSet(
           new Set(uncaughtErrors),
           new Set(consoleMessages),
           new Set(calledNativeMethods),
@@ -94,12 +94,12 @@ export class DebugAnalysis implements Analysis {
 
   static async create(
     pptrLaunchOptions?: PuppeteerLaunchOptions
-  ): Promise<DebugAnalysis> {
+  ): Promise<PuppeteerAnalysis> {
     const browser = await puppeteer.launch(pptrLaunchOptions);
     const monitor = await bundleMonitor(<ExposedFunctionReporter>{
       type: "ExposedFunctionReporter",
       functionName: REPORTER_FUNCTION_NAME,
     });
-    return new DebugAnalysis(browser, monitor);
+    return new PuppeteerAnalysis(browser, monitor);
   }
 }
