@@ -58,8 +58,16 @@ export class AssessmentAnalysisRunner
     let regularResults: AnalysisResult[] = [];
     let toolResults: AnalysisResult[] = [];
     for (let i = 0; i < this.repeat; i += 1) {
-      regularResults = [...regularResults, await this.regularAnalysis.run(url)];
-      toolResults = [...toolResults, await this.toolAnalysis.run(url)];
+      const regularResult = await this.regularAnalysis.run(url);
+      regularResults = [...regularResults, regularResult];
+      if (regularResult.status === "failure") {
+        break;
+      }
+      const toolResult = await this.toolAnalysis.run(url);
+      toolResults = [...toolResults, toolResult];
+      if (toolResult.status === "failure") {
+        break;
+      }
     }
     return new AssessmentLogfileRecord(regularResults, toolResults);
   }

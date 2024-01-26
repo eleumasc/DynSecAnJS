@@ -40,7 +40,11 @@ export class TestAnalysisRunner implements AnalysisRunner<TestLogfileRecord> {
   async runAnalysis(url: string): Promise<TestLogfileRecord> {
     let results: AnalysisResult[] = [];
     for (let i = 0; i < this.repeat; i += 1) {
-      results = [...results, await this.analysis.run(url)];
+      const result = await this.analysis.run(url);
+      results = [...results, result];
+      if (result.status === "failure") {
+        break;
+      }
     }
     return new TestLogfileRecord(results);
   }
