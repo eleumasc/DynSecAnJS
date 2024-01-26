@@ -138,7 +138,7 @@ function setupAnalysis() {
       pageUrl: $.global.location.href,
       uncaughtErrors: uncaughtErrors.values(),
       consoleMessages: consoleMessages.values(),
-      calledNativeMethods: calledBuiltinMethods.values(),
+      calledBuiltinMethods: calledBuiltinMethods.values(),
       cookieKeys: getCookieKeys(),
       localStorageKeys: getStorageKeys($.localStorage),
       sessionStorageKeys: getStorageKeys($.sessionStorage),

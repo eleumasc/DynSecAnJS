@@ -4,7 +4,7 @@ export interface FeatureSetData {
   type: "DefaultFeatureSet";
   uncaughtErrors: string[];
   consoleMessages: string[];
-  calledNativeMethods: string[];
+  calledBuiltinMethods: string[];
   cookieKeys: string[];
   localStorageKeys: string[];
   sessionStorageKeys: string[];
@@ -15,7 +15,7 @@ export default class FeatureSet {
   constructor(
     readonly uncaughtErrors: Set<string>,
     readonly consoleMessages: Set<string>,
-    readonly calledNativeMethods: Set<string>,
+    readonly calledBuiltinMethods: Set<string>,
     readonly cookieKeys: Set<string>,
     readonly localStorageKeys: Set<string>,
     readonly sessionStorageKeys: Set<string>,
@@ -26,7 +26,7 @@ export default class FeatureSet {
     return (
       equalSets(this.uncaughtErrors, that.uncaughtErrors) &&
       equalSets(this.consoleMessages, that.consoleMessages) &&
-      equalSets(this.calledNativeMethods, that.calledNativeMethods) &&
+      equalSets(this.calledBuiltinMethods, that.calledBuiltinMethods) &&
       equalSets(this.cookieKeys, that.cookieKeys) &&
       equalSets(this.localStorageKeys, that.localStorageKeys) &&
       equalSets(this.sessionStorageKeys, that.sessionStorageKeys) &&
@@ -42,8 +42,8 @@ export default class FeatureSet {
     if (!equalSets(this.consoleMessages, that.consoleMessages)) {
       brokenSet.add("consoleMessages");
     }
-    if (!equalSets(this.calledNativeMethods, that.calledNativeMethods)) {
-      brokenSet.add("calledNativeMethods");
+    if (!equalSets(this.calledBuiltinMethods, that.calledBuiltinMethods)) {
+      brokenSet.add("calledBuiltinMethods");
     }
     if (!equalSets(this.cookieKeys, that.cookieKeys)) {
       brokenSet.add("cookieKeys");
@@ -65,7 +65,7 @@ export default class FeatureSet {
     return new FeatureSet(
       intersectSets(this.uncaughtErrors, that.uncaughtErrors),
       intersectSets(this.consoleMessages, that.consoleMessages),
-      intersectSets(this.calledNativeMethods, that.calledNativeMethods),
+      intersectSets(this.calledBuiltinMethods, that.calledBuiltinMethods),
       intersectSets(this.cookieKeys, that.cookieKeys),
       intersectSets(this.localStorageKeys, that.localStorageKeys),
       intersectSets(this.sessionStorageKeys, that.sessionStorageKeys),
@@ -78,7 +78,7 @@ export default class FeatureSet {
       type: "DefaultFeatureSet",
       uncaughtErrors: [...this.uncaughtErrors],
       consoleMessages: [...this.consoleMessages],
-      calledNativeMethods: [...this.calledNativeMethods],
+      calledBuiltinMethods: [...this.calledBuiltinMethods],
       cookieKeys: [...this.cookieKeys],
       localStorageKeys: [...this.localStorageKeys],
       sessionStorageKeys: [...this.sessionStorageKeys],
@@ -90,7 +90,7 @@ export default class FeatureSet {
     const {
       uncaughtErrors,
       consoleMessages,
-      calledNativeMethods,
+      calledBuiltinMethods,
       cookieKeys,
       localStorageKeys,
       sessionStorageKeys,
@@ -99,7 +99,7 @@ export default class FeatureSet {
     return new FeatureSet(
       new Set(uncaughtErrors),
       new Set(consoleMessages),
-      new Set(calledNativeMethods),
+      new Set(calledBuiltinMethods),
       new Set(cookieKeys),
       new Set(localStorageKeys),
       new Set(sessionStorageKeys),

@@ -144,7 +144,7 @@ const configureServer = async (
       pageUrl,
       uncaughtErrors,
       consoleMessages,
-      calledNativeMethods,
+      calledBuiltinMethods,
       cookieKeys,
       localStorageKeys,
       sessionStorageKeys,
@@ -155,7 +155,7 @@ const configureServer = async (
       featureSet: new FeatureSet(
         new Set(uncaughtErrors),
         new Set(consoleMessages),
-        new Set(calledNativeMethods),
+        new Set(calledBuiltinMethods),
         new Set(cookieKeys),
         new Set(localStorageKeys),
         new Set(sessionStorageKeys),

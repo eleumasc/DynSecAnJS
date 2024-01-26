@@ -54,7 +54,7 @@ export class PuppeteerAnalysis implements Analysis {
         pageUrl,
         uncaughtErrors,
         consoleMessages,
-        calledNativeMethods,
+        calledBuiltinMethods,
         cookieKeys,
         localStorageKeys,
         sessionStorageKeys,
@@ -65,7 +65,7 @@ export class PuppeteerAnalysis implements Analysis {
         featureSet: new FeatureSet(
           new Set(uncaughtErrors),
           new Set(consoleMessages),
-          new Set(calledNativeMethods),
+          new Set(calledBuiltinMethods),
           new Set(cookieKeys),
           new Set(localStorageKeys),
           new Set(sessionStorageKeys),

@@ -4,7 +4,7 @@ export interface MonitorReport {
   pageUrl: string;
   uncaughtErrors: string[];
   consoleMessages: string[];
-  calledNativeMethods: string[];
+  calledBuiltinMethods: string[];
   cookieKeys: string[];
   localStorageKeys: string[];
   sessionStorageKeys: string[];
