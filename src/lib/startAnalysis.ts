@@ -27,7 +27,7 @@ export const startAnalysis = async (args: StartAnalysisArgs) => {
       sitelist,
       Math.ceil(sitelist.length / concurrencyLevel)
     );
-    return await Promise.all(
+    await Promise.all(
       sitesPerThread.map(async (sitelist, groupIndex) => {
         const worker = new Worker(__filename);
         const agent = new Agent(worker);
