@@ -6,12 +6,12 @@ export default class Logger {
   constructor(readonly analysisId: string) {}
 
   persist(logfile: Logfile) {
-    const { site, record } = logfile;
+    const { site } = logfile;
     const outDir = join("results", this.analysisId);
     mkdirSync(outDir, { recursive: true });
     writeFileSync(
       join(outDir, `${site}.json`),
-      JSON.stringify(serializeLogfile(<Logfile>{ site, record }))
+      JSON.stringify(serializeLogfile(logfile))
     );
   }
 
