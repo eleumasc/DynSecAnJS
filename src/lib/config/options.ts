@@ -6,3 +6,7 @@ export const pptrLaunchOptions: PuppeteerLaunchOptions = {
 };
 
 export const defaultAnalysisRepeat = 5;
+
+export const defaultNavigationTimeoutMs = 30_000;
+
+export const defaultAnalysisTimeoutMs = 10_000;

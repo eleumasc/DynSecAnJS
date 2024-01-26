@@ -14,6 +14,10 @@ import {
 import { timeBomb } from "./util/async";
 import { useIncognitoBrowserContext, usePage } from "./util/browser";
 import Deferred from "./util/Deferred";
+import {
+  defaultAnalysisTimeoutMs,
+  defaultNavigationTimeoutMs,
+} from "./config/options";
 
 const REPORTER_FUNCTION_NAME = "$__report";
 
@@ -45,10 +49,10 @@ export class PuppeteerAnalysis implements Analysis {
         }
       });
 
-      await page.goto(url, { timeout: 60_000 });
+      await page.goto(url, { timeout: defaultNavigationTimeoutMs });
       const monitorReport = await timeBomb(
         willReceiveMonitorReport.promise,
-        15_000
+        defaultAnalysisTimeoutMs
       );
       const {
         pageUrl,

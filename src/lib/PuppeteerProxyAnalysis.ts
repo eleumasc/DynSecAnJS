@@ -10,6 +10,10 @@ import { AnalysisResult, FailureAnalysisResult } from "./AnalysisResult";
 import AnalysisProxy, { Transformer, useAnalysisProxy } from "./AnalysisProxy";
 import { timeBomb } from "./util/async";
 import { useIncognitoBrowserContext, usePage } from "./util/browser";
+import {
+  defaultAnalysisTimeoutMs,
+  defaultNavigationTimeoutMs,
+} from "./config/options";
 
 const TOP_NAVIGATION_REQUEST_HEADER = "x-top-navigation-request";
 
@@ -45,8 +49,11 @@ export class PuppeteerProxyAnalysis implements Analysis {
         });
       });
 
-      await page.goto(url, { timeout: 60_000 });
-      return await timeBomb(analysisProxy.waitForCompleteAnalysis(), 15_000);
+      await page.goto(url, { timeout: defaultNavigationTimeoutMs });
+      return await timeBomb(
+        analysisProxy.waitForCompleteAnalysis(),
+        defaultAnalysisTimeoutMs
+      );
     };
 
     try {
