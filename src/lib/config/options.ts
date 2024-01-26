@@ -1,7 +1,7 @@
 import { PuppeteerLaunchOptions } from "puppeteer";
 
 export const pptrLaunchOptions: PuppeteerLaunchOptions = {
-  headless: false, // "new",
+  headless: "new",
   defaultViewport: { width: 1280, height: 720 },
 };
 
