@@ -21,6 +21,7 @@
     "browserify": "^17.0.0",
     "dotenv": "^16.4.0",
     "mockttp": "^3.10.1",
+    "parse5": "^7.1.2",
     "puppeteer": "^21.7.0",
     "yargs": "^17.7.2"
   }

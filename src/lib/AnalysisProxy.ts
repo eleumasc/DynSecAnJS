@@ -5,6 +5,7 @@ import { AnalysisResult, SuccessAnalysisResult } from "./AnalysisResult";
 import FeatureSet from "./FeatureSet";
 import { MonitorReport, SendReporter, bundleMonitor } from "./monitor";
 import Deferred from "./util/Deferred";
+import { injectScript } from "./injectScript";
 
 export interface AnalysisProxyOptions {
   isTopNavigationRequest: (req: CompletedRequest) => boolean;
@@ -63,17 +64,8 @@ const configureServer = async (
     content: string,
     contentType: TransformerContentType
   ): Promise<string> => {
-    if (contentType !== "html") {
-      return content;
-    }
-
-    const index = content.indexOf("<script "); // TODO: improve
-    if (index !== -1) {
-      return (
-        content.substring(0, index) +
-        `<script src="${getMonitorUrl}"></script>` +
-        content.substring(index)
-      );
+    if (contentType === "html") {
+      return injectScript(content, getMonitorUrl);
     }
     return content;
   };
