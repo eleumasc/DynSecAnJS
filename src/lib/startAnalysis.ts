@@ -2,27 +2,77 @@ import { Logfile, LogfileRecord } from "./Logfile";
 import { loadSessionFromConfigModule } from "./config";
 import Logger from "./Logger";
 import { loadSitelistFromFile } from "./sitelist";
+import { Worker, isMainThread, parentPort } from "worker_threads";
+import { Agent } from "port_agent";
+import { divide } from "./util/array";
 
 export interface StartAnalysisArgs {
   configName: string;
   sitelistPath: string;
+  concurrencyLevel: number;
 }
 
 export const startAnalysis = async (args: StartAnalysisArgs) => {
-  const { configName, sitelistPath } = args;
+  const { configName, sitelistPath, concurrencyLevel } = args;
 
-  const runner = await loadSessionFromConfigModule(configName).setupAnalysis();
+  const analysisId = (+new Date()).toString();
+  console.log(`Analysis ID is ${analysisId}`);
 
   const sitelist = loadSitelistFromFile(sitelistPath);
   console.log(sitelist);
   console.log(`${sitelist.length} sites`);
 
-  const analysisId = (+new Date()).toString();
+  if (concurrencyLevel > 1) {
+    const sitesPerThread = divide(
+      sitelist,
+      Math.ceil(sitelist.length / concurrencyLevel)
+    );
+    return await Promise.all(
+      sitesPerThread.map(async (sitelist, groupIndex) => {
+        const worker = new Worker(__filename);
+        const agent = new Agent(worker);
+        try {
+          await agent.call(runAnalysisThread.name, <AnalysisThreadOptions>{
+            configName,
+            sitelist,
+            threadId: groupIndex,
+            analysisId,
+          });
+        } finally {
+          worker.terminate();
+        }
+      })
+    );
+  } else {
+    await runAnalysisThread({
+      configName,
+      sitelist,
+      threadId: 0,
+      analysisId,
+    });
+  }
+
+  console.log("THE END");
+};
+
+interface AnalysisThreadOptions {
+  configName: string;
+  sitelist: string[];
+  threadId: number;
+  analysisId: string;
+}
+
+const runAnalysisThread = async (
+  options: AnalysisThreadOptions
+): Promise<void> => {
+  const { configName, sitelist, threadId, analysisId } = options;
+
+  const runner = await loadSessionFromConfigModule(configName).setupAnalysis();
+
   const logger = new Logger(analysisId);
-  console.log(`Analysis ID is ${analysisId}`);
 
   for (const [siteIndex, site] of Object.entries(sitelist)) {
-    console.log(`begin analysis ${site} [${siteIndex}]`);
+    console.log(`begin analysis ${site} [${threadId}-${siteIndex}]`);
 
     const startTime = +new Date();
 
@@ -39,5 +89,17 @@ export const startAnalysis = async (args: StartAnalysisArgs) => {
   }
 
   await runner.terminate();
-  console.log("THE END");
 };
+
+// worker thread
+if (!isMainThread) {
+  if (parentPort) {
+    const agent = new Agent(parentPort);
+
+    agent.register(
+      runAnalysisThread.name,
+      (options: AnalysisThreadOptions): Promise<void> =>
+        runAnalysisThread(options)
+    );
+  }
+}

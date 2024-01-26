@@ -15,6 +15,10 @@ yargs(process.argv.slice(2))
         .positional("sitelistPath", {
           type: "string",
           demandOption: true,
+        })
+        .option("concurrencyLevel", {
+          type: "number",
+          default: 1,
         });
     },
     (argv) => {
