@@ -6,26 +6,30 @@ import { TestLogfileRecord, TestLogfileRecordData } from "./TestSession";
 
 export interface Logfile {
   site: string;
+  startTime: number;
   record: LogfileRecord;
 }
 
 export interface LogfileData {
   site: string;
+  startTime: number;
   record: LogfileRecordData;
 }
 
 export const serializeLogfile = (concrete: Logfile): LogfileData => {
-  const { site, record } = concrete;
+  const { site, startTime, record } = concrete;
   return {
     site,
+    startTime,
     record: record.serialize(),
   };
 };
 
 export const deserializeLogfile = (data: LogfileData): Logfile => {
-  const { site, record } = data;
+  const { site, startTime, record } = data;
   return {
     site,
+    startTime,
     record: deserializeLogfileRecord(record),
   };
 };

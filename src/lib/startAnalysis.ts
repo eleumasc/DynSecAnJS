@@ -1,4 +1,4 @@
-import { LogfileRecord } from "./Logfile";
+import { Logfile, LogfileRecord } from "./Logfile";
 import { loadSessionFromConfigModule } from "./config";
 import Logger from "./Logger";
 import { loadSitelistFromFile } from "./sitelist";
@@ -24,10 +24,16 @@ export const startAnalysis = async (args: StartAnalysisArgs) => {
   for (const [siteIndex, site] of Object.entries(sitelist)) {
     console.log(`begin analysis ${site} [${siteIndex}]`);
 
+    const startTime = +new Date();
+
     const url = `http://${site}/`;
     const record = (await runner.runAnalysis(url)) as LogfileRecord;
 
-    logger.persist({ site, record });
+    logger.persist(<Logfile>{
+      site,
+      startTime,
+      record,
+    });
 
     console.log(`end analysis ${site}`);
   }
