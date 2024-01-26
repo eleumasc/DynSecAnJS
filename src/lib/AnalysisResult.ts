@@ -77,3 +77,14 @@ export const deserializeAnalysisResult = (
     throw new Error(`Invalid status of AnalysisResult: ${status}`);
   }
 };
+
+export const everySuccessAnalysisResult = (
+  results: AnalysisResult[]
+): results is SuccessAnalysisResult[] =>
+  results.every(
+    (result): result is SuccessAnalysisResult => result.status === "success"
+  );
+
+export const mapFeatureSets = (
+  results: SuccessAnalysisResult[]
+): FeatureSet[] => results.map(({ featureSet }) => featureSet);

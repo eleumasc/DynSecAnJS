@@ -1,32 +1,33 @@
-import { intersectArrays } from "./util/array";
-import { AnalysisResult, SuccessAnalysisResult } from "./AnalysisResult";
+import assert from "assert";
+import {
+  AnalysisResult,
+  everySuccessAnalysisResult,
+  mapFeatureSets,
+} from "./AnalysisResult";
+import { intersectSets } from "./util/set";
 
 export const assessRobustness = (results: AnalysisResult[]): string => {
-  if (
-    !results.every(
-      (result): result is SuccessAnalysisResult => result.status === "success"
-    )
-  ) {
+  if (!everySuccessAnalysisResult(results)) {
     return "failure";
   }
 
+  const featureSets = mapFeatureSets(results);
+
   if (
-    results.some((x, i) =>
-      results.slice(i + 1).some((y) => x.featureSet.equals(y.featureSet))
+    featureSets.some((x, i) =>
+      featureSets.slice(i + 1).some((y) => x.equals(y))
     )
   ) {
     return "ROBUST";
   } else {
-    const commonBroken = results
-      .flatMap((x, i) =>
-        results.slice(i + 1).map((y) => x.featureSet.broken(y.featureSet))
-      )
-      .reduce((acc: string[] | null, cur: string[]): string[] => {
-        if (!acc) {
-          return cur;
-        }
-        return intersectArrays(acc, cur);
-      }, null);
-    return "NON-robust: " + JSON.stringify(commonBroken);
+    const commonBroken = featureSets
+      .flatMap((x, i) => featureSets.slice(i + 1).map((y) => x.broken(y)))
+      .reduce(
+        (acc: Set<string> | null, cur: Set<string>): Set<string> =>
+          acc ? intersectSets(acc, cur) : cur,
+        null
+      );
+    assert(commonBroken !== null);
+    return "NON-robust: " + JSON.stringify([...commonBroken]);
   }
 };

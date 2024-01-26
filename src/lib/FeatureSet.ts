@@ -1,4 +1,4 @@
-import { equalSets } from "./util/set";
+import { equalSets, intersectSets } from "./util/set";
 
 export interface FeatureSetData {
   type: "DefaultFeatureSet";
@@ -34,31 +34,43 @@ export default class FeatureSet {
     );
   }
 
-  broken(that: FeatureSet): string[] {
-    let brokenArray: string[] = [];
+  broken(that: FeatureSet): Set<string> {
+    const brokenSet = new Set<string>();
     if (!equalSets(this.uncaughtErrors, that.uncaughtErrors)) {
-      brokenArray = [...brokenArray, "uncaughtErrors"];
+      brokenSet.add("uncaughtErrors");
     }
     if (!equalSets(this.consoleMessages, that.consoleMessages)) {
-      brokenArray = [...brokenArray, "consoleMessages"];
+      brokenSet.add("consoleMessages");
     }
     if (!equalSets(this.calledNativeMethods, that.calledNativeMethods)) {
-      brokenArray = [...brokenArray, "calledNativeMethods"];
+      brokenSet.add("calledNativeMethods");
     }
     if (!equalSets(this.cookieKeys, that.cookieKeys)) {
-      brokenArray = [...brokenArray, "cookieKeys"];
+      brokenSet.add("cookieKeys");
     }
     if (!equalSets(this.localStorageKeys, that.localStorageKeys)) {
-      brokenArray = [...brokenArray, "localStorageKeys"];
+      brokenSet.add("localStorageKeys");
     }
     if (!equalSets(this.sessionStorageKeys, that.sessionStorageKeys)) {
-      brokenArray = [...brokenArray, "sessionStorageKeys"];
+      brokenSet.add("sessionStorageKeys");
     }
     if (!equalSets(this.targetSites, that.targetSites)) {
-      brokenArray = [...brokenArray, "targetSites"];
+      brokenSet.add("targetSites");
     }
 
-    return brokenArray;
+    return brokenSet;
+  }
+
+  intersect(that: FeatureSet): FeatureSet {
+    return new FeatureSet(
+      intersectSets(this.uncaughtErrors, that.uncaughtErrors),
+      intersectSets(this.consoleMessages, that.consoleMessages),
+      intersectSets(this.calledNativeMethods, that.calledNativeMethods),
+      intersectSets(this.cookieKeys, that.cookieKeys),
+      intersectSets(this.localStorageKeys, that.localStorageKeys),
+      intersectSets(this.sessionStorageKeys, that.sessionStorageKeys),
+      intersectSets(this.targetSites, that.targetSites)
+    );
   }
 
   serialize(): FeatureSetData {
