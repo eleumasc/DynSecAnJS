@@ -5,6 +5,7 @@ import { loadSitelistFromFile } from "./sitelist";
 import { Worker, isMainThread, parentPort } from "worker_threads";
 import { Agent } from "port_agent";
 import { divide } from "./util/array";
+import EventEmitter from "events";
 
 export interface StartAnalysisArgs {
   configName: string;
@@ -66,6 +67,8 @@ const runAnalysisThread = async (
   options: AnalysisThreadOptions
 ): Promise<void> => {
   const { configName, sitelist, threadId, analysisId } = options;
+
+  EventEmitter.defaultMaxListeners = 15;
 
   const runner = await loadSessionFromConfigModule(configName).setupAnalysis();
 
