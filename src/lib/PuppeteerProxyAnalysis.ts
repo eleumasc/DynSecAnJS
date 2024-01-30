@@ -98,7 +98,10 @@ export class PuppeteerProxyAnalysis implements Analysis {
     pptrLaunchOptions?: PuppeteerLaunchOptions
   ): Promise<PuppeteerProxyAnalysis> {
     const httpsOptions = await generateCACertificate();
-    const server = getLocal({ https: httpsOptions });
+    const server = getLocal({
+      https: httpsOptions,
+      recordTraffic: false,
+    });
 
     const browser = await puppeteer.launch({
       ...pptrLaunchOptions,
