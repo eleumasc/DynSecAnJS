@@ -34,13 +34,22 @@ export class TestLogfileRecord implements LogfileRecord {
   }
 }
 
-export class TestAnalysisRunner implements AnalysisRunner<TestLogfileRecord> {
-  constructor(readonly analysis: Analysis, readonly repeat: number) {}
+export interface TestSessionOptions {
+  analysisRepeat: number;
+}
 
-  async runAnalysis(url: string): Promise<TestLogfileRecord> {
+export class TestAnalysisRunner implements AnalysisRunner<TestLogfileRecord> {
+  constructor(
+    readonly analysis: Analysis,
+    readonly options: TestSessionOptions
+  ) {}
+
+  async runAnalysis(url: string, label: string): Promise<TestLogfileRecord> {
+    const { analysisRepeat } = this.options;
+
     let results: AnalysisResult[] = [];
-    for (let i = 0; i < this.repeat; i += 1) {
-      const result = await this.analysis.run(url);
+    for (let i = 0; i < analysisRepeat; i += 1) {
+      const result = await this.analysis.run(url, `${label}.r${i}`);
       results = [...results, result];
       if (result.status === "failure") {
         break;
@@ -77,7 +86,7 @@ export class TestMeasurementRunner
 export class TestSession extends AbstractSession<TestLogfileRecord> {
   constructor(
     readonly analysisFactory: AnalysisFactory,
-    readonly analysisRepeat: number
+    readonly options: TestSessionOptions
   ) {
     super();
   }
@@ -85,7 +94,7 @@ export class TestSession extends AbstractSession<TestLogfileRecord> {
   async setupAnalysis(): Promise<AnalysisRunner<TestLogfileRecord>> {
     return new TestAnalysisRunner(
       await this.analysisFactory.call(null),
-      this.analysisRepeat
+      this.options
     );
   }
 

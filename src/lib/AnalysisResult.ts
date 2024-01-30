@@ -1,7 +1,9 @@
 import FeatureSet from "./FeatureSet";
+import { LogfileAttachment } from "./LogfileAttachment";
 
 export interface BaseAnalysisResult {
   status: string;
+  screenshot?: LogfileAttachment;
 }
 
 export interface SuccessAnalysisResult extends BaseAnalysisResult {
@@ -19,6 +21,7 @@ export type AnalysisResult = SuccessAnalysisResult | FailureAnalysisResult;
 
 export interface BaseAnalysisResultData {
   status: string;
+  screenshot?: LogfileAttachment;
 }
 
 export interface SuccessAnalysisResultData extends BaseAnalysisResultData {
@@ -39,11 +42,12 @@ export type AnalysisResultData =
 export const serializeAnalysisResult = (
   concrete: AnalysisResult
 ): AnalysisResultData => {
-  const { status } = concrete;
+  const { status, screenshot } = concrete;
   if (status === "success") {
     const { pageUrl, featureSet } = concrete;
     return {
       status,
+      screenshot,
       pageUrl,
       featureSet: featureSet.serialize(),
     };
@@ -51,6 +55,7 @@ export const serializeAnalysisResult = (
     const { reason } = concrete;
     return {
       status,
+      screenshot,
       reason,
     };
   }
@@ -59,11 +64,12 @@ export const serializeAnalysisResult = (
 export const deserializeAnalysisResult = (
   data: AnalysisResultData
 ): AnalysisResult => {
-  const { status } = data;
+  const { status, screenshot } = data;
   if (status === "success") {
     const { pageUrl, featureSet } = data;
     return {
       status,
+      screenshot,
       pageUrl,
       featureSet: FeatureSet.deserialize(featureSet),
     };
@@ -71,6 +77,7 @@ export const deserializeAnalysisResult = (
     const { reason } = data;
     return {
       status,
+      screenshot,
       reason,
     };
   } else {

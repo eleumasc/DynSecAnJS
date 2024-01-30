@@ -36,13 +36,21 @@ export class PuppeteerAnalysis implements Analysis {
       await page.evaluateOnNewDocument(this.monitor);
 
       const targetSites = new Set<string>();
+      const includedScriptUrls = new Set<string>();
+
       await page.setRequestInterception(true);
       page.on("request", (request) => {
         try {
-          const url = new URL(request.url());
-          const { protocol, hostname } = url;
+          const url = request.url();
+          const parsedUrl = new URL(url);
+          const { protocol, hostname } = parsedUrl;
+
           if (protocol === "http:" || protocol === "https:") {
             targetSites.add(hostname);
+          }
+
+          if (request.resourceType() === "script") {
+            includedScriptUrls.add(url);
           }
         } finally {
           request.continue();
@@ -73,7 +81,8 @@ export class PuppeteerAnalysis implements Analysis {
           new Set(cookieKeys),
           new Set(localStorageKeys),
           new Set(sessionStorageKeys),
-          new Set(targetSites)
+          new Set(targetSites),
+          new Set(includedScriptUrls)
         ),
       } satisfies SuccessAnalysisResult;
     };

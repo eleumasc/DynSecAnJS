@@ -6,7 +6,7 @@ export interface Session<T extends LogfileRecord> {
 }
 
 export interface AnalysisRunner<T extends LogfileRecord> {
-  runAnalysis(url: string): Promise<T>;
+  runAnalysis(url: string, label: string): Promise<T>;
   terminate(): Promise<void>;
 }
 

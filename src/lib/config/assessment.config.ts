@@ -27,5 +27,7 @@ export default new AssessmentSession(
       },
       pptrLaunchOptions
     ),
-  defaultAnalysisRepeat
+  {
+    analysisRepeat: defaultAnalysisRepeat,
+  }
 );

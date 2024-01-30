@@ -1,7 +1,7 @@
 import { AnalysisResult } from "./AnalysisResult";
 
 export interface Analysis {
-  run(url: string): Promise<AnalysisResult>;
+  run(url: string, label: string): Promise<AnalysisResult>;
   terminate(): Promise<void>;
 }
 

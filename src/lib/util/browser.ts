@@ -4,6 +4,7 @@ import {
   BrowserContextOptions,
   Page,
 } from "puppeteer";
+import { timeBomb } from "./async";
 
 export const useIncognitoBrowserContext = async <T>(
   browser: Browser,
@@ -26,6 +27,8 @@ export const usePage = async <T>(
   try {
     return await cb(page);
   } finally {
-    await page.close();
+    try {
+      await timeBomb(page.close(), 3_000);
+    } catch {}
   }
 };

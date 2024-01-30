@@ -1,6 +1,7 @@
 import { join } from "path";
 import { Logfile, deserializeLogfile, serializeLogfile } from "./Logfile";
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "fs";
+import { LogfileAttachmentFile } from "./LogfileAttachment";
 
 export default class Logger {
   constructor(readonly analysisId: string) {}
@@ -11,7 +12,9 @@ export default class Logger {
     mkdirSync(outDir, { recursive: true });
     writeFileSync(
       join(outDir, `${site}.json`),
-      JSON.stringify(serializeLogfile(logfile))
+      JSON.stringify(
+        LogfileAttachmentFile.saveAttachmentFiles(serializeLogfile(logfile), outDir)
+      )
     );
   }
 

@@ -45,25 +45,37 @@ export class AssessmentLogfileRecord implements LogfileRecord {
   }
 }
 
+export interface AssessmentSessionOptions {
+  analysisRepeat: number;
+}
+
 export class AssessmentAnalysisRunner
   implements AnalysisRunner<AssessmentLogfileRecord>
 {
   constructor(
     readonly regularAnalysis: Analysis,
     readonly toolAnalysis: Analysis,
-    readonly repeat: number
+    readonly options: AssessmentSessionOptions
   ) {}
 
-  async runAnalysis(url: string): Promise<AssessmentLogfileRecord> {
+  async runAnalysis(
+    url: string,
+    label: string
+  ): Promise<AssessmentLogfileRecord> {
+    const { analysisRepeat } = this.options;
+
     let regularResults: AnalysisResult[] = [];
     let toolResults: AnalysisResult[] = [];
-    for (let i = 0; i < this.repeat; i += 1) {
-      const regularResult = await this.regularAnalysis.run(url);
+    for (let i = 0; i < analysisRepeat; i += 1) {
+      const regularResult = await this.regularAnalysis.run(
+        url,
+        `${label}.r${i}`
+      );
       regularResults = [...regularResults, regularResult];
       if (regularResult.status === "failure") {
         break;
       }
-      const toolResult = await this.toolAnalysis.run(url);
+      const toolResult = await this.toolAnalysis.run(url, `${label}.t${i}`);
       toolResults = [...toolResults, toolResult];
       if (toolResult.status === "failure") {
         break;
@@ -105,7 +117,7 @@ export class AssessmentSession extends AbstractSession<AssessmentLogfileRecord> 
   constructor(
     readonly regularAnalysisFactory: AnalysisFactory,
     readonly toolAnalysisFactory: AnalysisFactory,
-    readonly analysisRepeat: number
+    readonly options: AssessmentSessionOptions
   ) {
     super();
   }
@@ -114,7 +126,7 @@ export class AssessmentSession extends AbstractSession<AssessmentLogfileRecord> 
     return new AssessmentAnalysisRunner(
       await this.regularAnalysisFactory.call(null),
       await this.toolAnalysisFactory.call(null),
-      this.analysisRepeat
+      this.options
     );
   }
 

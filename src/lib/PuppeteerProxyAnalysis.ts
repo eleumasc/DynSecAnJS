@@ -14,6 +14,7 @@ import {
   defaultAnalysisTimeoutMs,
   defaultNavigationTimeoutMs,
 } from "./config/options";
+import { LogfileAttachmentFile } from "./LogfileAttachment";
 
 const TOP_NAVIGATION_REQUEST_HEADER = "x-top-navigation-request";
 
@@ -28,7 +29,7 @@ export class PuppeteerProxyAnalysis implements Analysis {
     readonly options: PuppeteerProxyAnalysisOptions
   ) {}
 
-  async run(url: string): Promise<AnalysisResult> {
+  async run(url: string, label: string): Promise<AnalysisResult> {
     const { transform } = this.options;
 
     const runInPage = async (
@@ -50,10 +51,17 @@ export class PuppeteerProxyAnalysis implements Analysis {
       });
 
       await page.goto(url, { timeout: defaultNavigationTimeoutMs });
-      return await timeBomb(
+      const result = await timeBomb(
         analysisProxy.waitForCompleteAnalysis(),
         defaultAnalysisTimeoutMs
       );
+      return {
+        ...result,
+        screenshot: new LogfileAttachmentFile(
+          `${label}.png`,
+          await page.screenshot()
+        ),
+      };
     };
 
     try {

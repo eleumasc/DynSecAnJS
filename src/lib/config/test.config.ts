@@ -4,5 +4,7 @@ import { defaultAnalysisRepeat, pptrLaunchOptions } from "./options";
 
 export default new TestSession(
   () => PuppeteerAnalysis.create(pptrLaunchOptions),
-  defaultAnalysisRepeat
+  {
+    analysisRepeat: defaultAnalysisRepeat,
+  }
 );

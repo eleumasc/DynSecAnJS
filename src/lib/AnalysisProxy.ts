@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import { randomUUID } from "crypto";
 import { lookup as dnsLookup } from "dns/promises";
 import { CompletedRequest, Mockttp as MockttpServer } from "mockttp";
 import { AnalysisResult, SuccessAnalysisResult } from "./AnalysisResult";
@@ -57,8 +57,8 @@ const configureServer = async (
 
   const willCompleteAnalysis = new Deferred<AnalysisResult>();
 
-  const getMonitorUrl = `/${crypto.randomUUID()}`;
-  const reportUrl = `/${crypto.randomUUID()}`;
+  const getMonitorUrl = `/${randomUUID()}`;
+  const reportUrl = `/${randomUUID()}`;
 
   const inlineMonitor = async (
     content: string,
@@ -74,10 +74,15 @@ const configureServer = async (
     await transform(await inlineMonitor(content, contentType), contentType);
 
   const targetSites = new Set<string>();
+  const includedScriptUrls = new Set<string>();
+
+  const requestUrls = new Map<string, string>();
   server.forAnyRequest().thenPassThrough({
     async beforeRequest(req) {
-      const { url } = req;
+      const { id: requestId, url } = req;
       const { hostname } = new URL(url);
+
+      requestUrls.set(requestId, url);
 
       targetSites.add(hostname);
 
@@ -97,7 +102,7 @@ const configureServer = async (
     },
 
     async beforeResponse(res) {
-      const { statusCode, statusMessage, headers, body } = res;
+      const { id: requestId, statusCode, statusMessage, headers, body } = res;
 
       const contentTypeHeader = headers["content-type"];
       let contentType: TransformerContentType;
@@ -107,6 +112,13 @@ const configureServer = async (
         contentType = "javascript";
       } else {
         return;
+      }
+
+      if (contentType === "javascript") {
+        const url = requestUrls.get(requestId);
+        if (url) {
+          includedScriptUrls.add(url);
+        }
       }
 
       const originalBody = await body.getText();
@@ -159,7 +171,8 @@ const configureServer = async (
         new Set(cookieKeys),
         new Set(localStorageKeys),
         new Set(sessionStorageKeys),
-        new Set(targetSites)
+        new Set(targetSites),
+        new Set(includedScriptUrls)
       ),
     } satisfies SuccessAnalysisResult);
 

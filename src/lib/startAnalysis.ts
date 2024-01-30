@@ -77,7 +77,7 @@ const runAnalysisThread = async (
     const startTime = +new Date();
 
     const url = `http://${site}/`;
-    const record = (await runner.runAnalysis(url)) as LogfileRecord;
+    const record = (await runner.runAnalysis(url, site)) as LogfileRecord;
 
     logger.persist(<Logfile>{
       site,

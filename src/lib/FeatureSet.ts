@@ -9,6 +9,7 @@ export interface FeatureSetData {
   localStorageKeys: string[];
   sessionStorageKeys: string[];
   targetSites: string[];
+  includedScriptUrls: string[];
 }
 
 export default class FeatureSet {
@@ -19,7 +20,8 @@ export default class FeatureSet {
     readonly cookieKeys: Set<string>,
     readonly localStorageKeys: Set<string>,
     readonly sessionStorageKeys: Set<string>,
-    readonly targetSites: Set<string>
+    readonly targetSites: Set<string>,
+    readonly includedScriptUrls: Set<string>
   ) {}
 
   equals(that: FeatureSet): boolean {
@@ -30,12 +32,14 @@ export default class FeatureSet {
       equalSets(this.cookieKeys, that.cookieKeys) &&
       equalSets(this.localStorageKeys, that.localStorageKeys) &&
       equalSets(this.sessionStorageKeys, that.sessionStorageKeys) &&
-      equalSets(this.targetSites, that.targetSites)
+      equalSets(this.targetSites, that.targetSites) &&
+      equalSets(this.includedScriptUrls, that.includedScriptUrls)
     );
   }
 
   broken(that: FeatureSet): Set<string> {
     const brokenSet = new Set<string>();
+
     if (!equalSets(this.uncaughtErrors, that.uncaughtErrors)) {
       brokenSet.add("uncaughtErrors");
     }
@@ -57,6 +61,9 @@ export default class FeatureSet {
     if (!equalSets(this.targetSites, that.targetSites)) {
       brokenSet.add("targetSites");
     }
+    if (!equalSets(this.includedScriptUrls, that.includedScriptUrls)) {
+      brokenSet.add("includedScriptUrls");
+    }
 
     return brokenSet;
   }
@@ -69,7 +76,8 @@ export default class FeatureSet {
       intersectSets(this.cookieKeys, that.cookieKeys),
       intersectSets(this.localStorageKeys, that.localStorageKeys),
       intersectSets(this.sessionStorageKeys, that.sessionStorageKeys),
-      intersectSets(this.targetSites, that.targetSites)
+      intersectSets(this.targetSites, that.targetSites),
+      intersectSets(this.includedScriptUrls, that.includedScriptUrls)
     );
   }
 
@@ -83,6 +91,7 @@ export default class FeatureSet {
       localStorageKeys: [...this.localStorageKeys],
       sessionStorageKeys: [...this.sessionStorageKeys],
       targetSites: [...this.targetSites],
+      includedScriptUrls: [...this.includedScriptUrls],
     };
   }
 
@@ -95,6 +104,7 @@ export default class FeatureSet {
       localStorageKeys,
       sessionStorageKeys,
       targetSites,
+      includedScriptUrls,
     } = data;
     return new FeatureSet(
       new Set(uncaughtErrors),
@@ -103,7 +113,8 @@ export default class FeatureSet {
       new Set(cookieKeys),
       new Set(localStorageKeys),
       new Set(sessionStorageKeys),
-      new Set(targetSites)
+      new Set(targetSites),
+      new Set(includedScriptUrls)
     );
   }
 }
