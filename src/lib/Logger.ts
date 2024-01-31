@@ -1,4 +1,4 @@
-import { join } from "path";
+import { extname, join } from "path";
 import { Logfile, deserializeLogfile, serializeLogfile } from "./Logfile";
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "fs";
 import { LogfileAttachmentFile } from "./LogfileAttachment";
@@ -13,14 +13,20 @@ export default class Logger {
     writeFileSync(
       join(outDir, `${site}.json`),
       JSON.stringify(
-        LogfileAttachmentFile.saveAttachmentFiles(serializeLogfile(logfile), outDir)
+        LogfileAttachmentFile.saveAttachmentFiles(
+          serializeLogfile(logfile),
+          outDir
+        )
       )
     );
   }
 
   static *read(analysisId: string): Generator<Logfile, void> {
     const outDir = join("results", analysisId);
-    for (const filename of readdirSync(outDir)) {
+    const filenames = readdirSync(outDir).filter(
+      (filename) => extname(filename).toLowerCase() === ".json"
+    );
+    for (const filename of filenames) {
       yield deserializeLogfile(
         JSON.parse(readFileSync(join(outDir, filename)).toString())
       );
