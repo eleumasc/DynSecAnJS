@@ -4,6 +4,19 @@ import { spawn } from "child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
+import { Transformer } from "../AnalysisProxy";
+
+export const transformWithJalangi: Transformer = async (
+  content,
+  contentType
+) => {
+  switch (contentType) {
+    case "html":
+      return await esnstrument(content, "html");
+    case "javascript":
+      return await esnstrument(content, "js");
+  }
+};
 
 export const esnstrument = async (
   code: string,
