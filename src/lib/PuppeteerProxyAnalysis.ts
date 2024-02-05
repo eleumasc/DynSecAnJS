@@ -1,11 +1,10 @@
 import {
   Mockttp as MockttpServer,
-  generateCACertificate,
   generateSPKIFingerprint,
   getLocal,
 } from "mockttp";
 import puppeteer, { Browser, Page, PuppeteerLaunchOptions } from "puppeteer";
-import { Analysis } from "./Analysis";
+import { Analysis, AnalysisRunOptions } from "./Analysis";
 import { AnalysisResult, FailureAnalysisResult } from "./AnalysisResult";
 import AnalysisProxy, { Transformer, useAnalysisProxy } from "./AnalysisProxy";
 import { timeBomb } from "./util/async";
@@ -15,6 +14,7 @@ import {
   defaultNavigationTimeoutMs,
 } from "./config/options";
 import { LogfileAttachmentFile } from "./LogfileAttachment";
+import { readCA } from "./ca";
 
 const TOP_NAVIGATION_REQUEST_HEADER = "x-top-navigation-request";
 
@@ -29,8 +29,12 @@ export class PuppeteerProxyAnalysis implements Analysis {
     readonly options: PuppeteerProxyAnalysisOptions
   ) {}
 
-  async run(url: string, label: string): Promise<AnalysisResult> {
+  async run(
+    url: string,
+    runOptions: AnalysisRunOptions
+  ): Promise<AnalysisResult> {
     const { transform } = this.options;
+    const { label, httpForwardHost, httpsForwardHost } = runOptions;
 
     const runInPage = async (
       page: Page,
@@ -51,10 +55,12 @@ export class PuppeteerProxyAnalysis implements Analysis {
       });
 
       await page.goto(url, { timeout: defaultNavigationTimeoutMs });
+
       const result = await timeBomb(
         analysisProxy.waitForCompleteAnalysis(),
         defaultAnalysisTimeoutMs
       );
+
       return {
         ...result,
         screenshot: new LogfileAttachmentFile(
@@ -72,6 +78,8 @@ export class PuppeteerProxyAnalysis implements Analysis {
             return req.headers[TOP_NAVIGATION_REQUEST_HEADER] === "1";
           },
           transform,
+          httpForwardHost,
+          httpsForwardHost,
         },
         (analysisProxy) =>
           useIncognitoBrowserContext(
@@ -97,7 +105,7 @@ export class PuppeteerProxyAnalysis implements Analysis {
     analysisOptions: PuppeteerProxyAnalysisOptions,
     pptrLaunchOptions?: PuppeteerLaunchOptions
   ): Promise<PuppeteerProxyAnalysis> {
-    const httpsOptions = await generateCACertificate();
+    const httpsOptions = await readCA();
     const server = getLocal({
       https: httpsOptions,
       recordTraffic: false,

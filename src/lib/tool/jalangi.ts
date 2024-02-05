@@ -1,10 +1,9 @@
-import "dotenv/config";
-import assert from "assert";
 import { spawn } from "child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { Transformer } from "../AnalysisProxy";
+import { jalangiPath } from "../env";
 
 export const transformWithJalangi: Transformer = async (
   content,
@@ -22,12 +21,9 @@ export const esnstrument = async (
   code: string,
   extension: "html" | "js"
 ): Promise<string> => {
-  const jalangiPath = process.env.JALANGI_PATH as string | undefined;
-  assert(typeof jalangiPath !== "undefined");
-
-  const outDir = mkdtempSync(join(tmpdir(), "jal-"));
-  const originalPath = join(outDir, `index.${extension}`);
-  const instrumentedPath = join(outDir, `index-jal.${extension}`);
+  const jalDir = mkdtempSync(join(tmpdir(), "jal"));
+  const originalPath = join(jalDir, `index.${extension}`);
+  const instrumentedPath = join(jalDir, `index-jal.${extension}`);
 
   try {
     writeFileSync(originalPath, code);
@@ -40,7 +36,7 @@ export const esnstrument = async (
         "--inlineSource",
         "--noResultsGUI",
         "--outDir",
-        outDir,
+        jalDir,
         "--out",
         instrumentedPath,
         originalPath,
@@ -67,6 +63,6 @@ export const esnstrument = async (
 
     return instrumented;
   } finally {
-    rmSync(outDir, { force: true, recursive: true });
+    rmSync(jalDir, { force: true, recursive: true });
   }
 };

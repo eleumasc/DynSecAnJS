@@ -49,7 +49,7 @@ export class TestAnalysisRunner implements AnalysisRunner<TestLogfileRecord> {
 
     let results: AnalysisResult[] = [];
     for (let i = 0; i < analysisRepeat; i += 1) {
-      const result = await this.analysis.run(url, `${label}.r${i}`);
+      const result = await this.analysis.run(url, { label: `${label}.r${i}` });
       results = [...results, result];
       if (result.status === "failure") {
         break;

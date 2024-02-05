@@ -1,7 +1,7 @@
 import { AssessmentSession } from "../AssessmentSession";
 import { PuppeteerProxyAnalysis } from "../PuppeteerProxyAnalysis";
 import { transformWithJalangi } from "../tool/jalangi";
-import { defaultAnalysisRepeat, pptrLaunchOptions } from "./options";
+import { defaultAnalysisRepeat, defaultPptrLaunchOptions } from "./options";
 
 export default new AssessmentSession(
   () =>
@@ -11,14 +11,14 @@ export default new AssessmentSession(
           return content;
         },
       },
-      pptrLaunchOptions
+      defaultPptrLaunchOptions
     ),
   () =>
     PuppeteerProxyAnalysis.create(
       {
         transform: transformWithJalangi,
       },
-      pptrLaunchOptions
+      defaultPptrLaunchOptions
     ),
   {
     analysisRepeat: defaultAnalysisRepeat,

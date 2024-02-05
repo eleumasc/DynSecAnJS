@@ -1,7 +1,13 @@
 import { AnalysisResult } from "./AnalysisResult";
 
+export interface AnalysisRunOptions {
+  label: string;
+  httpForwardHost?: string;
+  httpsForwardHost?: string;
+}
+
 export interface Analysis {
-  run(url: string, label: string): Promise<AnalysisResult>;
+  run(url: string, options: AnalysisRunOptions): Promise<AnalysisResult>;
   terminate(): Promise<void>;
 }
 

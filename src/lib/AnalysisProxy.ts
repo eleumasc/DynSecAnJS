@@ -6,10 +6,13 @@ import FeatureSet from "./FeatureSet";
 import { MonitorReport, SendReporter, bundleMonitor } from "./monitor";
 import Deferred from "./util/Deferred";
 import { injectScript } from "./injectScript";
+import { PassThroughHandlerOptions } from "mockttp/dist/rules/requests/request-handler-definitions";
 
 export interface AnalysisProxyOptions {
   isTopNavigationRequest: (req: CompletedRequest) => boolean;
   transform: Transformer;
+  httpForwardHost?: string;
+  httpsForwardHost?: string;
 }
 
 export type Transformer = (
@@ -53,7 +56,12 @@ const configureServer = async (
   server: MockttpServer,
   options: AnalysisProxyOptions
 ): Promise<Deferred<AnalysisResult>> => {
-  const { isTopNavigationRequest, transform } = options;
+  const {
+    isTopNavigationRequest,
+    transform,
+    httpForwardHost,
+    httpsForwardHost,
+  } = options;
 
   const willCompleteAnalysis = new Deferred<AnalysisResult>();
 
@@ -77,7 +85,7 @@ const configureServer = async (
   const includedScriptUrls = new Set<string>();
 
   const requestUrls = new Map<string, string>();
-  server.forAnyRequest().thenPassThrough({
+  const defaultPassThroughHandlerOptions: PassThroughHandlerOptions = {
     async beforeRequest(req) {
       const { id: requestId, url } = req;
       const { hostname } = new URL(url);
@@ -140,7 +148,37 @@ const configureServer = async (
         body: transformedBody,
       };
     },
-  });
+  };
+
+  server
+    .forAnyRequest()
+    .withProtocol("http")
+    .thenPassThrough({
+      ...defaultPassThroughHandlerOptions,
+      ...(httpForwardHost
+        ? {
+            forwarding: {
+              targetHost: httpForwardHost,
+              updateHostHeader: false,
+            },
+          }
+        : {}),
+    });
+
+  server
+    .forAnyRequest()
+    .withProtocol("https")
+    .thenPassThrough({
+      ...defaultPassThroughHandlerOptions,
+      ...(httpsForwardHost
+        ? {
+            forwarding: {
+              targetHost: httpsForwardHost,
+              updateHostHeader: false,
+            },
+          }
+        : {}),
+    });
 
   const monitor = await bundleMonitor(<SendReporter>{
     type: "SendReporter",

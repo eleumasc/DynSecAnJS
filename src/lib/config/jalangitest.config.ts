@@ -1,5 +1,5 @@
 import { TestSession } from "../TestSession";
-import { defaultAnalysisRepeat, pptrLaunchOptions } from "./options";
+import { defaultAnalysisRepeat, defaultPptrLaunchOptions } from "./options";
 import { transformWithJalangi } from "../tool/jalangi";
 import { PuppeteerProxyAnalysis } from "../PuppeteerProxyAnalysis";
 
@@ -10,7 +10,7 @@ export default new TestSession(
         transform: transformWithJalangi,
       },
       {
-        ...pptrLaunchOptions,
+        ...defaultPptrLaunchOptions,
         headless: false,
       }
     ),

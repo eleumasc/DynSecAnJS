@@ -9,6 +9,10 @@ import { Logfile, LogfileRecord, LogfileRecordData } from "./Logfile";
 import { AnalysisRunner, MeasurementRunner } from "./Session";
 import { assessTransparency } from "./assessTransparency";
 import { AbstractSession } from "./AbstractSession";
+import { useWebPageReplay } from "./WebPageReplay";
+import { mkdtempSync, rmSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
 
 export interface AssessmentLogfileRecordData extends LogfileRecordData {
   type: "AssessmentLogfileRecord";
@@ -66,21 +70,42 @@ export class AssessmentAnalysisRunner
 
     let regularResults: AnalysisResult[] = [];
     let toolResults: AnalysisResult[] = [];
+    let failureOccurred = false;
     for (let i = 0; i < analysisRepeat; i += 1) {
-      const regularResult = await this.regularAnalysis.run(
-        url,
-        `${label}.r${i}`
-      );
-      regularResults = [...regularResults, regularResult];
-      if (regularResult.status === "failure") {
-        break;
-      }
-      const toolResult = await this.toolAnalysis.run(url, `${label}.t${i}`);
-      toolResults = [...toolResults, toolResult];
-      if (toolResult.status === "failure") {
-        break;
+      const wprDir = mkdtempSync(join(tmpdir(), "wpr"));
+      const archivePath = join(wprDir, "archive.wprgo");
+      try {
+        await useWebPageReplay("record", archivePath, async (wpr) => {
+          const regularResult = await this.regularAnalysis.run(url, {
+            label: `${label}.r${i}`,
+            httpForwardHost: `http://127.0.0.1:${wpr.getHttpPort()}`,
+            httpsForwardHost: `https://127.0.0.1:${wpr.getHttpsPort()}`,
+          });
+          regularResults = [...regularResults, regularResult];
+          if (regularResult.status === "failure") {
+            failureOccurred = true;
+          }
+        });
+        if (failureOccurred) break;
+        await useWebPageReplay("replay", archivePath, async (wpr) => {
+          const toolResult = await this.toolAnalysis.run(url, {
+            label: `${label}.t${i}`,
+            httpForwardHost: `http://127.0.0.1:${wpr.getHttpPort()}`,
+            httpsForwardHost: `https://127.0.0.1:${wpr.getHttpsPort()}`,
+          });
+          toolResults = [...toolResults, toolResult];
+          if (toolResult.status === "failure") {
+            failureOccurred = true;
+          }
+        });
+        if (failureOccurred) break;
+      } catch (e) {
+        console.log(e);
+      } finally {
+        rmSync(wprDir, { force: true, recursive: true });
       }
     }
+
     return new AssessmentLogfileRecord(regularResults, toolResults);
   }
 
