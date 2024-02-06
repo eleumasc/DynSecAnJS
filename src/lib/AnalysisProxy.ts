@@ -87,8 +87,20 @@ const configureServer = async (
   const requestUrls = new Map<string, string>();
   const defaultPassThroughHandlerOptions: PassThroughHandlerOptions = {
     async beforeRequest(req) {
-      const { id: requestId, url } = req;
-      const { hostname } = new URL(url);
+      const fixUrl = (url: URL, host: string) => {
+        const colonIndex = host.indexOf(":");
+        if (colonIndex === -1) {
+          url.hostname = host;
+          url.port = "";
+        } else {
+          url.hostname = host.substring(0, colonIndex);
+          url.port = host.substring(colonIndex + 1);
+        }
+        return url;
+      };
+
+      const { id: requestId, url: rawUrl, headers } = req;
+      const { hostname, href: url } = fixUrl(new URL(rawUrl), headers["host"]!);
 
       requestUrls.set(requestId, url);
 
