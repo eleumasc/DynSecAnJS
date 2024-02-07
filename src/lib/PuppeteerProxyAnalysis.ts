@@ -10,7 +10,7 @@ import AnalysisProxy, { Transformer, useAnalysisProxy } from "./AnalysisProxy";
 import { timeBomb } from "./util/async";
 import { useIncognitoBrowserContext, usePage } from "./util/browser";
 import {
-  defaultAnalysisTimeoutMs,
+  defaultEvalTimeoutMs,
   defaultNavigationTimeoutMs,
 } from "./config/options";
 import { LogfileAttachmentFile } from "./LogfileAttachment";
@@ -58,7 +58,7 @@ export class PuppeteerProxyAnalysis implements Analysis {
 
       const result = await timeBomb(
         analysisProxy.waitForCompleteAnalysis(),
-        defaultAnalysisTimeoutMs
+        defaultEvalTimeoutMs
       );
 
       return {

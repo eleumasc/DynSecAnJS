@@ -6,6 +6,7 @@ import { Worker, isMainThread, parentPort } from "worker_threads";
 import { Agent } from "port_agent";
 import { divide } from "./util/array";
 import EventEmitter from "events";
+import TimedAnalysisSession from "./TimedAnalysisSession";
 
 export interface StartAnalysisArgs {
   configName: string;
@@ -70,7 +71,9 @@ const runAnalysisThread = async (
 
   EventEmitter.defaultMaxListeners = 15;
 
-  const runner = await loadSessionFromConfigModule(configName).setupAnalysis();
+  const runner = await TimedAnalysisSession.from(
+    loadSessionFromConfigModule(configName)
+  ).setupAnalysis();
 
   const logger = new Logger(analysisId);
 
@@ -78,15 +81,17 @@ const runAnalysisThread = async (
     console.log(`begin analysis ${site} [${threadId}-${siteIndex}]`);
 
     const startTime = +new Date();
-
     const url = `http://${site}/`;
-    const record = (await runner.runAnalysis(url, site)) as LogfileRecord;
 
-    logger.persist(<Logfile>{
-      site,
-      startTime,
-      record,
-    });
+    try {
+      const record = (await runner.runAnalysis(url, site)) as LogfileRecord;
+
+      logger.persist(<Logfile>{
+        site,
+        startTime,
+        record,
+      });
+    } catch {}
 
     console.log(`end analysis ${site}`);
   }

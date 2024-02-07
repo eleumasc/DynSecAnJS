@@ -15,7 +15,7 @@ import { timeBomb } from "./util/async";
 import { useIncognitoBrowserContext, usePage } from "./util/browser";
 import Deferred from "./util/Deferred";
 import {
-  defaultAnalysisTimeoutMs,
+  defaultEvalTimeoutMs,
   defaultNavigationTimeoutMs,
 } from "./config/options";
 
@@ -60,7 +60,7 @@ export class PuppeteerAnalysis implements Analysis {
       await page.goto(url, { timeout: defaultNavigationTimeoutMs });
       const monitorReport = await timeBomb(
         willReceiveMonitorReport.promise,
-        defaultAnalysisTimeoutMs
+        defaultEvalTimeoutMs
       );
       const {
         pageUrl,

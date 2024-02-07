@@ -9,4 +9,6 @@ export const defaultAnalysisRepeat = 5;
 
 export const defaultNavigationTimeoutMs = 30_000;
 
-export const defaultAnalysisTimeoutMs = 10_000;
+export const defaultEvalTimeoutMs = 10_000;
+
+export const defaultAnalysisTimeoutMs = 75000;
