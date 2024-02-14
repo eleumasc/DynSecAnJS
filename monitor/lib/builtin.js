@@ -36,6 +36,7 @@ module.exports = {
   addEventListener: function (thisArg, name, callback) {
     Apply(EventTarget_prototype_addEventListener, thisArg, [name, callback]);
   },
+  setTimeout: global.setTimeout.bind(global),
   ErrorEvent_prototype_message: __getGetter(ErrorEvent.prototype, "message"),
   getCookie: __getGetter(Document.prototype, "cookie").bind(global.document),
   localStorage: global.localStorage,

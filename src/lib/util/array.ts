@@ -1,6 +1,6 @@
 import assert from "assert";
 
-export const divide = <T>(array: T[], size: number): T[][] => {
+export const divideArray = <T>(array: T[], size: number): T[][] => {
   assert(size > 0);
   let result: T[][] = [];
   const N = array.length;

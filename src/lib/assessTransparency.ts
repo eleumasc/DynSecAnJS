@@ -1,18 +1,23 @@
 import assert from "assert";
 import {
-  AnalysisResult,
-  everySuccessAnalysisResult,
-  mapFeatureSets,
-} from "./AnalysisResult";
+  ExecutionAnalysisResult,
+  mapSuccessExecutionsToFeatureSets,
+} from "./ExecutionAnalysis";
 import FeatureSet from "./FeatureSet";
+import { Fallible, isSuccess } from "./util/Fallible";
 
 export const assessTransparency = (
-  regularResults: AnalysisResult[],
-  toolResults: AnalysisResult[]
+  fallibleResult: Fallible<ExecutionAnalysisResult>
 ): string => {
+  if (!isSuccess(fallibleResult)) {
+    return "failure";
+  }
+
+  const { originalExecutions, toolExecutions } = fallibleResult.val;
+
   if (
-    !everySuccessAnalysisResult(regularResults) ||
-    !everySuccessAnalysisResult(toolResults)
+    !originalExecutions.every(isSuccess) ||
+    !toolExecutions.every(isSuccess)
   ) {
     return "failure";
   }
@@ -27,17 +32,17 @@ export const assessTransparency = (
     return result;
   };
 
-  const regularCombinedFeatureSet = computeCombinedFeatureSet(
-    mapFeatureSets(regularResults)
+  const originalCombinedFeatureSet = computeCombinedFeatureSet(
+    mapSuccessExecutionsToFeatureSets(originalExecutions)
   );
   const toolCombinedFeatureSet = computeCombinedFeatureSet(
-    mapFeatureSets(toolResults)
+    mapSuccessExecutionsToFeatureSets(toolExecutions)
   );
 
-  if (regularCombinedFeatureSet.equals(toolCombinedFeatureSet)) {
+  if (originalCombinedFeatureSet.equals(toolCombinedFeatureSet)) {
     return "TRANSPARENT";
   } else {
-    const broken = regularCombinedFeatureSet.broken(toolCombinedFeatureSet);
+    const broken = originalCombinedFeatureSet.broken(toolCombinedFeatureSet);
     return "NON-transparent: " + JSON.stringify([...broken]);
   }
 };

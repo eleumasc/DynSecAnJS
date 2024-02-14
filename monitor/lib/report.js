@@ -1,4 +1,5 @@
 var $ = require("./builtin");
+var config = require("./config");
 
 function LogReporter() {
   var report = $.log;
@@ -27,7 +28,7 @@ function SendReporter(url) {
 }
 
 function selectExport() {
-  var reporter = $.fromJson(process.env.REPORTER);
+  var reporter = config.reporter;
   switch (reporter.type) {
     case "ExposedFunctionReporter":
       return ExposedFunctionReporter(reporter.functionName);

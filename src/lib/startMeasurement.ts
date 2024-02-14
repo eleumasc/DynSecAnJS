@@ -1,21 +1,22 @@
-import { loadSessionFromConfigModule } from "./config";
-import Logger from "./Logger";
+import { assessTransparency } from "./assessTransparency";
+import Archive from "./Archive";
 
 export interface StartMeasurementArgs {
-  configName: string;
-  analysisId: string;
+  archivePath: string;
 }
 
 export const startMeasurement = async (args: StartMeasurementArgs) => {
-  const { configName, analysisId } = args;
+  const { archivePath } = args;
 
-  const runner = await loadSessionFromConfigModule(
-    configName
-  ).setupMeasurement();
+  const archive = new Archive(archivePath);
+  const sitelist = archive.getSitelist();
 
-  for (const logfile of Logger.read(analysisId)) {
-    await runner.runMeasurement(logfile.record, logfile);
+  const tableRows: string[][] = [];
+  for (const archiveSite of sitelist) {
+    const logfile = archive.load(archiveSite, "execution");
+    const { site, result } = logfile;
+    tableRows.push([site, assessTransparency(result)]);
   }
 
-  await runner.report();
+  console.table(tableRows);
 };

@@ -1,7 +1,6 @@
 import { equalSets, intersectSets } from "./util/set";
 
 export interface FeatureSetData {
-  type: "DefaultFeatureSet";
   uncaughtErrors: string[];
   consoleMessages: string[];
   calledBuiltinMethods: string[];
@@ -81,9 +80,8 @@ export default class FeatureSet {
     );
   }
 
-  serialize(): FeatureSetData {
+  serialize(): any {
     return {
-      type: "DefaultFeatureSet",
       uncaughtErrors: [...this.uncaughtErrors],
       consoleMessages: [...this.consoleMessages],
       calledBuiltinMethods: [...this.calledBuiltinMethods],
@@ -95,7 +93,7 @@ export default class FeatureSet {
     };
   }
 
-  static deserialize(data: FeatureSetData): FeatureSet {
+  static deserialize(data: any): FeatureSet {
     const {
       uncaughtErrors,
       consoleMessages,

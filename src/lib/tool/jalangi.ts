@@ -1,8 +1,8 @@
 import { spawn } from "child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
-import { Transformer } from "../AnalysisProxy";
+import { Transformer } from "../MonitorProxy";
 import { jalangiPath } from "../env";
 
 export const transformWithJalangi: Transformer = async (
@@ -21,12 +21,12 @@ export const esnstrument = async (
   code: string,
   extension: "html" | "js"
 ): Promise<string> => {
-  const jalDir = mkdtempSync(join(tmpdir(), "jal"));
-  const originalPath = join(jalDir, `index.${extension}`);
-  const instrumentedPath = join(jalDir, `index-jal.${extension}`);
+  const tmpDir = await mkdtemp(join(tmpdir(), "jal"));
+  const originalPath = join(tmpDir, `index.${extension}`);
+  const modifiedPath = join(tmpDir, `index-mod.${extension}`);
 
   try {
-    writeFileSync(originalPath, code);
+    await writeFile(originalPath, code);
 
     const proc = spawn(
       "node",
@@ -36,9 +36,9 @@ export const esnstrument = async (
         "--inlineSource",
         "--noResultsGUI",
         "--outDir",
-        jalDir,
+        tmpDir,
         "--out",
-        instrumentedPath,
+        modifiedPath,
         originalPath,
       ],
       {
@@ -57,12 +57,10 @@ export const esnstrument = async (
       });
     });
 
-    const instrumented = readFileSync(instrumentedPath, {
-      encoding: "utf8",
-    });
+    const modified = (await readFile(modifiedPath)).toString();
 
-    return instrumented;
+    return modified;
   } finally {
-    rmSync(jalDir, { force: true, recursive: true });
+    await rm(tmpDir, { force: true, recursive: true });
   }
 };

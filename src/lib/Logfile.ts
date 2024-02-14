@@ -1,59 +1,32 @@
 import {
-  AssessmentLogfileRecord,
-  AssessmentLogfileRecordData,
-} from "./AssessmentSession";
-import { TestLogfileRecord, TestLogfileRecordData } from "./TestSession";
+  ExecutionAnalysisResult,
+  deserializeExecutionAnalysisResult,
+  serializeExecutionAnalysisResult,
+} from "./ExecutionAnalysis";
+import {
+  Fallible,
+  deserializeFallible,
+  serializeFallible,
+} from "./util/Fallible";
 
 export interface Logfile {
   site: string;
-  startTime: number;
-  record: LogfileRecord;
+  kind: string;
+  result: Fallible<ExecutionAnalysisResult>;
 }
 
-export interface LogfileData {
-  site: string;
-  startTime: number;
-  record: LogfileRecordData;
-}
-
-export const serializeLogfile = (concrete: Logfile): LogfileData => {
-  const { site, startTime, record } = concrete;
+export const serializeLogfile = (concrete: Logfile): any => {
+  const { result, ...rest } = concrete;
   return {
-    site,
-    startTime,
-    record: record.serialize(),
+    ...rest,
+    result: serializeFallible(result, serializeExecutionAnalysisResult),
   };
 };
 
-export const deserializeLogfile = (data: LogfileData): Logfile => {
-  const { site, startTime, record } = data;
+export const deserializeLogfile = (data: any): Logfile => {
+  const { result, ...rest } = data;
   return {
-    site,
-    startTime,
-    record: deserializeLogfileRecord(record),
+    ...rest,
+    result: deserializeFallible(result, deserializeExecutionAnalysisResult),
   };
-};
-
-export interface LogfileRecord {
-  serialize(): LogfileRecordData;
-}
-
-export interface LogfileRecordData {
-  type: string;
-}
-
-export const deserializeLogfileRecord = (
-  data: LogfileRecordData
-): LogfileRecord => {
-  const { type } = data;
-  switch (type) {
-    case "TestLogfileRecord":
-      return TestLogfileRecord.deserialize(data as TestLogfileRecordData);
-    case "AssessmentLogfileRecord":
-      return AssessmentLogfileRecord.deserialize(
-        data as AssessmentLogfileRecordData
-      );
-    default:
-      throw new Error(`Unsupported type of LogfileRecord: ${type}`);
-  }
 };

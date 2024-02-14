@@ -6,7 +6,7 @@ import {
 } from "puppeteer";
 import { timeBomb } from "./async";
 
-export const useIncognitoBrowserContext = async <T>(
+export const useBrowserContext = async <T>(
   browser: Browser,
   options: BrowserContextOptions | undefined,
   cb: (browserContext: BrowserContext) => Promise<T>

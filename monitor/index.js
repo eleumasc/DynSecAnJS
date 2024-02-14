@@ -4,6 +4,7 @@ var ArraySet = require("./lib/ArraySet");
 var ArrayMap = require("./lib/ArrayMap");
 var Arr = require("./lib/Arr");
 var report = require("./lib/report");
+var config = require("./lib/config");
 
 function setupAnalysis() {
   var global = $.global;
@@ -133,7 +134,7 @@ function setupAnalysis() {
     return storageKeys;
   }
 
-  return function () {
+  return function (loadingCompleted) {
     return {
       pageUrl: $.global.location.href,
       uncaughtErrors: uncaughtErrors.values(),
@@ -142,15 +143,28 @@ function setupAnalysis() {
       cookieKeys: getCookieKeys(),
       localStorageKeys: getStorageKeys($.localStorage),
       sessionStorageKeys: getStorageKeys($.sessionStorage),
+      loadingCompleted: loadingCompleted,
     };
   };
 }
 
 var analysis = setupAnalysis();
 
-$.addEventListener($.global.document, "DOMContentLoaded", function () {
+var reported = false;
+function reportAnalysis(loadingCompleted) {
+  if (reported) {
+    return;
+  }
   if ($.global !== $.global.top) {
     return;
   }
-  report(analysis());
+  report(analysis(loadingCompleted));
+}
+
+$.setTimeout(function () {
+  reportAnalysis(false);
+}, config.loadingTimeoutMs);
+
+$.addEventListener($.global.document, "DOMContentLoaded", function () {
+  reportAnalysis(true);
 });

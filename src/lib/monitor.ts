@@ -1,5 +1,10 @@
 import browserify from "browserify";
 
+export interface MonitorConfig {
+  reporter: Reporter;
+  loadingTimeoutMs: number;
+}
+
 export interface MonitorReport {
   pageUrl: string;
   uncaughtErrors: string[];
@@ -8,6 +13,7 @@ export interface MonitorReport {
   cookieKeys: string[];
   localStorageKeys: string[];
   sessionStorageKeys: string[];
+  loadingCompleted: boolean;
 }
 
 export interface Reporter {
@@ -28,13 +34,13 @@ export interface SendReporter extends Reporter {
   url: string;
 }
 
-export const bundleMonitor = (reporter: Reporter): Promise<string> => {
+export const bundleMonitor = (config: MonitorConfig): Promise<string> => {
   return new Promise<string>((resolve, reject) => {
     browserify({ basedir: "monitor" })
       .add("./index.js")
       .transform(
         require("@browserify/envify/custom")({
-          REPORTER: JSON.stringify(reporter),
+          CONFIG: JSON.stringify(config),
         })
       )
       .bundle((err, buf) => {

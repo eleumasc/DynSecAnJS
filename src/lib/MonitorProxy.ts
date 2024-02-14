@@ -1,16 +1,17 @@
 import { randomUUID } from "crypto";
 import { lookup as dnsLookup } from "dns/promises";
 import { CompletedRequest, Mockttp as MockttpServer } from "mockttp";
-import { AnalysisResult, SuccessAnalysisResult } from "./AnalysisResult";
+import { PassThroughHandlerOptions } from "mockttp/dist/rules/requests/request-handler-definitions";
+import { ExecutionDetail } from "./ExecutionAnalysis";
 import FeatureSet from "./FeatureSet";
+import { injectScript } from "./injectScript";
 import { MonitorReport, SendReporter, bundleMonitor } from "./monitor";
 import Deferred from "./util/Deferred";
-import { injectScript } from "./injectScript";
-import { PassThroughHandlerOptions } from "mockttp/dist/rules/requests/request-handler-definitions";
+import { defaultAnalysisTimeoutMs } from "./defaults";
 
-export interface AnalysisProxyOptions {
+export interface Options {
   isTopNavigationRequest: (req: CompletedRequest) => boolean;
-  transform: Transformer;
+  transform?: Transformer;
   httpForwardHost?: string;
   httpsForwardHost?: string;
 }
@@ -22,40 +23,40 @@ export type Transformer = (
 
 export type TransformerContentType = "html" | "javascript";
 
-export default class AnalysisProxy {
+export default class MonitorProxy {
   constructor(
-    readonly server: MockttpServer,
-    readonly willCompleteAnalysis: Deferred<AnalysisResult>
+    readonly mockttpServer: MockttpServer,
+    readonly willCompleteAnalysis: Deferred<ExecutionDetail>
   ) {}
 
   getPort(): number {
-    return this.server.port;
+    return this.mockttpServer.port;
   }
 
-  waitForCompleteAnalysis(): Promise<AnalysisResult> {
+  waitForCompleteAnalysis(): Promise<ExecutionDetail> {
     return this.willCompleteAnalysis.promise;
   }
 
   async terminate(): Promise<void> {
-    await this.server.stop();
+    await this.mockttpServer.stop();
   }
 
   static async create(
     server: MockttpServer,
-    options: AnalysisProxyOptions
-  ): Promise<AnalysisProxy> {
-    const willCompleteAnalysis = await configureServer(server, options);
+    options: Options
+  ): Promise<MonitorProxy> {
+    const monitorProxy = await configureServer(server, options);
 
     await server.start();
 
-    return new AnalysisProxy(server, willCompleteAnalysis);
+    return monitorProxy;
   }
 }
 
 const configureServer = async (
   server: MockttpServer,
-  options: AnalysisProxyOptions
-): Promise<Deferred<AnalysisResult>> => {
+  options: Options
+): Promise<MonitorProxy> => {
   const {
     isTopNavigationRequest,
     transform,
@@ -63,12 +64,12 @@ const configureServer = async (
     httpsForwardHost,
   } = options;
 
-  const willCompleteAnalysis = new Deferred<AnalysisResult>();
+  const willCompleteAnalysis = new Deferred<ExecutionDetail>();
 
   const getMonitorUrl = `/${randomUUID()}`;
   const reportUrl = `/${randomUUID()}`;
 
-  const inlineMonitor = async (
+  const injectMonitor: Transformer = async (
     content: string,
     contentType: TransformerContentType
   ): Promise<string> => {
@@ -78,16 +79,20 @@ const configureServer = async (
     return content;
   };
 
-  const compositeTransform: Transformer = async (content, contentType) =>
-    await transform(await inlineMonitor(content, contentType), contentType);
+  const compositeTransform: Transformer = transform
+    ? async (content, contentType) =>
+        await transform(await injectMonitor(content, contentType), contentType)
+    : injectMonitor;
 
   const targetSites = new Set<string>();
   const includedScriptUrls = new Set<string>();
+  const startTime: number = +new Date();
 
   const requestUrls = new Map<string, string>();
-  const defaultPassThroughHandlerOptions: PassThroughHandlerOptions = {
+  const handlerOptions: PassThroughHandlerOptions = {
     async beforeRequest(req) {
-      const fixUrl = (url: URL, host: string) => {
+      const getEffectiveUrl = (actualUrl: URL, host: string) => {
+        const url = new URL(actualUrl);
         const colonIndex = host.indexOf(":");
         if (colonIndex === -1) {
           url.hostname = host;
@@ -99,10 +104,13 @@ const configureServer = async (
         return url;
       };
 
-      const { id: requestId, url: rawUrl, headers } = req;
-      const { hostname, href: url } = fixUrl(new URL(rawUrl), headers["host"]!);
+      const { id: requestId, url, headers } = req;
+      const { hostname, href: effectiveUrl } = getEffectiveUrl(
+        new URL(url),
+        headers["host"]!
+      );
 
-      requestUrls.set(requestId, url);
+      requestUrls.set(requestId, effectiveUrl);
 
       targetSites.add(hostname);
 
@@ -166,7 +174,7 @@ const configureServer = async (
     .forAnyRequest()
     .withProtocol("http")
     .thenPassThrough({
-      ...defaultPassThroughHandlerOptions,
+      ...handlerOptions,
       ...(httpForwardHost
         ? {
             forwarding: {
@@ -181,7 +189,7 @@ const configureServer = async (
     .forAnyRequest()
     .withProtocol("https")
     .thenPassThrough({
-      ...defaultPassThroughHandlerOptions,
+      ...handlerOptions,
       ...(httpsForwardHost
         ? {
             forwarding: {
@@ -192,13 +200,18 @@ const configureServer = async (
         : {}),
     });
 
-  const monitor = await bundleMonitor(<SendReporter>{
-    type: "SendReporter",
-    url: reportUrl,
+  const monitor = await bundleMonitor({
+    reporter: <SendReporter>{
+      type: "SendReporter",
+      url: reportUrl,
+    },
+    loadingTimeoutMs: defaultAnalysisTimeoutMs,
   });
   server.forGet(getMonitorUrl).thenReply(200, monitor);
 
   server.forPost(reportUrl).thenCallback(async (req) => {
+    const executionTimeMs = +new Date() - startTime;
+
     const { body } = req;
 
     const monitorReport = (await body.getJson()) as MonitorReport;
@@ -210,9 +223,9 @@ const configureServer = async (
       cookieKeys,
       localStorageKeys,
       sessionStorageKeys,
+      loadingCompleted,
     } = monitorReport;
     willCompleteAnalysis.resolve({
-      status: "success",
       pageUrl,
       featureSet: new FeatureSet(
         new Set(uncaughtErrors),
@@ -224,23 +237,25 @@ const configureServer = async (
         new Set(targetSites),
         new Set(includedScriptUrls)
       ),
-    } satisfies SuccessAnalysisResult);
+      loadingCompleted,
+      executionTimeMs,
+    });
 
     return { statusCode: 204 };
   });
 
-  return willCompleteAnalysis;
+  return new MonitorProxy(server, willCompleteAnalysis);
 };
 
-export const useAnalysisProxy = async <T>(
-  server: MockttpServer,
-  options: AnalysisProxyOptions,
-  cb: (analysisProxy: AnalysisProxy) => Promise<T>
+export const useMonitorProxy = async <T>(
+  mockttpServer: MockttpServer,
+  options: Options,
+  cb: (monitorProxy: MonitorProxy) => Promise<T>
 ): Promise<T> => {
-  const analysisProxy = await AnalysisProxy.create(server, options);
+  const monitorProxy = await MonitorProxy.create(mockttpServer, options);
   try {
-    return await cb(analysisProxy);
+    return await cb(monitorProxy);
   } finally {
-    await analysisProxy.terminate();
+    await monitorProxy.terminate();
   }
 };

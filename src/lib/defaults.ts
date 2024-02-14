@@ -7,8 +7,8 @@ export const defaultPptrLaunchOptions: PuppeteerLaunchOptions = {
 
 export const defaultAnalysisRepeat = 5;
 
-export const defaultNavigationTimeoutMs = 30_000;
+export const defaultAnalysisTimeoutMs = 120_000;
 
-export const defaultEvalTimeoutMs = 10_000;
+export const defaultAnalysisDelayMs = 15_000;
 
-export const defaultAnalysisTimeoutMs = 75000;
+export const defaultFaultAwarenessTimeoutMs = 150_000;

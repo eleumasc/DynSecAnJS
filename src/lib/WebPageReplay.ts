@@ -1,41 +1,41 @@
 import { ChildProcess, spawn } from "child_process";
 import { getTcpPort, waitUntilUsed } from "./util/net";
 import Deferred from "./util/Deferred";
-import { certPath, keyPath } from "./ca";
-import { wprgoPath } from "./env";
+import { debugMode, wprgoPath } from "./env";
+import CertificationAuthority from "./CertificationAuthority";
 
 export type WebPageReplayOperation = "replay" | "record";
 
+export interface Options {
+  operation: WebPageReplayOperation;
+  archivePath: string;
+  certificationAuthority: CertificationAuthority;
+}
+
 export default class WebPageReplay {
   constructor(
+    readonly httpHost: string,
+    readonly httpsHost: string,
     readonly subprocess: ChildProcess,
-    readonly httpPort: number,
-    readonly httpsPort: number,
-    readonly archivePath: string,
-    readonly willChildExit: Deferred<void>
+    readonly willSubprocessExit: Deferred<void>
   ) {}
 
-  getHttpPort(): number {
-    return this.httpPort;
+  getHttpHost(): string {
+    return this.httpHost;
   }
 
-  getHttpsPort(): number {
-    return this.httpsPort;
-  }
-
-  getArchivePath(): string {
-    return this.archivePath;
+  getHttpsHost(): string {
+    return this.httpsHost;
   }
 
   async stop(): Promise<void> {
     this.subprocess.kill("SIGINT");
-    await this.willChildExit.promise;
+    await this.willSubprocessExit.promise;
   }
 
-  static async start(
-    operation: WebPageReplayOperation,
-    archivePath: string
-  ): Promise<WebPageReplay> {
+  static async start(options: Options): Promise<WebPageReplay> {
+    const { operation, archivePath, certificationAuthority } = options;
+
     const ports = await Promise.all([getTcpPort(), getTcpPort()]);
     const [httpPort, httpsPort] = ports;
 
@@ -45,8 +45,8 @@ export default class WebPageReplay {
         operation,
         `--http_port=${httpPort}`,
         `--https_port=${httpsPort}`,
-        `--https_cert_file=${certPath}`,
-        `--https_key_file=${keyPath}`,
+        `--https_cert_file=${certificationAuthority.getCertificatePath()}`,
+        `--https_key_file=${certificationAuthority.getKeyPath()}`,
         archivePath,
       ],
       {
@@ -54,33 +54,33 @@ export default class WebPageReplay {
       }
     );
 
-    child.stderr.pipe(process.stdout); // TODO: debug
+    if (debugMode) {
+      child.stderr.pipe(process.stdout);
+    }
 
     await waitUntilUsed(httpPort, 500, 30_000);
 
-    const willChildExit = new Deferred<void>();
+    const willSubprocessExit = new Deferred<void>();
     child.on("exit", async () => {
-      willChildExit.resolve();
+      willSubprocessExit.resolve();
     });
 
     return new WebPageReplay(
+      `127.0.0.1:${httpPort}`,
+      `127.0.0.1:${httpsPort}`,
       child,
-      httpPort,
-      httpsPort,
-      archivePath,
-      willChildExit
+      willSubprocessExit
     );
   }
 }
 
-export const useWebPageReplay = async (
-  operation: WebPageReplayOperation,
-  archivePath: string,
-  cb: (wpr: WebPageReplay) => Promise<void>
+export const useWebPageReplay = async <T>(
+  options: Options,
+  cb: (wpr: WebPageReplay) => Promise<T>
 ) => {
-  const wpr = await WebPageReplay.start(operation, archivePath);
+  const wpr = await WebPageReplay.start(options);
   try {
-    await cb(wpr);
+    return await cb(wpr);
   } finally {
     await wpr.stop();
   }
