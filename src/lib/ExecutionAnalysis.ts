@@ -68,9 +68,5 @@ export const serializeExecutionDetail = (concrete: ExecutionDetail): any => {
 
 export const deserializeExecutionDetail = (data: any): ExecutionDetail => {
   const { featureSet, ...rest } = data;
-  return { ...rest, featureSet: featureSet.deserialize() };
+  return { ...rest, featureSet: FeatureSet.deserialize(featureSet) };
 };
-
-export const mapSuccessExecutionsToFeatureSets = (
-  successes: Success<ExecutionDetail>[]
-): FeatureSet[] => successes.map(({ val: { featureSet } }) => featureSet);

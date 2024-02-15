@@ -1,4 +1,4 @@
-import { equalSets, intersectSets } from "./util/set";
+import { equalSets } from "./util/set";
 
 export interface FeatureSetData {
   uncaughtErrors: string[];
@@ -24,16 +24,7 @@ export default class FeatureSet {
   ) {}
 
   equals(that: FeatureSet): boolean {
-    return (
-      equalSets(this.uncaughtErrors, that.uncaughtErrors) &&
-      equalSets(this.consoleMessages, that.consoleMessages) &&
-      equalSets(this.calledBuiltinMethods, that.calledBuiltinMethods) &&
-      equalSets(this.cookieKeys, that.cookieKeys) &&
-      equalSets(this.localStorageKeys, that.localStorageKeys) &&
-      equalSets(this.sessionStorageKeys, that.sessionStorageKeys) &&
-      equalSets(this.targetSites, that.targetSites) &&
-      equalSets(this.includedScriptUrls, that.includedScriptUrls)
-    );
+    return this.broken(that).size === 0;
   }
 
   broken(that: FeatureSet): Set<string> {
@@ -45,39 +36,26 @@ export default class FeatureSet {
     if (!equalSets(this.consoleMessages, that.consoleMessages)) {
       brokenSet.add("consoleMessages");
     }
-    if (!equalSets(this.calledBuiltinMethods, that.calledBuiltinMethods)) {
-      brokenSet.add("calledBuiltinMethods");
-    }
-    if (!equalSets(this.cookieKeys, that.cookieKeys)) {
-      brokenSet.add("cookieKeys");
-    }
-    if (!equalSets(this.localStorageKeys, that.localStorageKeys)) {
-      brokenSet.add("localStorageKeys");
-    }
-    if (!equalSets(this.sessionStorageKeys, that.sessionStorageKeys)) {
-      brokenSet.add("sessionStorageKeys");
-    }
-    if (!equalSets(this.targetSites, that.targetSites)) {
-      brokenSet.add("targetSites");
-    }
-    if (!equalSets(this.includedScriptUrls, that.includedScriptUrls)) {
-      brokenSet.add("includedScriptUrls");
-    }
+    // if (!equalSets(this.calledBuiltinMethods, that.calledBuiltinMethods)) {
+    //   brokenSet.add("calledBuiltinMethods");
+    // }
+    // if (!equalSets(this.cookieKeys, that.cookieKeys)) {
+    //   brokenSet.add("cookieKeys");
+    // }
+    // if (!equalSets(this.localStorageKeys, that.localStorageKeys)) {
+    //   brokenSet.add("localStorageKeys");
+    // }
+    // if (!equalSets(this.sessionStorageKeys, that.sessionStorageKeys)) {
+    //   brokenSet.add("sessionStorageKeys");
+    // }
+    // if (!equalSets(this.targetSites, that.targetSites)) {
+    //   brokenSet.add("targetSites");
+    // }
+    // if (!equalSets(this.includedScriptUrls, that.includedScriptUrls)) {
+    //   brokenSet.add("includedScriptUrls");
+    // }
 
     return brokenSet;
-  }
-
-  intersect(that: FeatureSet): FeatureSet {
-    return new FeatureSet(
-      intersectSets(this.uncaughtErrors, that.uncaughtErrors),
-      intersectSets(this.consoleMessages, that.consoleMessages),
-      intersectSets(this.calledBuiltinMethods, that.calledBuiltinMethods),
-      intersectSets(this.cookieKeys, that.cookieKeys),
-      intersectSets(this.localStorageKeys, that.localStorageKeys),
-      intersectSets(this.sessionStorageKeys, that.sessionStorageKeys),
-      intersectSets(this.targetSites, that.targetSites),
-      intersectSets(this.includedScriptUrls, that.includedScriptUrls)
-    );
   }
 
   serialize(): any {

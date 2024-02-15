@@ -22,7 +22,6 @@
     "dotenv": "^16.4.0",
     "mockttp": "^3.10.1",
     "parse5": "^7.1.2",
-    "port_agent": "^1.4.0",
     "puppeteer": "^21.7.0",
     "yargs": "^17.7.2"
   }

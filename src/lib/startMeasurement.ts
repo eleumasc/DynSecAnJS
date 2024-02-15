@@ -1,4 +1,4 @@
-import { assessTransparency } from "./assessTransparency";
+import { measure } from "./measure";
 import Archive from "./Archive";
 
 export interface StartMeasurementArgs {
@@ -15,7 +15,7 @@ export const startMeasurement = async (args: StartMeasurementArgs) => {
   for (const archiveSite of sitelist) {
     const logfile = archive.load(archiveSite, "execution");
     const { site, result } = logfile;
-    tableRows.push([site, assessTransparency(result)]);
+    tableRows.push([site, ...measure(result)]);
   }
 
   console.table(tableRows);
