@@ -1,13 +1,13 @@
 import { ExecutionAnalysisResult, ExecutionDetail } from "./ExecutionAnalysis";
 import FeatureSet from "./FeatureSet";
-import { Fallible, isSuccess } from "./util/Fallible";
+import { Fallible, isFailure, isSuccess } from "./util/Fallible";
 import { avg, stdev } from "./util/math";
 
 export const measure = (
   fallibleResult: Fallible<ExecutionAnalysisResult>
 ): string[] => {
   if (!isSuccess(fallibleResult)) {
-    return ["failure"];
+    return [`GENERAL failure: ${fallibleResult.reason}`];
   }
 
   const {
@@ -15,11 +15,13 @@ export const measure = (
     toolExecutions: fallibleToolExecutions,
   } = fallibleResult.val;
 
-  if (
-    !fallibleOriginalExecutions.every(isSuccess) ||
-    !fallibleToolExecutions.every(isSuccess)
-  ) {
-    return ["failure"];
+  if (!fallibleOriginalExecutions.every(isSuccess)) {
+    return [
+      `ORIG failure: ${fallibleOriginalExecutions.find(isFailure)?.reason}`,
+    ];
+  }
+  if (!fallibleToolExecutions.every(isSuccess)) {
+    return [`TOOL failure: ${fallibleToolExecutions.find(isFailure)?.reason}`];
   }
 
   const getPredominantFeatureSet = (
