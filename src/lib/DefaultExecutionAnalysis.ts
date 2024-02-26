@@ -41,7 +41,10 @@ export class DefaultExecutionAnalysis implements ExecutionAnalysis {
         supportedJavaScriptVersion
       )
     ) {
-      throw new Error(`This tool does not support this site`);
+      return {
+        status: "failure",
+        reason: "This tool does not support this site",
+      };
     }
 
     const url = `http://${site}/`;

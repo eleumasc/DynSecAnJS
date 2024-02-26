@@ -16,14 +16,20 @@ export const selectExecutionAnalysis = (
         new FaultAwareAgent(
           async () =>
             await PuppeteerAgent.create({
-              pptrLaunchOptions: defaultPptrLaunchOptions,
+              pptrLaunchOptions: {
+                ...defaultPptrLaunchOptions,
+                headless: false,
+              },
               certificationAuthority: CertificationAuthority.read(),
             })
         ),
         new FaultAwareAgent(
           async () =>
             await PuppeteerAgent.create({
-              pptrLaunchOptions: defaultPptrLaunchOptions,
+              pptrLaunchOptions: {
+                ...defaultPptrLaunchOptions,
+                headless: false,
+              },
               certificationAuthority: CertificationAuthority.read(),
               transform: transformWithJalangi,
             })

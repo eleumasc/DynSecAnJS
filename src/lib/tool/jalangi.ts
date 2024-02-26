@@ -2,8 +2,8 @@ import { spawn } from "child_process";
 import { mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
-import { Transformer } from "../MonitorProxy";
 import { jalangiPath } from "../env";
+import { Transformer } from "../PuppeteerAgent";
 
 export const transformWithJalangi: Transformer = async (
   content,

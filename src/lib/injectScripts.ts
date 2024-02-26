@@ -1,17 +1,22 @@
 import * as parse5 from "parse5";
 import { ChildNode, Element, Node } from "parse5/dist/tree-adapters/default";
 
-export const injectScript = (html: string, scriptSrc: string): string => {
+export const injectScripts = (html: string, scriptSrcs: string[]): string => {
   const document = parse5.parse(html);
-
-  const scriptElement = parse5.parseFragment(
-    `<script src="${scriptSrc}"></script>`
-  ) as Element;
 
   const headNode = findHeadNode(document);
 
   if (headNode) {
-    headNode.childNodes.unshift(scriptElement.childNodes[0]);
+    headNode.childNodes.unshift(
+      ...scriptSrcs
+        .map(
+          (scriptSrc) =>
+            parse5.parseFragment(
+              `<script src="${scriptSrc}"></script>`
+            ) as Element
+        )
+        .map((scriptElement) => scriptElement.childNodes[0])
+    );
   }
 
   const modifiedHtml = parse5.serialize(document);
@@ -19,7 +24,7 @@ export const injectScript = (html: string, scriptSrc: string): string => {
   return modifiedHtml;
 };
 
-function findHeadNode(node: Node): Element | null {
+const findHeadNode = (node: Node): Element | null => {
   if (isElement(node) && node.tagName === "head") {
     return node;
   }
@@ -34,12 +39,14 @@ function findHeadNode(node: Node): Element | null {
   }
 
   return null;
-}
+};
 
-function isElement(node: Node): node is Element {
+const isElement = (node: Node): node is Element => {
   return "tagName" in node;
-}
+};
 
-function hasChildNodes(node: Node): node is Node & { childNodes: ChildNode[] } {
+const hasChildNodes = (
+  node: Node
+): node is Node & { childNodes: ChildNode[] } => {
   return "childNodes" in node;
-}
+};

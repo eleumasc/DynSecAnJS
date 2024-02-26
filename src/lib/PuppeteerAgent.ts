@@ -3,25 +3,39 @@ import {
   generateSPKIFingerprint,
   getLocal,
 } from "mockttp";
-import puppeteer, { Browser, Page, PuppeteerLaunchOptions } from "puppeteer";
+import puppeteer, {
+  Browser,
+  Page,
+  PuppeteerLaunchOptions,
+  TimeoutError,
+} from "puppeteer";
 import { ExecutionDetail } from "./ExecutionAnalysis";
-import MonitorProxy, { Transformer, useMonitorProxy } from "./MonitorProxy";
 import { timeBomb } from "./util/async";
 import { useBrowserContext, usePage } from "./util/browser";
 import { defaultAnalysisDelayMs, defaultAnalysisTimeoutMs } from "./defaults";
 import { Agent, RunOptions } from "./Agent";
 import CertificationAuthority from "./CertificationAuthority";
-import { useWebPageReplay } from "./WebPageReplay";
 import { Fallible } from "./util/Fallible";
 import { DataAttachment } from "./Archive";
+import Deferred from "./util/Deferred";
+import { MonitorReport } from "./monitor";
+import { randomUUID } from "crypto";
+import { ContentType } from "./AnalysisProxy";
+import FeatureSet from "./FeatureSet";
+import { useMonitorViaAnalysisProxy } from "./useMonitorViaAnalysisProxy";
 
-const TOP_NAVIGATION_REQUEST_HEADER = "x-top-navigation-request";
+const X_REQUEST_ID = "x-dynsecanjs-request-id";
 
 export interface Options {
   pptrLaunchOptions?: PuppeteerLaunchOptions;
   certificationAuthority: CertificationAuthority;
   transform?: Transformer;
 }
+
+export type Transformer = (
+  content: string,
+  contentType: ContentType
+) => Promise<string>;
 
 export class PuppeteerAgent implements Agent {
   constructor(
@@ -34,31 +48,40 @@ export class PuppeteerAgent implements Agent {
     const { certificationAuthority, transform } = this.options;
     const { url, wprArchivePath, wprOperation, attachmentList } = runOptions;
 
-    const runInPage = async (
-      page: Page,
-      monitorProxy: MonitorProxy
-    ): Promise<ExecutionDetail> => {
+    const willCompleteAnalysis = new Deferred<ExecutionDetail>();
+
+    const topNavigationRequestIds = new Set<string>();
+    const runPage = async (page: Page): Promise<ExecutionDetail> => {
       await page.setRequestInterception(true);
       page.on("request", (request) => {
+        const requestId = randomUUID();
+        if (
+          request.resourceType() === "document" &&
+          request.frame() === page.mainFrame()
+        ) {
+          topNavigationRequestIds.add(requestId);
+        }
         request.continue({
           headers: {
             ...request.headers(),
-            [TOP_NAVIGATION_REQUEST_HEADER]:
-              request.resourceType() === "document" &&
-              request.frame() === page.mainFrame()
-                ? "1"
-                : "0",
+            [X_REQUEST_ID]: requestId,
           },
         });
       });
 
-      await page.goto(url, {
-        timeout: defaultAnalysisTimeoutMs,
-        waitUntil: "domcontentloaded",
-      });
+      try {
+        await page.goto(url, {
+          waitUntil: "domcontentloaded",
+          timeout: defaultAnalysisTimeoutMs,
+        });
+      } catch (e) {
+        if (!(e instanceof TimeoutError)) {
+          throw e;
+        }
+      }
 
       const result = await timeBomb(
-        monitorProxy.waitForCompleteAnalysis(),
+        willCompleteAnalysis.promise,
         defaultAnalysisDelayMs
       );
 
@@ -73,36 +96,75 @@ export class PuppeteerAgent implements Agent {
     };
 
     try {
-      return await useWebPageReplay(
+      const targetSites = new Set<string>();
+      const includedScriptUrls = new Set<string>();
+      const startTime = Date.now();
+
+      return await useMonitorViaAnalysisProxy(
         {
-          operation: wprOperation ?? "replay",
-          archivePath: wprArchivePath,
-          certificationAuthority,
+          mockttpServer: this.mockttpServer,
+          reportCallback: (monitorReport: MonitorReport) => {
+            const {
+              pageUrl,
+              uncaughtErrors,
+              consoleMessages,
+              calledBuiltinMethods,
+              cookieKeys,
+              localStorageKeys,
+              sessionStorageKeys,
+              loadingCompleted,
+            } = monitorReport;
+            willCompleteAnalysis.resolve({
+              pageUrl,
+              featureSet: new FeatureSet(
+                new Set(uncaughtErrors),
+                new Set(consoleMessages),
+                new Set(calledBuiltinMethods),
+                new Set(cookieKeys),
+                new Set(localStorageKeys),
+                new Set(sessionStorageKeys),
+                new Set(targetSites),
+                new Set(includedScriptUrls)
+              ),
+              loadingCompleted,
+              executionTimeMs: Date.now() - startTime,
+            });
+          },
+          requestListener: (req) => {
+            targetSites.add(req.url.hostname);
+          },
+          responseTransformer: async (res) => {
+            const { contentType, body, req } = res;
+            if (contentType === "javascript") {
+              includedScriptUrls.add(req.url.href);
+            }
+            return transform ? transform(body, contentType) : body;
+          },
+          dnsLookupErrorListener: (err, req) => {
+            const requestId = req.headers[X_REQUEST_ID];
+            if (requestId && topNavigationRequestIds.has(requestId as string)) {
+              willCompleteAnalysis.reject(err);
+            }
+          },
+          wprOptions: {
+            operation: wprOperation ?? "replay",
+            archivePath: wprArchivePath,
+            certificationAuthority,
+          },
+          loadingTimeoutMs: defaultAnalysisTimeoutMs, // TODO: abstract into "monitorCommand", same for reportCallback, requestListener, and responseTransformer
         },
-        async (wpr) =>
-          await useMonitorProxy(
-            this.mockttpServer,
-            {
-              isTopNavigationRequest: (req) => {
-                return req.headers[TOP_NAVIGATION_REQUEST_HEADER] === "1";
-              },
-              transform,
-              httpForwardHost: wpr.getHttpHost(),
-              httpsForwardHost: wpr.getHttpsHost(),
-            },
-            (monitorProxy) =>
-              useBrowserContext(
-                this.browser,
-                { proxyServer: `127.0.0.1:${monitorProxy.getPort()}` },
-                (browserContext) =>
-                  usePage(browserContext, async (page) => {
-                    const executionDetail = await runInPage(page, monitorProxy);
-                    return {
-                      status: "success",
-                      val: executionDetail,
-                    };
-                  })
-              )
+        async (analysisProxy) =>
+          useBrowserContext(
+            this.browser,
+            { proxyServer: `127.0.0.1:${analysisProxy.getPort()}` },
+            (browserContext) =>
+              usePage(browserContext, async (page) => {
+                const executionDetail = await runPage(page);
+                return {
+                  status: "success",
+                  val: executionDetail,
+                };
+              })
           )
       );
     } catch (e) {
@@ -119,7 +181,7 @@ export class PuppeteerAgent implements Agent {
 
   static async create(options: Options): Promise<PuppeteerAgent> {
     const { pptrLaunchOptions, certificationAuthority } = options;
-    const server = getLocal({
+    const mockttpServer = getLocal({
       https: {
         cert: certificationAuthority.getCertificate(),
         key: certificationAuthority.getKey(),
@@ -138,6 +200,6 @@ export class PuppeteerAgent implements Agent {
       ],
     });
 
-    return new PuppeteerAgent(browser, server, options);
+    return new PuppeteerAgent(browser, mockttpServer, options);
   }
 }
