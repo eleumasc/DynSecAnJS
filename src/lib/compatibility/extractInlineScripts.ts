@@ -17,7 +17,14 @@ export const extractInlineScripts = (html: string): ExtractedInlineScript[] => {
 const findInlineScripts = (node: Node): ExtractedInlineScript[] => {
   const result: ExtractedInlineScript[] = [];
   if (isElement(node)) {
-    if (node.tagName === "script" && node.childNodes.length > 0) {
+    if (
+      node.tagName === "script" &&
+      (node.attrs
+        .find((attr) => attr.name === "type")
+        ?.value.includes("javascript") ??
+        true) &&
+      node.childNodes.length > 0
+    ) {
       const scriptNode = node.childNodes[0];
       if ("value" in scriptNode) {
         result.push({ code: scriptNode.value, isEventHandler: false });

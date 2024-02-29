@@ -23,9 +23,7 @@ export const deployAnalysis = async <TAnalysis extends Analysis<any, any>>(
       return false;
     }
     const task = it.value;
-    try {
-      await task(analysis);
-    } catch {}
+    await task(analysis);
     return true;
   };
 

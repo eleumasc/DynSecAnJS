@@ -2,6 +2,7 @@ import { Analysis } from "./Analysis";
 import { AttachmentList } from "./ArchiveWriter";
 import {
   CompatibilityDetail,
+  deserializeCompatibilityDetail,
   serializeCompatibilityDetail,
 } from "./compatibility/CompatibilityDetail";
 import {
@@ -25,7 +26,7 @@ export interface OriginalAnalysis
 
 export interface OriginalAnalysisResult {
   compatibility: CompatibilityDetail;
-  wprArchivePath: string;
+  wprArchiveFile: string;
   timeSeedMs: number;
   originalExecutions: Fallible<ExecutionDetail>[];
 }
@@ -49,7 +50,7 @@ export const deserializeOriginalAnalysisResult = (
   const { compatibility, originalExecutions, ...rest } = raw;
   return {
     ...rest,
-    compatibility: deserializeExecutionDetail(compatibility),
+    compatibility: deserializeCompatibilityDetail(compatibility),
     originalExecutions: originalExecutions.map((element: any) =>
       deserializeFallible(element, deserializeExecutionDetail)
     ),

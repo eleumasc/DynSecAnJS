@@ -28,7 +28,10 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
     const url = `http://${site}/`;
 
     const wprArchiveAttachment = FileAttachment.create();
-    attachmentList.add("archive.wprgo", wprArchiveAttachment);
+    const wprArchiveFile = attachmentList.add(
+      "archive.wprgo",
+      wprArchiveAttachment
+    );
     const wprArchivePath = wprArchiveAttachment.getTempPath();
     const timeSeedMs = Date.now();
     const compatibility = await this.compatibilityAgent.run({
@@ -64,7 +67,7 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
       status: "success",
       val: {
         compatibility: compatibility.val,
-        wprArchivePath,
+        wprArchiveFile: wprArchiveFile,
         timeSeedMs,
         originalExecutions,
       },

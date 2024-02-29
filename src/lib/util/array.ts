@@ -1,6 +1,6 @@
 import assert from "assert";
 
-export const distictArray = <T>(array: T[]): T[] => {
+export const distinctArray = <T>(array: T[]): T[] => {
   return [...new Set(array)];
 };
 

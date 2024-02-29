@@ -6,7 +6,7 @@ import { defaultAnalysisRepeat, defaultPptrLaunchOptions } from "./defaults";
 import { ToolAnalysis } from "./ToolAnalysis";
 import { ESVersion } from "./compatibility/ESVersion";
 import FaultAwareAgent from "./FaultAwareAgent";
-import { createProxyHooksProviderForExecution } from "./ProxyHooks";
+import { createExecutionProxyHooksProvider } from "./createExecutionProxyHooksProvider";
 
 export const createToolAnalysis = (toolName: string): ToolAnalysis => {
   switch (toolName) {
@@ -17,7 +17,7 @@ export const createToolAnalysis = (toolName: string): ToolAnalysis => {
             await PuppeteerAgent.create(defaultPptrLaunchOptions, {
               certificationAuthority: CertificationAuthority.read(),
               proxyHooksProvider:
-                createProxyHooksProviderForExecution(transformWithJalangi),
+                createExecutionProxyHooksProvider(transformWithJalangi),
             })
         ),
         {

@@ -57,8 +57,9 @@ export const startToolAnalysis = async (args: ToolAnalysisArgs) => {
       let result: Fallible<ToolAnalysisResult>;
       if (isSuccess(originalLogfile.data)) {
         const {
-          val: { compatibility, wprArchivePath, timeSeedMs },
+          val: { compatibility, wprArchiveFile, timeSeedMs },
         } = originalLogfile.data;
+        const wprArchivePath = resolve(originalArchivePath, wprArchiveFile);
         result = await analysis.run({
           site,
           minimumESVersion: compatibility.minimumESVersion,

@@ -1,18 +1,35 @@
-import { parse } from "acorn";
+import { Options as ParseOptions, Program, parse } from "acorn";
 import { Category } from "./CompatibilityDetail";
 import { collectDiffEvidences } from "./collectDiffEvidences";
-import { distictArray } from "../util/array";
+import { distinctArray } from "../util/array";
 
 export const analyzeScript = (
   code: string,
   isEventHandler: boolean = false
 ): Category[] => {
-  return distictArray(
-    collectDiffEvidences(
-      parse(code, {
-        ecmaVersion: 2022,
-        allowReturnOutsideFunction: isEventHandler,
-      })
-    ).map((diffEvidence) => diffEvidence.category)
+  let program: Program;
+  const parseOptions = <ParseOptions>{
+    ecmaVersion: 2022,
+    allowReturnOutsideFunction: isEventHandler,
+  };
+  try {
+    program = parse(code, parseOptions);
+  } catch (e) {
+    try {
+      program = parse(code, {
+        ...parseOptions,
+        sourceType: "module",
+      });
+    } catch {
+      try {
+        JSON.parse(code);
+        return [];
+      } catch {
+        throw e;
+      }
+    }
+  }
+  return distinctArray(
+    collectDiffEvidences(program).map(({ category }) => category)
   );
 };

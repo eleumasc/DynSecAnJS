@@ -2,10 +2,8 @@ import CertificationAuthority from "./CertificationAuthority";
 import { DefaultOriginalAnalysis } from "./DefaultOriginalAnalysis";
 import FaultAwareAgent from "./FaultAwareAgent";
 import { OriginalAnalysis } from "./OriginalAnalysis";
-import {
-  createProxyHooksProviderForCompatibility,
-  createProxyHooksProviderForExecution,
-} from "./ProxyHooks";
+import { createCompatibilityProxyHooksProvider } from "./compatibility/createCompatibilityProxyHooksProvider";
+import { createExecutionProxyHooksProvider } from "./createExecutionProxyHooksProvider";
 import { PuppeteerAgent } from "./PuppeteerAgent";
 import { defaultAnalysisRepeat, defaultPptrLaunchOptions } from "./defaults";
 
@@ -15,14 +13,14 @@ export const createOriginalAnalysis = (): OriginalAnalysis => {
       async () =>
         await PuppeteerAgent.create(defaultPptrLaunchOptions, {
           certificationAuthority: CertificationAuthority.read(),
-          proxyHooksProvider: createProxyHooksProviderForCompatibility(),
+          proxyHooksProvider: createCompatibilityProxyHooksProvider(),
         })
     ),
     new FaultAwareAgent(
       async () =>
         await PuppeteerAgent.create(defaultPptrLaunchOptions, {
           certificationAuthority: CertificationAuthority.read(),
-          proxyHooksProvider: createProxyHooksProviderForExecution(),
+          proxyHooksProvider: createExecutionProxyHooksProvider(),
         })
     ),
     { analysisRepeat: defaultAnalysisRepeat }

@@ -18,7 +18,7 @@ export const startMeasurement = async (args: MeasurementArgs) => {
   );
   const originalSitelist = originalArchive.getSitelist();
   const toolArchive = new ArchiveReader(
-    originalArchivePath,
+    toolArchivePath,
     "tool-analysis",
     deserializeToolAnalysisResult
   );
