@@ -1,21 +1,37 @@
 import { measure } from "./measure";
-import Archive from "./Archive";
+import ArchiveReader from "./ArchiveReader";
+import { deserializeOriginalAnalysisResult } from "./OriginalAnalysis";
+import { deserializeToolAnalysisResult } from "./ToolAnalysis";
 
-export interface StartMeasurementArgs {
-  archivePath: string;
+export interface MeasurementArgs {
+  originalArchivePath: string;
+  toolArchivePath: string;
 }
 
-export const startMeasurement = async (args: StartMeasurementArgs) => {
-  const { archivePath } = args;
+export const startMeasurement = async (args: MeasurementArgs) => {
+  const { originalArchivePath, toolArchivePath } = args;
 
-  const archive = new Archive(archivePath);
-  const sitelist = archive.getSitelist();
+  const originalArchive = new ArchiveReader(
+    originalArchivePath,
+    "original-analysis",
+    deserializeOriginalAnalysisResult
+  );
+  const originalSitelist = originalArchive.getSitelist();
+  const toolArchive = new ArchiveReader(
+    originalArchivePath,
+    "tool-analysis",
+    deserializeToolAnalysisResult
+  );
+  const toolSitelist = toolArchive.getSitelist();
 
   const tableRows: string[][] = [];
-  for (const archiveSite of sitelist) {
-    const logfile = archive.load(archiveSite, "execution");
-    const { site, result } = logfile;
-    tableRows.push([site, ...measure(result)]);
+  for (const site of originalSitelist) {
+    if (!toolSitelist.includes(site)) {
+      continue;
+    }
+    const originalLogfile = originalArchive.load(site);
+    const toolLogfile = toolArchive.load(site);
+    tableRows.push([site, ...measure(originalLogfile.data, toolLogfile.data)]);
   }
 
   console.table(tableRows);

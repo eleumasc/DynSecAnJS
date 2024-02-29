@@ -10,6 +10,7 @@ export interface Options {
   operation: WebPageReplayOperation;
   archivePath: string;
   certificationAuthority: CertificationAuthority;
+  injectDeterministic?: boolean;
 }
 
 export default class WebPageReplay {
@@ -34,7 +35,12 @@ export default class WebPageReplay {
   }
 
   static async start(options: Options): Promise<WebPageReplay> {
-    const { operation, archivePath, certificationAuthority } = options;
+    const {
+      operation,
+      archivePath,
+      certificationAuthority,
+      injectDeterministic,
+    } = options;
 
     const ports = await Promise.all([getTcpPort(), getTcpPort()]);
     const [httpPort, httpsPort] = ports;
@@ -47,6 +53,7 @@ export default class WebPageReplay {
         `--https_port=${httpsPort}`,
         `--https_cert_file=${certificationAuthority.getCertificatePath()}`,
         `--https_key_file=${certificationAuthority.getKeyPath()}`,
+        ...(injectDeterministic ?? true ? [] : ["--inject_scripts="]),
         archivePath,
       ],
       {

@@ -1,23 +1,22 @@
 import { Logfile } from "./Logfile";
-import Archive, {
+import ArchiveWriter, {
   AttachmentList,
   DefaultAttachmentList,
   PrefixAttachmentList,
-} from "./Archive";
+} from "./ArchiveWriter";
 import { readSitelistFromFile } from "./sitelist";
-import { selectExecutionAnalysis } from "./selectExecutionAnalysis";
-import { JavaScriptVersion } from "./compatibility/JavaScriptVersion";
 import { deployAnalysis } from "./deployAnalysis";
 import { resolve } from "path";
+import { createOriginalAnalysis } from "./createOriginalAnalysis";
+import { serializeOriginalAnalysisResult } from "./OriginalAnalysis";
 
-export interface StartAnalysisArgs {
-  toolName: string;
+export interface OriginalAnalysisArgs {
   sitelistPath: string;
   concurrencyLevel: number;
 }
 
-export const startAnalysis = async (args: StartAnalysisArgs) => {
-  const { toolName, sitelistPath, concurrencyLevel } = args;
+export const startOriginalAnalysis = async (args: OriginalAnalysisArgs) => {
+  const { sitelistPath, concurrencyLevel } = args;
 
   const analysisId = Date.now().toString();
   console.log(`Analysis ID is ${analysisId}`);
@@ -26,10 +25,14 @@ export const startAnalysis = async (args: StartAnalysisArgs) => {
   console.log(sitelist);
   console.log(`${sitelist.length} sites`);
 
-  const archive = new Archive(resolve("results", analysisId));
+  const archive = new ArchiveWriter(
+    resolve("results", analysisId),
+    "original-analysis",
+    serializeOriginalAnalysisResult
+  );
 
   await deployAnalysis(
-    () => selectExecutionAnalysis(toolName),
+    () => createOriginalAnalysis(),
     { concurrencyLevel },
     sitelist.map((site, i) => async (analysis) => {
       console.log(`begin analysis ${site} [${i} / ${sitelist.length}]`);
@@ -41,13 +44,11 @@ export const startAnalysis = async (args: StartAnalysisArgs) => {
 
       const result = await analysis.run({
         site,
-        minimumJavaScriptVersion: JavaScriptVersion.ES5, // TODO: read from CompatibilityAnalysisResult
-        wprArchivePath: "", // TODO: read from CompatibilityAnalysisResult
         attachmentList,
       });
 
       archive.store(
-        <Logfile>{ site, kind: "execution", result },
+        { site, kind: "original-analysis", data: result },
         attachmentList
       );
 

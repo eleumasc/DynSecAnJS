@@ -1,19 +1,31 @@
-import { ExecutionAnalysisResult, ExecutionDetail } from "./ExecutionAnalysis";
+import { ToolAnalysisResult } from "./ToolAnalysis";
+import { ExecutionDetail } from "./ExecutionDetail";
 import FeatureSet from "./FeatureSet";
 import { Fallible, isFailure, isSuccess } from "./util/Fallible";
 import { avg, stdev } from "./util/math";
+import { OriginalAnalysisResult } from "./OriginalAnalysis";
 
 export const measure = (
-  fallibleResult: Fallible<ExecutionAnalysisResult>
+  fallibleOriginalResult: Fallible<OriginalAnalysisResult>,
+  fallibleToolResult: Fallible<ToolAnalysisResult>
 ): string[] => {
-  if (!isSuccess(fallibleResult)) {
-    return [`GENERAL failure: ${fallibleResult.reason}`];
+  if (!isSuccess(fallibleOriginalResult)) {
+    return [`GENERAL ORIG failure: ${fallibleOriginalResult.reason}`];
+  }
+  if (!isSuccess(fallibleToolResult)) {
+    return [`GENERAL TOOL failure: ${fallibleToolResult.reason}`];
   }
 
   const {
-    originalExecutions: fallibleOriginalExecutions,
-    toolExecutions: fallibleToolExecutions,
-  } = fallibleResult.val;
+    val: { originalExecutions: fallibleOriginalExecutions },
+  } = fallibleOriginalResult;
+  const {
+    val: { compatible, toolExecutions: fallibleToolExecutions },
+  } = fallibleToolResult;
+
+  if (!compatible) {
+    return ["NON-COMPATIBLE"];
+  }
 
   if (!fallibleOriginalExecutions.every(isSuccess)) {
     return [
@@ -77,7 +89,7 @@ export const measure = (
       return "TRANSPARENT";
     } else {
       const broken = originalFeatureSet.broken(toolFeatureSet);
-      return "NON-transparent: " + JSON.stringify([...broken]);
+      return "NON-TRANSPARENT: " + JSON.stringify([...broken]);
     }
   };
 

@@ -1,15 +1,14 @@
 import { Agent, AgentFactory, RunOptions } from "./Agent";
-import { ExecutionDetail } from "./ExecutionAnalysis";
 import { defaultFaultAwarenessTimeoutMs } from "./defaults";
 import { Failure, Fallible } from "./util/Fallible";
 import { timeBomb } from "./util/async";
 
-export default class FaultAwareAgent implements Agent {
-  protected agent: Agent | null = null;
+export default class FaultAwareAgent<T> implements Agent<T> {
+  protected agent: Agent<T> | null = null;
 
-  constructor(readonly agentFactory: AgentFactory) {}
+  constructor(readonly agentFactory: AgentFactory<T>) {}
 
-  async run(runOptions: RunOptions): Promise<Fallible<ExecutionDetail>> {
+  async run(runOptions: RunOptions): Promise<Fallible<T>> {
     if (this.agent === null) {
       this.agent = await this.agentFactory.call(null);
     }

@@ -148,6 +148,8 @@ function setupAnalysis() {
   };
 }
 
+require("./deterministic");
+
 var analysis = setupAnalysis();
 
 var reported = false;

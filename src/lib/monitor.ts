@@ -3,6 +3,7 @@ import browserify from "browserify";
 export interface MonitorConfig {
   reporter: Reporter;
   loadingTimeoutMs: number;
+  timeSeedMs: number;
 }
 
 export interface MonitorReport {

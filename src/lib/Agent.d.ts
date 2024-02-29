@@ -1,18 +1,21 @@
-import { AttachmentList } from "./Archive";
-import { ExecutionDetail } from "./ExecutionAnalysis";
+import { AttachmentList } from "./ArchiveWriter";
+import { ExecutionDetail } from "./ExecutionDetail";
 import { WebPageReplayOperation } from "./WebPageReplay";
 import { Fallible } from "./util/Fallible";
+import { Options as WebPageReplayOptions } from "./WebPageReplay";
 
 export interface RunOptions {
   url: string;
-  wprArchivePath: string;
-  wprOperation?: WebPageReplayOperation;
+  wprOptions: Pick<WebPageReplayOptions, "operation" | "archivePath">;
+  timeSeedMs: number;
+  loadingTimeoutMs: number;
+  analysisDelayMs: number;
   attachmentList?: AttachmentList;
 }
 
-export interface Agent {
-  run(runOptions: RunOptions): Promise<Fallible<ExecutionDetail>>;
+export interface Agent<AnalysisResult> {
+  run(runOptions: RunOptions): Promise<Fallible<AnalysisResult>>;
   terminate(): Promise<void>;
 }
 
-export type AgentFactory = () => Promise<Agent>;
+export type AgentFactory<AnalysisResult> = () => Promise<Agent<AnalysisResult>>;

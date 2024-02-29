@@ -29,3 +29,4 @@ const getFlag = (key: string, defaultValue: boolean): boolean => {
 export const jalangiPath = get("JALANGI_PATH");
 export const wprgoPath = get("WPRGO_PATH");
 export const debugMode = getFlag("DEBUG_MODE", false);
+export const headless = getFlag("HEADLESS", true) ? "new" : false;

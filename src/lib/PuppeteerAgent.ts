@@ -9,27 +9,23 @@ import puppeteer, {
   PuppeteerLaunchOptions,
   TimeoutError,
 } from "puppeteer";
-import { ExecutionDetail } from "./ExecutionAnalysis";
 import { timeBomb } from "./util/async";
 import { useBrowserContext, usePage } from "./util/browser";
-import { defaultAnalysisDelayMs, defaultAnalysisTimeoutMs } from "./defaults";
-import { Agent, RunOptions } from "./Agent";
 import CertificationAuthority from "./CertificationAuthority";
 import { Fallible } from "./util/Fallible";
-import { DataAttachment } from "./Archive";
+import { DataAttachment } from "./ArchiveWriter";
 import Deferred from "./util/Deferred";
-import { MonitorReport } from "./monitor";
 import { randomUUID } from "crypto";
 import { ContentType } from "./AnalysisProxy";
-import FeatureSet from "./FeatureSet";
-import { useMonitorViaAnalysisProxy } from "./useMonitorViaAnalysisProxy";
+import { useProxiedMonitor } from "./useProxiedMonitor";
+import { Agent, RunOptions } from "./Agent";
+import { ProxyHooksProvider } from "./ProxyHooks";
 
 const X_REQUEST_ID = "x-dynsecanjs-request-id";
 
-export interface Options {
-  pptrLaunchOptions?: PuppeteerLaunchOptions;
+export interface Options<T> {
   certificationAuthority: CertificationAuthority;
-  transform?: Transformer;
+  proxyHooksProvider: ProxyHooksProvider<T>;
 }
 
 export type Transformer = (
@@ -37,21 +33,28 @@ export type Transformer = (
   contentType: ContentType
 ) => Promise<string>;
 
-export class PuppeteerAgent implements Agent {
+export class PuppeteerAgent<T> implements Agent<T> {
   constructor(
     readonly browser: Browser,
     readonly mockttpServer: MockttpServer,
-    readonly options: Options
+    readonly options: Options<T>
   ) {}
 
-  async run(runOptions: RunOptions): Promise<Fallible<ExecutionDetail>> {
-    const { certificationAuthority, transform } = this.options;
-    const { url, wprArchivePath, wprOperation, attachmentList } = runOptions;
+  async run(runOptions: RunOptions): Promise<Fallible<T>> {
+    const { certificationAuthority, proxyHooksProvider } = this.options;
+    const {
+      url,
+      wprOptions,
+      timeSeedMs,
+      loadingTimeoutMs,
+      analysisDelayMs,
+      attachmentList,
+    } = runOptions;
 
-    const willCompleteAnalysis = new Deferred<ExecutionDetail>();
+    const willCompleteAnalysis = new Deferred<T>();
 
     const topNavigationRequestIds = new Set<string>();
-    const runPage = async (page: Page): Promise<ExecutionDetail> => {
+    const runPage = async (page: Page): Promise<T> => {
       await page.setRequestInterception(true);
       page.on("request", (request) => {
         const requestId = randomUUID();
@@ -72,7 +75,7 @@ export class PuppeteerAgent implements Agent {
       try {
         await page.goto(url, {
           waitUntil: "domcontentloaded",
-          timeout: defaultAnalysisTimeoutMs,
+          timeout: loadingTimeoutMs,
         });
       } catch (e) {
         if (!(e instanceof TimeoutError)) {
@@ -82,7 +85,7 @@ export class PuppeteerAgent implements Agent {
 
       const result = await timeBomb(
         willCompleteAnalysis.promise,
-        defaultAnalysisDelayMs
+        analysisDelayMs
       );
 
       if (attachmentList) {
@@ -96,50 +99,15 @@ export class PuppeteerAgent implements Agent {
     };
 
     try {
-      const targetSites = new Set<string>();
-      const includedScriptUrls = new Set<string>();
-      const startTime = Date.now();
+      const { reportCallback, requestListener, responseTransformer } =
+        proxyHooksProvider(willCompleteAnalysis);
 
-      return await useMonitorViaAnalysisProxy(
+      return await useProxiedMonitor(
         {
           mockttpServer: this.mockttpServer,
-          reportCallback: (monitorReport: MonitorReport) => {
-            const {
-              pageUrl,
-              uncaughtErrors,
-              consoleMessages,
-              calledBuiltinMethods,
-              cookieKeys,
-              localStorageKeys,
-              sessionStorageKeys,
-              loadingCompleted,
-            } = monitorReport;
-            willCompleteAnalysis.resolve({
-              pageUrl,
-              featureSet: new FeatureSet(
-                new Set(uncaughtErrors),
-                new Set(consoleMessages),
-                new Set(calledBuiltinMethods),
-                new Set(cookieKeys),
-                new Set(localStorageKeys),
-                new Set(sessionStorageKeys),
-                new Set(targetSites),
-                new Set(includedScriptUrls)
-              ),
-              loadingCompleted,
-              executionTimeMs: Date.now() - startTime,
-            });
-          },
-          requestListener: (req) => {
-            targetSites.add(req.url.hostname);
-          },
-          responseTransformer: async (res) => {
-            const { contentType, body, req } = res;
-            if (contentType === "javascript") {
-              includedScriptUrls.add(req.url.href);
-            }
-            return transform ? transform(body, contentType) : body;
-          },
+          reportCallback,
+          requestListener,
+          responseTransformer,
           dnsLookupErrorListener: (err, req) => {
             const requestId = req.headers[X_REQUEST_ID];
             if (requestId && topNavigationRequestIds.has(requestId as string)) {
@@ -147,11 +115,11 @@ export class PuppeteerAgent implements Agent {
             }
           },
           wprOptions: {
-            operation: wprOperation ?? "replay",
-            archivePath: wprArchivePath,
+            ...wprOptions,
             certificationAuthority,
           },
-          loadingTimeoutMs: defaultAnalysisTimeoutMs, // TODO: abstract into "monitorCommand", same for reportCallback, requestListener, and responseTransformer
+          timeSeedMs,
+          loadingTimeoutMs,
         },
         async (analysisProxy) =>
           useBrowserContext(
@@ -179,8 +147,11 @@ export class PuppeteerAgent implements Agent {
     await this.browser.close();
   }
 
-  static async create(options: Options): Promise<PuppeteerAgent> {
-    const { pptrLaunchOptions, certificationAuthority } = options;
+  static async create<T>(
+    pptrLaunchOptions: PuppeteerLaunchOptions | undefined,
+    options: Options<T>
+  ): Promise<PuppeteerAgent<T>> {
+    const { certificationAuthority } = options;
     const mockttpServer = getLocal({
       https: {
         cert: certificationAuthority.getCertificate(),

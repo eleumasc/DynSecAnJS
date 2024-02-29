@@ -1,13 +1,13 @@
-import { ExecutionAnalysis } from "./ExecutionAnalysis";
+import { Analysis } from "./Analysis";
 
 export interface Options {
   concurrencyLevel: number;
 }
 
-export const deployAnalysis = async (
-  analysisFactory: () => ExecutionAnalysis,
+export const deployAnalysis = async <TAnalysis extends Analysis<any, any>>(
+  analysisFactory: () => TAnalysis,
   options: Options,
-  tasks: Iterable<(analysis: ExecutionAnalysis) => Promise<void>>
+  tasks: Iterable<(analysis: TAnalysis) => Promise<void>>
 ): Promise<void> => {
   const { concurrencyLevel } = options;
 
@@ -17,7 +17,7 @@ export const deployAnalysis = async (
     }
   })();
 
-  const processNext = async (analysis: ExecutionAnalysis) => {
+  const processNext = async (analysis: TAnalysis) => {
     const it = generator.next();
     if (it.done) {
       return false;

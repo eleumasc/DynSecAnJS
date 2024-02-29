@@ -1,52 +1,37 @@
 import { join, resolve } from "path";
-import { Logfile, deserializeLogfile, serializeLogfile } from "./Logfile";
+import { Logfile, serializeLogfile } from "./Logfile";
 import {
   copyFileSync,
   mkdirSync,
-  readFileSync,
   renameSync,
   unlinkSync,
   writeFileSync,
 } from "fs";
-import { readSitelistFromFile, writeSitelistToFile } from "./sitelist";
-import assert from "assert";
+import { writeSitelistToFile } from "./sitelist";
 import { tmpdir } from "os";
 
-export default class Archive {
+export default class ArchiveWriter<Kind extends string, Data> {
   protected sitelist: string[] = [];
 
-  constructor(readonly path: string) {}
+  constructor(
+    readonly path: string,
+    readonly kind: Kind,
+    readonly serializeData: (data: Data) => any
+  ) {}
 
-  store(logfile: Logfile, attachmentList?: AttachmentList): void {
+  store(logfile: Logfile<Kind, Data>, attachmentList?: AttachmentList): void {
     const { site } = logfile;
     const outDir = resolve(this.path);
     mkdirSync(outDir, { recursive: true });
     writeFileSync(
       join(outDir, `${site}.json`),
-      JSON.stringify(serializeLogfile(logfile))
+      JSON.stringify(serializeLogfile(logfile, this.serializeData))
     );
     if (attachmentList) {
       attachmentList.store(outDir);
     }
     this.sitelist = [...this.sitelist, site];
     writeSitelistToFile(join(outDir, "sites.txt"), this.sitelist);
-  }
-
-  load(site: string, kind: string): Logfile {
-    const outDir = resolve(this.path);
-    const logfile = deserializeLogfile(
-      JSON.parse(readFileSync(join(outDir, `${site}.json`)).toString())
-    );
-    assert(
-      logfile.kind === kind,
-      `Expected kind '${kind}', but got '${logfile.kind}'`
-    );
-    return logfile;
-  }
-
-  getSitelist(): string[] {
-    const outDir = resolve(this.path);
-    return readSitelistFromFile(join(outDir, "sites.txt"));
   }
 }
 

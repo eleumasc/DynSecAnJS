@@ -71,7 +71,7 @@ export default class FeatureSet {
     };
   }
 
-  static deserialize(data: any): FeatureSet {
+  static deserialize(raw: any): FeatureSet {
     const {
       uncaughtErrors,
       consoleMessages,
@@ -81,7 +81,7 @@ export default class FeatureSet {
       sessionStorageKeys,
       targetSites,
       includedScriptUrls,
-    } = data;
+    } = raw;
     return new FeatureSet(
       new Set(uncaughtErrors),
       new Set(consoleMessages),

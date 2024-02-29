@@ -25,29 +25,29 @@ export const isFailure = <T>(fallible: Fallible<T>): fallible is Failure => {
 };
 
 export const serializeFallible = <T>(
-  concrete: Fallible<T>,
-  serializeVal: (val: T) => any
+  cooked: Fallible<T>,
+  serializeVal: (cookedVal: T) => any
 ): any => {
-  const { status } = concrete;
+  const { status } = cooked;
   if (status === "success") {
-    const { val } = concrete;
+    const { val } = cooked;
     return { status, val: serializeVal(val) };
   } else {
-    const { reason } = concrete;
+    const { reason } = cooked;
     return { status, reason };
   }
 };
 
 export const deserializeFallible = <T>(
-  data: any,
-  deserializeVal: (valData: any) => T
+  raw: any,
+  deserializeVal: (rawVal: any) => T
 ): Fallible<T> => {
-  const { status } = data;
+  const { status } = raw;
   if (status === "success") {
-    const { val } = data;
+    const { val } = raw;
     return { status, val: deserializeVal(val) };
   } else if (status === "failure") {
-    const { reason } = data;
+    const { reason } = raw;
     assert(typeof reason === "string");
     return { status, reason };
   } else {

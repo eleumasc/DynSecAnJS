@@ -1,17 +1,14 @@
 import yargs from "yargs/yargs";
-import { startAnalysis } from "./lib/startAnalysis";
+import { startOriginalAnalysis } from "./lib/startOriginalAnalysis";
+import { startToolAnalysis } from "./lib/startToolAnalysis";
 import { startMeasurement } from "./lib/startMeasurement";
 
 yargs(process.argv.slice(2))
   .command(
-    "analysis <toolName> <sitelistPath>",
+    "original-analysis <sitelistPath>",
     "Start analysis",
     (yargs) => {
       return yargs
-        .positional("toolName", {
-          type: "string",
-          demandOption: true,
-        })
         .positional("sitelistPath", {
           type: "string",
           demandOption: true,
@@ -22,17 +19,44 @@ yargs(process.argv.slice(2))
         });
     },
     (argv) => {
-      startAnalysis(argv);
+      startOriginalAnalysis(argv);
     }
   )
   .command(
-    "measurement <archivePath>",
+    "tool-analysis <toolName> <originalArchivePath>",
+    "Start analysis",
+    (yargs) => {
+      return yargs
+        .positional("toolName", {
+          type: "string",
+          demandOption: true,
+        })
+        .positional("originalArchivePath", {
+          type: "string",
+          demandOption: true,
+        })
+        .option("concurrencyLevel", {
+          type: "number",
+          default: 1,
+        });
+    },
+    (argv) => {
+      startToolAnalysis(argv);
+    }
+  )
+  .command(
+    "measurement <originalArchivePath> <toolArchivePath>",
     "Start measurement",
     (yargs) => {
-      return yargs.positional("archivePath", {
-        type: "string",
-        demandOption: true,
-      });
+      return yargs
+        .positional("originalArchivePath", {
+          type: "string",
+          demandOption: true,
+        })
+        .positional("toolArchivePath", {
+          type: "string",
+          demandOption: true,
+        });
     },
     (argv) => {
       startMeasurement(argv);

@@ -1,13 +1,14 @@
 import { PuppeteerLaunchOptions } from "puppeteer";
+import { headless } from "./env";
 
 export const defaultPptrLaunchOptions: PuppeteerLaunchOptions = {
-  headless: "new",
+  headless,
   defaultViewport: { width: 1280, height: 720 },
 };
 
 export const defaultAnalysisRepeat = 5;
 
-export const defaultAnalysisTimeoutMs = 120_000;
+export const defaultLoadingTimeoutMs = 120_000;
 
 export const defaultAnalysisDelayMs = 15_000;
 
