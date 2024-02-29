@@ -23,7 +23,7 @@ export interface ToolAnalysisArgs {
 export const startToolAnalysis = async (args: ToolAnalysisArgs) => {
   const { toolName, originalArchivePath, concurrencyLevel } = args;
 
-  const analysisId = Date.now().toString();
+  const analysisId = `${Date.now().toString()}-${toolName}`;
   console.log(`Analysis ID is ${analysisId}`);
 
   const originalArchive = new ArchiveReader(

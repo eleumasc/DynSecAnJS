@@ -11,7 +11,7 @@ import {
   Options as WebPageReplayOptions,
   useWebPageReplay,
 } from "./WebPageReplay";
-import { SendReporter, bundleMonitor } from "./monitor";
+import { SendReporter, MonitorWaitUntil, bundleMonitor } from "./monitor";
 
 interface Options {
   mockttpServer: MockttpServer;
@@ -23,8 +23,9 @@ interface Options {
     WebPageReplayOptions,
     "operation" | "archivePath" | "certificationAuthority"
   >;
-  timeSeedMs: number;
   loadingTimeoutMs: number;
+  timeSeedMs: number;
+  waitUntil: MonitorWaitUntil;
 }
 
 export const useProxiedMonitor = async <T>(
@@ -40,6 +41,7 @@ export const useProxiedMonitor = async <T>(
     wprOptions,
     loadingTimeoutMs,
     timeSeedMs,
+    waitUntil,
   } = options;
 
   return await useWebPageReplay(
@@ -55,6 +57,7 @@ export const useProxiedMonitor = async <T>(
           },
           loadingTimeoutMs,
           timeSeedMs,
+          waitUntil,
         })
       );
 

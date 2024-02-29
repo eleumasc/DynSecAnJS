@@ -12,9 +12,13 @@ export enum ESVersion {
 
 const ESVersionValues = Object.values(ESVersion);
 
-export const lessOrEqualToESVersions = (
-  a: ESVersion,
-  b: ESVersion
-): boolean => {
+export const lessOrEqualToESVersion = (a: ESVersion, b: ESVersion): boolean => {
   return ESVersionValues.indexOf(a) <= ESVersionValues.indexOf(b);
+};
+
+export const maxESVersion = (esVersions: ESVersion[]) => {
+  return esVersions.reduce(
+    (max, cur) => (lessOrEqualToESVersion(cur, max) ? max : cur),
+    ESVersionValues[0]
+  );
 };

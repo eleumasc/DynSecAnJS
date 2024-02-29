@@ -2,7 +2,7 @@ import { RunOptions, ToolAnalysis, ToolAnalysisResult } from "./ToolAnalysis";
 import { ExecutionDetail } from "./ExecutionDetail";
 import { Fallible, isFailure } from "./util/Fallible";
 import { Agent } from "./Agent";
-import { ESVersion, lessOrEqualToESVersions } from "./compatibility/ESVersion";
+import { ESVersion, lessOrEqualToESVersion } from "./compatibility/ESVersion";
 import { PrefixAttachmentList } from "./ArchiveWriter";
 import { defaultAnalysisDelayMs, defaultLoadingTimeoutMs } from "./defaults";
 
@@ -27,7 +27,7 @@ export class DefaultToolAnalysis implements ToolAnalysis {
       attachmentList,
     } = runOptions;
 
-    if (!lessOrEqualToESVersions(siteMinimumESVersion, supportedESVersion)) {
+    if (!lessOrEqualToESVersion(siteMinimumESVersion, supportedESVersion)) {
       return {
         status: "success",
         val: { compatible: false, toolExecutions: [] },
@@ -41,8 +41,9 @@ export class DefaultToolAnalysis implements ToolAnalysis {
       const toolExecution = await this.toolAgent.run({
         url,
         wprOptions: { operation: "replay", archivePath: wprArchivePath },
-        timeSeedMs,
         loadingTimeoutMs: defaultLoadingTimeoutMs,
+        timeSeedMs,
+        waitUntil: "domcontentloaded",
         analysisDelayMs: defaultAnalysisDelayMs,
         attachmentList: new PrefixAttachmentList(attachmentList, `t${i}-`),
       });

@@ -18,7 +18,7 @@ export interface OriginalAnalysisArgs {
 export const startOriginalAnalysis = async (args: OriginalAnalysisArgs) => {
   const { sitelistPath, concurrencyLevel } = args;
 
-  const analysisId = Date.now().toString();
+  const analysisId = `${Date.now().toString()}-orig`;
   console.log(`Analysis ID is ${analysisId}`);
 
   const sitelist = readSitelistFromFile(sitelistPath);

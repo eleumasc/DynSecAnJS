@@ -1,5 +1,9 @@
 import assert from "assert";
 
+export const distictArray = <T>(array: T[]): T[] => {
+  return [...new Set(array)];
+};
+
 export const divideArray = <T>(array: T[], size: number): T[][] => {
   assert(size > 0);
   let result: T[][] = [];

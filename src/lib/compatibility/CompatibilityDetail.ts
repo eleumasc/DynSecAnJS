@@ -1,14 +1,20 @@
 import { ESVersion } from "./ESVersion";
 
 export interface CompatibilityDetail {
+  pageUrl: string;
   minimumESVersion: ESVersion;
   scripts: ScriptDetail[];
 }
 
+export interface Category {
+  name: string;
+  esVersion: ESVersion;
+}
+
 export interface ScriptDetail {
   kind: string;
-  evidences: string[];
   minimumESVersion: ESVersion;
+  categories: Category[];
 }
 
 export interface ExternalScriptDetail extends ScriptDetail {
@@ -18,6 +24,7 @@ export interface ExternalScriptDetail extends ScriptDetail {
 
 export interface InlineScriptDetail extends ScriptDetail {
   kind: "inline";
+  isEventHandler: boolean;
 }
 
 export const serializeCompatibilityDetail = (

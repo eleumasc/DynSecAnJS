@@ -4,7 +4,15 @@ import { MonitorReport } from "./monitor";
 import { RequestListener, ResponseTransformer } from "./AnalysisProxy";
 import FeatureSet from "./FeatureSet";
 import { Transformer } from "./PuppeteerAgent";
-import { CompatibilityDetail } from "./compatibility/CompatibilityDetail";
+import {
+  CompatibilityDetail,
+  ExternalScriptDetail,
+  InlineScriptDetail,
+  ScriptDetail,
+} from "./compatibility/CompatibilityDetail";
+import { extractInlineScripts } from "./compatibility/extractInlineScripts";
+import { maxESVersion } from "./compatibility/ESVersion";
+import { analyzeScript } from "./compatibility/analyzeScript";
 
 export interface ProxyHooks {
   reportCallback: (data: any) => void;
@@ -65,13 +73,43 @@ export const createProxyHooksProviderForExecution =
 
 export const createProxyHooksProviderForCompatibility =
   (): ProxyHooksProvider<CompatibilityDetail> => (willCompleteAnalysis) => {
+    const scripts: ScriptDetail[] = [];
     return {
-      reportCallback: (data: any) => {
-        // TODO: implement
+      reportCallback: (monitorReport: MonitorReport) => {
+        const { pageUrl, loadingCompleted } = monitorReport;
+        willCompleteAnalysis.resolve({
+          pageUrl,
+          minimumESVersion: maxESVersion(
+            scripts.map(({ minimumESVersion }) => minimumESVersion)
+          ),
+          scripts,
+        });
       },
       responseTransformer: async (res) => {
-        const { body } = res;
-        // TODO: analyze html or javascript for compatibility
+        const { body, contentType, req } = res;
+        if (contentType === "html") {
+          for (const { code, isEventHandler } of extractInlineScripts(body)) {
+            const categories = analyzeScript(code, isEventHandler);
+            scripts.push(<InlineScriptDetail>{
+              kind: "inline",
+              minimumESVersion: maxESVersion(
+                categories.map(({ esVersion }) => esVersion)
+              ),
+              categories,
+              isEventHandler,
+            });
+          }
+        } else {
+          const categories = analyzeScript(body);
+          scripts.push(<ExternalScriptDetail>{
+            kind: "external",
+            minimumESVersion: maxESVersion(
+              categories.map(({ esVersion }) => esVersion)
+            ),
+            categories,
+            url: req.url.href,
+          });
+        }
         return body;
       },
     };

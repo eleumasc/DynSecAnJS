@@ -35,8 +35,9 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
       url,
       wprOptions: { operation: "record", archivePath: wprArchivePath },
       loadingTimeoutMs: defaultLoadingTimeoutMs,
-      analysisDelayMs: defaultAnalysisDelayMs,
       timeSeedMs,
+      waitUntil: "load",
+      analysisDelayMs: defaultAnalysisDelayMs,
     });
     if (isFailure(compatibility)) {
       return compatibility;
@@ -48,8 +49,9 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
         url,
         wprOptions: { operation: "replay", archivePath: wprArchivePath },
         loadingTimeoutMs: defaultLoadingTimeoutMs,
-        analysisDelayMs: defaultAnalysisDelayMs,
         timeSeedMs,
+        waitUntil: "domcontentloaded",
+        analysisDelayMs: defaultAnalysisDelayMs,
         attachmentList: new PrefixAttachmentList(attachmentList, `r${i}`),
       });
       originalExecutions.push(originalExecution);

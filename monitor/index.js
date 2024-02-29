@@ -167,6 +167,14 @@ $.setTimeout(function () {
   reportAnalysis(false);
 }, config.loadingTimeoutMs);
 
-$.addEventListener($.global.document, "DOMContentLoaded", function () {
-  reportAnalysis(true);
-});
+switch (config.waitUntil) {
+  case "domcontentloaded":
+    $.addEventListener($.global.document, "DOMContentLoaded", function () {
+      reportAnalysis(true);
+    });
+    break;
+  default:
+    $.addEventListener($.global, "load", function () {
+      reportAnalysis(true);
+    });
+}

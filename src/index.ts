@@ -6,7 +6,7 @@ import { startMeasurement } from "./lib/startMeasurement";
 yargs(process.argv.slice(2))
   .command(
     "original-analysis <sitelistPath>",
-    "Start analysis",
+    "Start original analysis",
     (yargs) => {
       return yargs
         .positional("sitelistPath", {
@@ -24,7 +24,7 @@ yargs(process.argv.slice(2))
   )
   .command(
     "tool-analysis <toolName> <originalArchivePath>",
-    "Start analysis",
+    "Start tool analysis",
     (yargs) => {
       return yargs
         .positional("toolName", {

@@ -1,9 +1,12 @@
 import browserify from "browserify";
 
+export type MonitorWaitUntil = "load" | "domcontentloaded";
+
 export interface MonitorConfig {
   reporter: Reporter;
   loadingTimeoutMs: number;
   timeSeedMs: number;
+  waitUntil: MonitorWaitUntil;
 }
 
 export interface MonitorReport {

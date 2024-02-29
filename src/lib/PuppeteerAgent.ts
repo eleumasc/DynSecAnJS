@@ -47,6 +47,7 @@ export class PuppeteerAgent<T> implements Agent<T> {
       wprOptions,
       timeSeedMs,
       loadingTimeoutMs,
+      waitUntil,
       analysisDelayMs,
       attachmentList,
     } = runOptions;
@@ -74,7 +75,7 @@ export class PuppeteerAgent<T> implements Agent<T> {
 
       try {
         await page.goto(url, {
-          waitUntil: "domcontentloaded",
+          waitUntil,
           timeout: loadingTimeoutMs,
         });
       } catch (e) {
@@ -118,8 +119,9 @@ export class PuppeteerAgent<T> implements Agent<T> {
             ...wprOptions,
             certificationAuthority,
           },
-          timeSeedMs,
           loadingTimeoutMs,
+          timeSeedMs,
+          waitUntil,
         },
         async (analysisProxy) =>
           useBrowserContext(
