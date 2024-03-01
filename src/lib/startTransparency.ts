@@ -1,9 +1,50 @@
-import { ToolAnalysisResult } from "./ToolAnalysis";
+import ArchiveReader from "./ArchiveReader";
+import {
+  OriginalAnalysisResult,
+  deserializeOriginalAnalysisResult,
+} from "./OriginalAnalysis";
+import {
+  ToolAnalysisResult,
+  deserializeToolAnalysisResult,
+} from "./ToolAnalysis";
 import { ExecutionDetail } from "./ExecutionDetail";
 import FeatureSet from "./FeatureSet";
-import { Fallible, isFailure, isSuccess } from "./util/Fallible";
+import { Fallible, isSuccess, isFailure } from "./util/Fallible";
 import { avg, stdev } from "./util/math";
-import { OriginalAnalysisResult } from "./OriginalAnalysis";
+
+export interface TransparencyArgs {
+  originalArchivePath: string;
+  toolArchivePath: string;
+}
+
+export const startTransparency = async (args: TransparencyArgs) => {
+  const { originalArchivePath, toolArchivePath } = args;
+
+  const originalArchive = new ArchiveReader(
+    originalArchivePath,
+    "original-analysis",
+    deserializeOriginalAnalysisResult
+  );
+  const originalSitelist = originalArchive.getSitelist();
+  const toolArchive = new ArchiveReader(
+    toolArchivePath,
+    "tool-analysis",
+    deserializeToolAnalysisResult
+  );
+  const toolSitelist = toolArchive.getSitelist();
+
+  const tableRows: string[][] = [];
+  for (const site of originalSitelist) {
+    if (!toolSitelist.includes(site)) {
+      continue;
+    }
+    const originalLogfile = originalArchive.load(site);
+    const toolLogfile = toolArchive.load(site);
+    tableRows.push([site, ...measure(originalLogfile.data, toolLogfile.data)]);
+  }
+
+  console.table(tableRows);
+};
 
 export const measure = (
   fallibleOriginalResult: Fallible<OriginalAnalysisResult>,

@@ -1,7 +1,8 @@
 import yargs from "yargs/yargs";
 import { startOriginalAnalysis } from "./lib/startOriginalAnalysis";
 import { startToolAnalysis } from "./lib/startToolAnalysis";
-import { startMeasurement } from "./lib/startMeasurement";
+import { startTransparency } from "./lib/startTransparency";
+import { startCompatibility } from "./lib/startCompatibility";
 
 yargs(process.argv.slice(2))
   .command(
@@ -45,8 +46,21 @@ yargs(process.argv.slice(2))
     }
   )
   .command(
-    "measurement <originalArchivePath> <toolArchivePath>",
-    "Start measurement",
+    "compatibility <originalArchivePath>",
+    "Start compatibility measurement",
+    (yargs) => {
+      return yargs.positional("originalArchivePath", {
+        type: "string",
+        demandOption: true,
+      });
+    },
+    (argv) => {
+      startCompatibility(argv);
+    }
+  )
+  .command(
+    "transparency <originalArchivePath> <toolArchivePath>",
+    "Start transparency measurement",
     (yargs) => {
       return yargs
         .positional("originalArchivePath", {
@@ -59,7 +73,7 @@ yargs(process.argv.slice(2))
         });
     },
     (argv) => {
-      startMeasurement(argv);
+      startTransparency(argv);
     }
   )
   .strictCommands()
