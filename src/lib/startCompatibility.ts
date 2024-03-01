@@ -1,7 +1,5 @@
 import ArchiveReader from "./ArchiveReader";
-import {
-  deserializeOriginalAnalysisResult,
-} from "./OriginalAnalysis";
+import { deserializeOriginalAnalysisResult } from "./OriginalAnalysis";
 import { isSuccess } from "./util/Fallible";
 import { ESVersion } from "./compatibility/ESVersion";
 import { distinctArray } from "./util/array";
@@ -50,7 +48,7 @@ export const startCompatibility = async (args: CompatibilityArgs) => {
 
     for (const categoryName of distinctArray(
       scripts.flatMap(({ categories }) =>
-        categories.flatMap(({ name }) => name)
+        categories.flatMap(({ esVersion, name }) => `${esVersion}:${name}`)
       )
     )) {
       sitesByCategories.set(
