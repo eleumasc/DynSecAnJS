@@ -43,7 +43,7 @@ export class DefaultToolAnalysis implements ToolAnalysis {
         wprOptions: { operation: "replay", archivePath: wprArchivePath },
         loadingTimeoutMs: defaultLoadingTimeoutMs,
         timeSeedMs,
-        waitUntil: "domcontentloaded",
+        waitUntil: "load",
         analysisDelayMs: defaultAnalysisDelayMs,
         attachmentList: new PrefixAttachmentList(attachmentList, `t${i}-`),
       });

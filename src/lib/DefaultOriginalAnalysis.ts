@@ -53,7 +53,7 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
         wprOptions: { operation: "replay", archivePath: wprArchivePath },
         loadingTimeoutMs: defaultLoadingTimeoutMs,
         timeSeedMs,
-        waitUntil: "domcontentloaded",
+        waitUntil: "load",
         analysisDelayMs: defaultAnalysisDelayMs,
         attachmentList: new PrefixAttachmentList(attachmentList, `r${i}`),
       });
