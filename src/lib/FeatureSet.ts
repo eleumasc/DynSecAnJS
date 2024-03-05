@@ -1,4 +1,4 @@
-import { equalSets } from "./util/set";
+import { equalSets, isSubsetOf } from "./util/set";
 
 export interface FeatureSetData {
   uncaughtErrors: string[];
@@ -24,38 +24,16 @@ export default class FeatureSet {
   ) {}
 
   equals(that: FeatureSet): boolean {
-    return this.broken(that).size === 0;
-  }
-
-  broken(that: FeatureSet): Set<string> {
-    const brokenSet = new Set<string>();
-
-    if (!equalSets(this.uncaughtErrors, that.uncaughtErrors)) {
-      brokenSet.add("uncaughtErrors");
-    }
-    if (!equalSets(this.consoleMessages, that.consoleMessages)) {
-      brokenSet.add("consoleMessages");
-    }
-    // if (!equalSets(this.calledBuiltinMethods, that.calledBuiltinMethods)) {
-    //   brokenSet.add("calledBuiltinMethods");
-    // }
-    // if (!equalSets(this.cookieKeys, that.cookieKeys)) {
-    //   brokenSet.add("cookieKeys");
-    // }
-    // if (!equalSets(this.localStorageKeys, that.localStorageKeys)) {
-    //   brokenSet.add("localStorageKeys");
-    // }
-    // if (!equalSets(this.sessionStorageKeys, that.sessionStorageKeys)) {
-    //   brokenSet.add("sessionStorageKeys");
-    // }
-    // if (!equalSets(this.targetSites, that.targetSites)) {
-    //   brokenSet.add("targetSites");
-    // }
-    // if (!equalSets(this.includedScriptUrls, that.includedScriptUrls)) {
-    //   brokenSet.add("includedScriptUrls");
-    // }
-
-    return brokenSet;
+    return (
+      equalSets(this.uncaughtErrors, that.uncaughtErrors) &&
+      equalSets(this.consoleMessages, that.consoleMessages) &&
+      // equalSets(this.calledBuiltinMethods, that.calledBuiltinMethods) &&
+      equalSets(that.cookieKeys, this.cookieKeys) &&
+      equalSets(that.localStorageKeys, this.localStorageKeys) &&
+      equalSets(that.sessionStorageKeys, this.sessionStorageKeys) &&
+      equalSets(that.targetSites, this.targetSites) &&
+      equalSets(that.includedScriptUrls, this.includedScriptUrls)
+    );
   }
 
   serialize(): any {
