@@ -5,6 +5,7 @@ import { Agent } from "./Agent";
 import { ESVersion, lessOrEqualToESVersion } from "./compatibility/ESVersion";
 import { PrefixAttachmentList } from "./ArchiveWriter";
 import { defaultAnalysisDelayMs, defaultLoadingTimeoutMs } from "./defaults";
+import { RunOptions as AgentRunOptions } from "./Agent";
 
 export interface Options {
   supportedESVersion: ESVersion;
@@ -14,6 +15,7 @@ export interface Options {
 export class DefaultToolAnalysis implements ToolAnalysis {
   constructor(
     readonly toolAgent: Agent<ExecutionDetail>,
+    readonly toolCompatAgent: Agent<ExecutionDetail>,
     readonly options: Options
   ) {}
 
@@ -27,18 +29,16 @@ export class DefaultToolAnalysis implements ToolAnalysis {
       attachmentList,
     } = runOptions;
 
-    if (!lessOrEqualToESVersion(siteMinimumESVersion, supportedESVersion)) {
-      return {
-        status: "success",
-        val: { compatible: false, toolExecutions: [] },
-      };
-    }
+    const compatible = lessOrEqualToESVersion(
+      siteMinimumESVersion,
+      supportedESVersion
+    );
 
     const url = `http://${site}/`;
 
     let toolExecutions: Fallible<ExecutionDetail>[] = [];
     for (let i = 0; i < analysisRepeat; i += 1) {
-      const toolExecution = await this.toolAgent.run({
+      const runOptions = <AgentRunOptions>{
         url,
         wprOptions: { operation: "replay", archivePath: wprArchivePath },
         loadingTimeoutMs: defaultLoadingTimeoutMs,
@@ -46,7 +46,11 @@ export class DefaultToolAnalysis implements ToolAnalysis {
         waitUntil: "load",
         analysisDelayMs: defaultAnalysisDelayMs,
         attachmentList: new PrefixAttachmentList(attachmentList, `t${i}-`),
-      });
+      };
+      const toolExecution = compatible
+        ? await this.toolAgent.run(runOptions)
+        : await this.toolCompatAgent.run(runOptions);
+
       toolExecutions.push(toolExecution);
       if (isFailure(toolExecution)) {
         break;
@@ -55,7 +59,7 @@ export class DefaultToolAnalysis implements ToolAnalysis {
 
     return {
       status: "success",
-      val: { compatible: true, toolExecutions },
+      val: { compatible, toolExecutions },
     };
   }
 

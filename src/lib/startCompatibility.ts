@@ -1,9 +1,9 @@
 import ArchiveReader from "./ArchiveReader";
 import { deserializeOriginalAnalysisResult } from "./OriginalAnalysis";
 import { isSuccess } from "./util/Fallible";
-import { ESVersion } from "./compatibility/ESVersion";
+import { maxESVersion } from "./compatibility/ESVersion";
 import { distinctArray } from "./util/array";
-import { sortMap } from "./util/map";
+import { incrementMapEntry, sortCountingMap, sortMap } from "./util/map";
 
 export interface CompatibilityArgs {
   originalArchivePath: string;
@@ -20,8 +20,9 @@ export const startCompatibility = async (args: CompatibilityArgs) => {
   const sitelist = archive.getSitelist();
 
   let failures = 0;
-  let nojs = 0;
-  const sitesByESVersion = new Map<ESVersion, number>();
+  const sitesByESVersion = new Map<string, number>();
+  const sitesByExternalScriptESVersion = new Map<string, number>();
+  const sitesByInlineScriptESVersion = new Map<string, number>();
   const sitesByCategories = new Map<string, number>();
   for (const site of sitelist) {
     const logfile = archive.load(site);
@@ -37,13 +38,29 @@ export const startCompatibility = async (args: CompatibilityArgs) => {
       },
     } = fallibleResult;
 
-    if (scripts.length === 0) {
-      nojs += 1;
-    }
+    incrementMapEntry(
+      sitesByESVersion,
+      scripts.length > 0 ? minimumESVersion : "nojs"
+    );
 
-    sitesByESVersion.set(
-      minimumESVersion,
-      (sitesByESVersion.get(minimumESVersion) ?? 0) + 1
+    const externalScripts = scripts.filter(({ kind }) => kind === "external");
+    incrementMapEntry(
+      sitesByExternalScriptESVersion,
+      externalScripts.length > 0
+        ? maxESVersion(
+            externalScripts.map(({ minimumESVersion }) => minimumESVersion)
+          )
+        : "nojs"
+    );
+
+    const inlineScripts = scripts.filter(({ kind }) => kind === "inline");
+    incrementMapEntry(
+      sitesByInlineScriptESVersion,
+      inlineScripts.length > 0
+        ? maxESVersion(
+            inlineScripts.map(({ minimumESVersion }) => minimumESVersion)
+          )
+        : "nojs"
     );
 
     for (const categoryName of distinctArray(
@@ -51,22 +68,20 @@ export const startCompatibility = async (args: CompatibilityArgs) => {
         categories.flatMap(({ esVersion, name }) => `${esVersion}:${name}`)
       )
     )) {
-      sitesByCategories.set(
-        categoryName,
-        (sitesByCategories.get(categoryName) ?? 0) + 1
-      );
+      incrementMapEntry(sitesByCategories, categoryName);
     }
   }
 
   console.log("# sites", sitelist.length);
   console.log("# failures", failures);
-  console.log("# nojs", nojs);
+  console.log("sitesByESVersion", sortCountingMap(sitesByESVersion, -1));
   console.log(
-    "sitesByESVersion",
-    sortMap(sitesByESVersion, ([_1, v1], [_2, v2]) => -(v1 - v2))
+    "sitesByExternalScriptESVersion",
+    sortCountingMap(sitesByExternalScriptESVersion, -1)
   );
   console.log(
-    "sitesByCategories",
-    sortMap(sitesByCategories, ([_1, v1], [_2, v2]) => -(v1 - v2))
+    "sitesByInlineScriptESVersion",
+    sortCountingMap(sitesByInlineScriptESVersion, -1)
   );
+  console.log("sitesByCategories", sortCountingMap(sitesByCategories, -1));
 };

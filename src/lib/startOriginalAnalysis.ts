@@ -1,4 +1,3 @@
-import { Logfile } from "./Logfile";
 import ArchiveWriter, {
   AttachmentList,
   DefaultAttachmentList,

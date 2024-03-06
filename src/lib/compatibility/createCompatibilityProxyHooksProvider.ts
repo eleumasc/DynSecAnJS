@@ -16,7 +16,7 @@ export const createCompatibilityProxyHooksProvider =
     const scripts: ScriptDetail[] = [];
     return {
       reportCallback: (monitorReport: MonitorReport) => {
-        const { pageUrl, loadingCompleted } = monitorReport;
+        const { pageUrl } = monitorReport;
         willCompleteAnalysis.resolve({
           pageUrl,
           minimumESVersion: maxESVersion(

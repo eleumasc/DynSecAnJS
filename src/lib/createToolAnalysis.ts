@@ -7,6 +7,8 @@ import { ToolAnalysis } from "./ToolAnalysis";
 import { ESVersion } from "./compatibility/ESVersion";
 import FaultAwareAgent from "./FaultAwareAgent";
 import { createExecutionProxyHooksProvider } from "./createExecutionProxyHooksProvider";
+import { transpileWithBabel } from "./tool/babel";
+import { compose } from "./tool/compose";
 
 export const createToolAnalysis = (toolName: string): ToolAnalysis => {
   switch (toolName) {
@@ -18,6 +20,15 @@ export const createToolAnalysis = (toolName: string): ToolAnalysis => {
               certificationAuthority: CertificationAuthority.read(),
               proxyHooksProvider:
                 createExecutionProxyHooksProvider(transformWithJalangi),
+            })
+        ),
+        new FaultAwareAgent(
+          async () =>
+            await PuppeteerAgent.create(defaultPptrLaunchOptions, {
+              certificationAuthority: CertificationAuthority.read(),
+              proxyHooksProvider: createExecutionProxyHooksProvider(
+                compose(transpileWithBabel, transformWithJalangi)
+              ),
             })
         ),
         {

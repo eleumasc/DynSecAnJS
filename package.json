@@ -10,6 +10,7 @@
   "license": "ISC",
   "devDependencies": {
     "@tsconfig/recommended": "^1.0.3",
+    "@types/babel__core": "^7.20.5",
     "@types/browserify": "^12.0.40",
     "@types/node": "^20.10.8",
     "@types/yargs": "^17.0.32",
@@ -17,6 +18,8 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@babel/core": "^7.24.0",
+    "@babel/preset-env": "^7.24.0",
     "@browserify/envify": "^6.0.0",
     "acorn": "^8.11.3",
     "acorn-walk": "^8.3.2",

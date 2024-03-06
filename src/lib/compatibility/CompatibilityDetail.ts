@@ -1,4 +1,4 @@
-import { ESVersion } from "./ESVersion";
+import { ESVersion, maxESVersion } from "./ESVersion";
 
 export interface CompatibilityDetail {
   pageUrl: string;
