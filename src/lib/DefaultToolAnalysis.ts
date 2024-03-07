@@ -64,6 +64,9 @@ export class DefaultToolAnalysis implements ToolAnalysis {
   }
 
   async terminate(): Promise<void> {
-    await this.toolAgent.terminate();
+    await Promise.all([
+      this.toolAgent.terminate(),
+      this.toolCompatAgent.terminate(),
+    ]);
   }
 }

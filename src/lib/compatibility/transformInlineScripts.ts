@@ -19,20 +19,20 @@ export const transformInlineScripts = async (
           true) &&
         node.childNodes.length > 0
       ) {
-        const scriptNode = node.childNodes[0];
-        if ("value" in scriptNode) {
-          scriptNode.value = await transform(scriptNode.value, false);
+        const codeNode = node.childNodes[0];
+        if ("value" in codeNode) {
+          codeNode.value = await transform(codeNode.value, false);
         }
       }
       for (const attr of node.attrs) {
         if (htmlEventAttributes.includes(attr.name)) {
-          attr.value = await transform(attr.value, false);
+          attr.value = await transform(attr.value, true);
         }
       }
     }
 
     for (const childNode of getChildNodes(node)) {
-      visitNode(childNode);
+      await visitNode(childNode);
     }
   })(document);
 

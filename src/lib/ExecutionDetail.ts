@@ -1,6 +1,7 @@
 import FeatureSet from "./FeatureSet";
 
 export interface ExecutionDetail {
+  actuallyCompatible: boolean;
   pageUrl: string;
   screenshotFile?: string;
   featureSet: FeatureSet;

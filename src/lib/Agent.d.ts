@@ -1,6 +1,4 @@
 import { AttachmentList } from "./ArchiveWriter";
-import { ExecutionDetail } from "./ExecutionDetail";
-import { WebPageReplayOperation } from "./WebPageReplay";
 import { Fallible } from "./util/Fallible";
 import { Options as WebPageReplayOptions } from "./WebPageReplay";
 import { MonitorWaitUntil } from "./monitor";
