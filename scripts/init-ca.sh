@@ -19,7 +19,7 @@ extendedKeyUsage = serverAuth
 EOF
 
 # Generate the self-signed certificate using the CSR and extensions
-openssl x509 -req -in ca/csr.pem -signkey ca/key.pem -out ca/cert.pem -extfile ca/extfile.cnf
+openssl x509 -req -in ca/csr.pem -signkey ca/key.pem -out ca/cert.pem -extfile ca/extfile.cnf -days 365
 
 # Clean up temporary files
 rm ca/csr.pem ca/extfile.cnf
