@@ -65,9 +65,9 @@ export const measure = (
     val: { compatible, toolExecutions: fallibleToolExecutions },
   } = fallibleToolResult;
 
-  if (!compatible) {
-    return ["NON-COMPATIBLE"];
-  }
+  // if (!compatible) {
+  //   return ["NON-COMPATIBLE"];
+  // }
 
   if (!fallibleOriginalExecutions.every(isSuccess)) {
     return [
@@ -84,6 +84,10 @@ export const measure = (
   const toolExecutions = fallibleToolExecutions
     .map((successExecution) => successExecution.val)
     .filter((execution) => execution.loadingCompleted);
+
+  if (!toolExecutions.every(({ actuallyCompatible }) => actuallyCompatible)) {
+    return ["NON-COMPATIBLE"];
+  }
 
   const THRESHOLD = 3;
   const measureTransparency = (
