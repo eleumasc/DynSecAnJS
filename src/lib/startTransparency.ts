@@ -141,10 +141,10 @@ export const measure = (
 const broken = (orig: FeatureSet, tool: FeatureSet): Set<string> => {
   const brokenSet = new Set<string>();
 
-  if (!equalSets(orig.uncaughtErrors, tool.uncaughtErrors)) {
+  if (!isSubsetOf(tool.uncaughtErrors, orig.uncaughtErrors)) {
     brokenSet.add("uncaughtErrors");
   }
-  if (!equalSets(orig.consoleMessages, tool.consoleMessages)) {
+  if (!isSubsetOf(tool.consoleMessages, orig.consoleMessages)) {
     brokenSet.add("consoleMessages");
   }
   // if (!equalSets(orig.calledBuiltinMethods, tool.calledBuiltinMethods)) {
