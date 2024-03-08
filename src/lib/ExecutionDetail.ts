@@ -2,6 +2,7 @@ import FeatureSet from "./FeatureSet";
 
 export interface ExecutionDetail {
   actuallyCompatible: boolean;
+  transformLogs: string[];
   pageUrl: string;
   screenshotFile?: string;
   featureSet: FeatureSet;

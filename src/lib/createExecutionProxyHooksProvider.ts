@@ -7,7 +7,8 @@ import { ProxyHooksProvider } from "./ProxyHooks";
 export const createExecutionProxyHooksProvider =
   (transform?: Transformer): ProxyHooksProvider<ExecutionDetail> =>
   (willCompleteAnalysis) => {
-    let actuallyCompatible = true;
+    let actuallyCompatible: boolean = true;
+    const transformLogs: string[] = [];
     const targetSites = new Set<string>();
     const includedScriptUrls = new Set<string>();
     const startTime = Date.now();
@@ -25,6 +26,7 @@ export const createExecutionProxyHooksProvider =
         } = monitorReport;
         willCompleteAnalysis.resolve({
           actuallyCompatible,
+          transformLogs,
           pageUrl,
           featureSet: new FeatureSet(
             new Set(uncaughtErrors),
@@ -51,8 +53,9 @@ export const createExecutionProxyHooksProvider =
         if (transform) {
           try {
             return await transform(body, contentType);
-          } catch {
+          } catch (e) {
             actuallyCompatible = false;
+            transformLogs.push(`[${req.url}] ${e}`);
           }
         }
         return body;

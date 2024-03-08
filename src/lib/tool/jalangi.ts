@@ -4,18 +4,19 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { jalangiPath } from "../env";
 import { Transformer } from "../PuppeteerAgent";
+import { identifyTransformer } from "./identifyTransformer";
 
-export const transformWithJalangi: Transformer = async (
-  content,
-  contentType
-) => {
-  switch (contentType) {
-    case "html":
-      return await esnstrument(content, "html");
-    case "javascript":
-      return await esnstrument(content, "js");
+export const transformWithJalangi: Transformer = identifyTransformer(
+  "jalangi",
+  async (content, contentType) => {
+    switch (contentType) {
+      case "html":
+        return await esnstrument(content, "html");
+      case "javascript":
+        return await esnstrument(content, "js");
+    }
   }
-};
+);
 
 export const esnstrument = async (
   code: string,
@@ -24,11 +25,12 @@ export const esnstrument = async (
   const tmpDir = await mkdtemp(join(tmpdir(), "jal"));
   const originalPath = join(tmpDir, `index.${extension}`);
   const modifiedPath = join(tmpDir, `index-mod.${extension}`);
+  let stdoutData = "";
 
   try {
     await writeFile(originalPath, code);
 
-    const proc = spawn(
+    const childProcess = spawn(
       "node",
       [
         join(jalangiPath, "src", "js", "commands", "esnstrument_cli.js"),
@@ -47,12 +49,16 @@ export const esnstrument = async (
       }
     );
 
+    childProcess.stdout?.on("data", (data) => {
+      stdoutData += data.toString();
+    });
+
     await new Promise((resolve, reject) => {
-      proc.on("exit", function (code, signal) {
+      childProcess.on("exit", function (code, signal) {
         resolve({ code: code, signal: signal });
       });
 
-      proc.on("error", function (err) {
+      childProcess.on("error", function (err) {
         reject(err);
       });
     });
@@ -60,6 +66,8 @@ export const esnstrument = async (
     const modified = (await readFile(modifiedPath)).toString();
 
     return modified;
+  } catch (e) {
+    throw new Error(`${String(e)}\n\n${stdoutData}`);
   } finally {
     await rm(tmpDir, { force: true, recursive: true });
   }

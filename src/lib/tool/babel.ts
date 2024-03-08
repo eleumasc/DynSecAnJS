@@ -1,18 +1,22 @@
 import { transformAsync } from "@babel/core";
 import { Transformer } from "../PuppeteerAgent";
 import { transformInlineScripts } from "../compatibility/transformInlineScripts";
+import { identifyTransformer } from "./identifyTransformer";
 
-export const transpileWithBabel: Transformer = async (content, contentType) => {
-  switch (contentType) {
-    case "html":
-      return await transformInlineScripts(
-        content,
-        async (code, isEventHandler) => await transpile(code, isEventHandler)
-      );
-    case "javascript":
-      return await transpile(content);
+export const transpileWithBabel: Transformer = identifyTransformer(
+  "babel",
+  async (content, contentType) => {
+    switch (contentType) {
+      case "html":
+        return await transformInlineScripts(
+          content,
+          async (code, isEventHandler) => await transpile(code, isEventHandler)
+        );
+      case "javascript":
+        return await transpile(content);
+    }
   }
-};
+);
 
 const transpile = async (
   code: string,
