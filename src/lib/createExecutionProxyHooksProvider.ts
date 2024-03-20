@@ -3,10 +3,12 @@ import { MonitorReport } from "./monitor";
 import FeatureSet from "./FeatureSet";
 import { Transformer } from "./PuppeteerAgent";
 import { ProxyHooksProvider } from "./ProxyHooks";
+import { transpileWithBabel } from "./tool/babel";
+import { compose } from "./tool/compose";
 
 export const createExecutionProxyHooksProvider =
-  (transform?: Transformer): ProxyHooksProvider<ExecutionDetail> =>
-  (willCompleteAnalysis) => {
+  (directTransform?: Transformer): ProxyHooksProvider<ExecutionDetail> =>
+  (willCompleteAnalysis, compatMode) => {
     let actuallyCompatible: boolean = true;
     const transformLogs: string[] = [];
     const targetSites = new Set<string>();
@@ -50,6 +52,9 @@ export const createExecutionProxyHooksProvider =
         if (contentType === "javascript") {
           includedScriptUrls.add(req.url.href);
         }
+        const transform = compatMode
+          ? compose(transpileWithBabel, directTransform)
+          : directTransform;
         if (transform) {
           try {
             return await transform(body, contentType);

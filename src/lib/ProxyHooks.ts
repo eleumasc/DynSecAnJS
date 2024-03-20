@@ -8,5 +8,6 @@ export interface ProxyHooks {
 }
 
 export type ProxyHooksProvider<T> = (
-  willCompleteAnalysis: Deferred<T>
+  willCompleteAnalysis: Deferred<T>,
+  compatMode: boolean
 ) => ProxyHooks;

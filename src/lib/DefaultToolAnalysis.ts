@@ -4,8 +4,7 @@ import { Fallible, isFailure } from "./util/Fallible";
 import { Agent } from "./Agent";
 import { ESVersion, lessOrEqualToESVersion } from "./compatibility/ESVersion";
 import { PrefixAttachmentList } from "./ArchiveWriter";
-import { defaultAnalysisDelayMs, defaultLoadingTimeoutMs } from "./defaults";
-import { RunOptions as AgentRunOptions } from "./Agent";
+import { defaultDelayMs, defaultLoadingTimeoutMs } from "./defaults";
 
 export interface Options {
   supportedESVersion: ESVersion;
@@ -15,7 +14,6 @@ export interface Options {
 export class DefaultToolAnalysis implements ToolAnalysis {
   constructor(
     readonly toolAgent: Agent<ExecutionDetail>,
-    readonly toolCompatAgent: Agent<ExecutionDetail>,
     readonly options: Options
   ) {}
 
@@ -38,18 +36,16 @@ export class DefaultToolAnalysis implements ToolAnalysis {
 
     let toolExecutions: Fallible<ExecutionDetail>[] = [];
     for (let i = 0; i < analysisRepeat; i += 1) {
-      const runOptions = <AgentRunOptions>{
+      const toolExecution = await this.toolAgent.run({
         url,
         wprOptions: { operation: "replay", archivePath: wprArchivePath },
         loadingTimeoutMs: defaultLoadingTimeoutMs,
         timeSeedMs,
         waitUntil: "load",
-        analysisDelayMs: defaultAnalysisDelayMs,
+        delayMs: defaultDelayMs,
         attachmentList: new PrefixAttachmentList(attachmentList, `t${i}-`),
-      };
-      const toolExecution = compatible
-        ? await this.toolAgent.run(runOptions)
-        : await this.toolCompatAgent.run(runOptions);
+        compatMode: !compatible,
+      });
 
       toolExecutions.push(toolExecution);
       if (isFailure(toolExecution)) {
@@ -64,9 +60,6 @@ export class DefaultToolAnalysis implements ToolAnalysis {
   }
 
   async terminate(): Promise<void> {
-    await Promise.all([
-      this.toolAgent.terminate(),
-      this.toolCompatAgent.terminate(),
-    ]);
+    await Promise.all([this.toolAgent.terminate()]);
   }
 }

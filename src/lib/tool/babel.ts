@@ -4,7 +4,7 @@ import { transformInlineScripts } from "../compatibility/transformInlineScripts"
 import { identifyTransformer } from "./identifyTransformer";
 
 export const transpileWithBabel: Transformer = identifyTransformer(
-  "babel",
+  "Babel.js",
   async (content, contentType) => {
     switch (contentType) {
       case "html":

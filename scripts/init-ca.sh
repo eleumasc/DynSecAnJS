@@ -3,6 +3,7 @@
 # Set the domain and IP address
 DOMAIN="localhost"
 IP_ADDRESS="127.0.0.1"
+INTNET_IP_ADDRESS="192.168.1.1"
 
 mkdir -p ca
 
@@ -14,7 +15,7 @@ openssl req -new -key ca/key.pem -out ca/csr.pem -subj "/CN=dynsecanjs CA"
 
 # Create a configuration file for the certificate extensions
 cat <<EOF > ca/extfile.cnf
-subjectAltName = DNS:$DOMAIN, IP:$IP_ADDRESS
+subjectAltName = DNS:$DOMAIN, IP:$IP_ADDRESS, IP:$INTNET_IP_ADDRESS
 extendedKeyUsage = serverAuth
 EOF
 

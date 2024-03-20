@@ -8,7 +8,7 @@ import {
   RunOptions,
 } from "./OriginalAnalysis";
 import { CompatibilityDetail } from "./compatibility/CompatibilityDetail";
-import { defaultAnalysisDelayMs, defaultLoadingTimeoutMs } from "./defaults";
+import { defaultDelayMs, defaultLoadingTimeoutMs } from "./defaults";
 
 export interface Options {
   analysisRepeat: number;
@@ -40,7 +40,8 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
       loadingTimeoutMs: defaultLoadingTimeoutMs,
       timeSeedMs,
       waitUntil: "load",
-      analysisDelayMs: defaultAnalysisDelayMs,
+      delayMs: defaultDelayMs,
+      compatMode: false,
     });
     if (isFailure(compatibility)) {
       return compatibility;
@@ -54,8 +55,9 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
         loadingTimeoutMs: defaultLoadingTimeoutMs,
         timeSeedMs,
         waitUntil: "load",
-        analysisDelayMs: defaultAnalysisDelayMs,
+        delayMs: defaultDelayMs,
         attachmentList: new PrefixAttachmentList(attachmentList, `r${i}`),
+        compatMode: false,
       });
       originalExecutions.push(originalExecution);
       if (isFailure(originalExecution)) {

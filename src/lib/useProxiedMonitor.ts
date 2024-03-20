@@ -1,4 +1,4 @@
-import { Mockttp as MockttpServer } from "mockttp";
+import { getLocal } from "mockttp";
 import AnalysisProxy, {
   DnsLookupErrorListener,
   RequestListener,
@@ -12,20 +12,18 @@ import {
   useWebPageReplay,
 } from "./WebPageReplay";
 import { SendReporter, MonitorWaitUntil, bundleMonitor } from "./monitor";
+import CertificationAuthority from "./CertificationAuthority";
 
 interface Options {
-  mockttpServer: MockttpServer;
   reportCallback: (data: any) => void;
   requestListener?: RequestListener;
   responseTransformer?: ResponseTransformer;
   dnsLookupErrorListener?: DnsLookupErrorListener;
-  wprOptions: Pick<
-    WebPageReplayOptions,
-    "operation" | "archivePath" | "certificationAuthority"
-  >;
+  wprOptions: Pick<WebPageReplayOptions, "operation" | "archivePath">;
   loadingTimeoutMs: number;
   timeSeedMs: number;
   waitUntil: MonitorWaitUntil;
+  certificationAuthority: CertificationAuthority;
 }
 
 export const useProxiedMonitor = async <T>(
@@ -33,7 +31,6 @@ export const useProxiedMonitor = async <T>(
   cb: (analysisProxy: AnalysisProxy) => Promise<T>
 ): Promise<T> => {
   const {
-    mockttpServer,
     reportCallback,
     requestListener,
     responseTransformer,
@@ -42,10 +39,15 @@ export const useProxiedMonitor = async <T>(
     loadingTimeoutMs,
     timeSeedMs,
     waitUntil,
+    certificationAuthority,
   } = options;
 
   return await useWebPageReplay(
-    { ...wprOptions, injectDeterministic: false },
+    {
+      ...wprOptions,
+      certificationAuthority,
+      injectDeterministic: false,
+    },
     async (wpr) => {
       const reportExposedCallback = createExposedCallback(reportCallback);
 
@@ -60,6 +62,14 @@ export const useProxiedMonitor = async <T>(
           waitUntil,
         })
       );
+
+      const mockttpServer = getLocal({
+        https: {
+          cert: certificationAuthority.getCertificate(),
+          key: certificationAuthority.getKey(),
+        },
+        recordTraffic: false,
+      });
 
       return await useAnalysisProxy(
         mockttpServer,

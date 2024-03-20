@@ -1,8 +1,4 @@
-import {
-  Mockttp as MockttpServer,
-  generateSPKIFingerprint,
-  getLocal,
-} from "mockttp";
+import { generateSPKIFingerprint } from "mockttp";
 import puppeteer, {
   Browser,
   Page,
@@ -34,11 +30,7 @@ export type Transformer = (
 ) => Promise<string>;
 
 export class PuppeteerAgent<T> implements Agent<T> {
-  constructor(
-    readonly browser: Browser,
-    readonly mockttpServer: MockttpServer,
-    readonly options: Options<T>
-  ) {}
+  constructor(readonly browser: Browser, readonly options: Options<T>) {}
 
   async run(runOptions: RunOptions): Promise<Fallible<T>> {
     const { certificationAuthority, proxyHooksProvider } = this.options;
@@ -48,8 +40,9 @@ export class PuppeteerAgent<T> implements Agent<T> {
       timeSeedMs,
       loadingTimeoutMs,
       waitUntil,
-      analysisDelayMs,
+      delayMs,
       attachmentList,
+      compatMode,
     } = runOptions;
 
     const willCompleteAnalysis = new Deferred<T>();
@@ -73,39 +66,27 @@ export class PuppeteerAgent<T> implements Agent<T> {
         });
       });
 
-      try {
-        await page.goto(url, {
-          waitUntil,
-          timeout: loadingTimeoutMs,
-        });
-      } catch (e) {
-        if (!(e instanceof TimeoutError)) {
-          throw e;
-        }
-      }
+      await page.evaluate(`location.href = ${JSON.stringify(url)}`);
 
       const result = await timeBomb(
         willCompleteAnalysis.promise,
-        analysisDelayMs
+        loadingTimeoutMs + delayMs
       );
 
-      if (attachmentList) {
-        attachmentList.add(
-          "screenshot.png",
-          new DataAttachment(await page.screenshot())
-        );
-      }
+      attachmentList?.add(
+        "screenshot.png",
+        new DataAttachment(await page.screenshot())
+      );
 
       return result;
     };
 
     try {
       const { reportCallback, requestListener, responseTransformer } =
-        proxyHooksProvider(willCompleteAnalysis);
+        proxyHooksProvider(willCompleteAnalysis, compatMode);
 
       return await useProxiedMonitor(
         {
-          mockttpServer: this.mockttpServer,
           reportCallback,
           requestListener,
           responseTransformer,
@@ -115,15 +96,13 @@ export class PuppeteerAgent<T> implements Agent<T> {
               willCompleteAnalysis.reject(err);
             }
           },
-          wprOptions: {
-            ...wprOptions,
-            certificationAuthority,
-          },
+          wprOptions,
           loadingTimeoutMs,
           timeSeedMs,
           waitUntil,
+          certificationAuthority,
         },
-        async (analysisProxy) =>
+        (analysisProxy) =>
           useBrowserContext(
             this.browser,
             { proxyServer: `127.0.0.1:${analysisProxy.getPort()}` },
@@ -154,13 +133,6 @@ export class PuppeteerAgent<T> implements Agent<T> {
     options: Options<T>
   ): Promise<PuppeteerAgent<T>> {
     const { certificationAuthority } = options;
-    const mockttpServer = getLocal({
-      https: {
-        cert: certificationAuthority.getCertificate(),
-        key: certificationAuthority.getKey(),
-      },
-      recordTraffic: false,
-    });
 
     const browser = await puppeteer.launch({
       ...pptrLaunchOptions,
@@ -173,6 +145,6 @@ export class PuppeteerAgent<T> implements Agent<T> {
       ],
     });
 
-    return new PuppeteerAgent(browser, mockttpServer, options);
+    return new PuppeteerAgent(browser, options);
   }
 }

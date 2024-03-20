@@ -7,7 +7,7 @@ import { Transformer } from "../PuppeteerAgent";
 import { identifyTransformer } from "./identifyTransformer";
 
 export const transformWithJalangi: Transformer = identifyTransformer(
-  "jalangi",
+  "Jalangi",
   async (content, contentType) => {
     switch (contentType) {
       case "html":

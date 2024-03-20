@@ -13,6 +13,7 @@
     "@types/babel__core": "^7.20.5",
     "@types/browserify": "^12.0.40",
     "@types/node": "^20.10.8",
+    "@types/selenium-webdriver": ">=3.0.0 <4.0.0",
     "@types/yargs": "^17.0.32",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3"
@@ -28,6 +29,7 @@
     "mockttp": "^3.10.1",
     "parse5": "^7.1.2",
     "puppeteer": "^21.7.0",
+    "selenium-webdriver": ">=3.0.0 <4.0.0",
     "yargs": "^17.7.2"
   }
 }

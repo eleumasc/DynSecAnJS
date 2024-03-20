@@ -9,8 +9,9 @@ export interface RunOptions {
   timeSeedMs: number;
   loadingTimeoutMs: number;
   waitUntil: MonitorWaitUntil;
-  analysisDelayMs: number;
+  delayMs: number;
   attachmentList?: AttachmentList;
+  compatMode: boolean;
 }
 
 export interface Agent<AnalysisResult> {
