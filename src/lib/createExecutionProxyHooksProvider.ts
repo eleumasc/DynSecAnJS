@@ -1,13 +1,15 @@
 import { ExecutionDetail } from "./ExecutionDetail";
 import { MonitorReport } from "./monitor";
 import FeatureSet from "./FeatureSet";
-import { Transformer } from "./PuppeteerAgent";
+import { ResponseTransformer } from "./ResponseTransformer";
 import { ProxyHooksProvider } from "./ProxyHooks";
 import { transpileWithBabel } from "./tool/babel";
-import { compose } from "./tool/compose";
+import { composeResponseTransformers } from "./tool/util";
 
 export const createExecutionProxyHooksProvider =
-  (directTransform?: Transformer): ProxyHooksProvider<ExecutionDetail> =>
+  (
+    directTransform?: ResponseTransformer
+  ): ProxyHooksProvider<ExecutionDetail> =>
   (willCompleteAnalysis, compatMode) => {
     let actuallyCompatible: boolean = true;
     const transformLogs: string[] = [];
@@ -53,11 +55,11 @@ export const createExecutionProxyHooksProvider =
           includedScriptUrls.add(req.url.href);
         }
         const transform = compatMode
-          ? compose(transpileWithBabel, directTransform)
+          ? composeResponseTransformers(transpileWithBabel, directTransform)
           : directTransform;
         if (transform) {
           try {
-            return await transform(body, contentType);
+            return await transform(body, res);
           } catch (e) {
             actuallyCompatible = false;
             transformLogs.push(`[${req.url}] ${e}`);

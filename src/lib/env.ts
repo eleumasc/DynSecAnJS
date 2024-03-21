@@ -26,7 +26,8 @@ const getFlag = (key: string, defaultValue: boolean): boolean => {
   }
 };
 
-export const jalangiPath = get("JALANGI_PATH");
-export const wprgoPath = get("WPRGO_PATH");
 export const debugMode = getFlag("DEBUG_MODE", false);
 export const headless = !getFlag("HEADFUL_MODE", false);
+export const wprgoPath = get("WPRGO_PATH");
+export const jestPath = get("JEST_PATH");
+export const jalangiPath = get("JALANGI_PATH");

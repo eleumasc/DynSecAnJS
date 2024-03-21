@@ -10,6 +10,7 @@ import { createExecutionProxyHooksProvider } from "./createExecutionProxyHooksPr
 import { SeleniumAgent } from "./SeleniumAgent";
 import { Browser } from "selenium-webdriver";
 import { headless } from "./env";
+import { transformWithJEST } from "./tool/jest";
 
 export const createToolAnalysis = (toolName: string): ToolAnalysis => {
   switch (toolName) {
@@ -86,6 +87,22 @@ export const createToolAnalysis = (toolName: string): ToolAnalysis => {
                 proxyHooksProvider: createExecutionProxyHooksProvider(),
               }
             )
+        ),
+        {
+          supportedESVersion: ESVersion.ES5,
+          analysisRepeat: defaultAnalysisRepeat,
+        }
+      );
+
+    case "JEST":
+      return new DefaultToolAnalysis(
+        new FaultAwareAgent(
+          async () =>
+            await PuppeteerAgent.create(defaultPptrLaunchOptions, {
+              certificationAuthority: CertificationAuthority.read(),
+              proxyHooksProvider:
+                createExecutionProxyHooksProvider(transformWithJEST),
+            })
         ),
         {
           supportedESVersion: ESVersion.ES5,

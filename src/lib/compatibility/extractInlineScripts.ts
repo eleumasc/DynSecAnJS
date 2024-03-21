@@ -1,6 +1,6 @@
 import * as parse5 from "parse5";
 import { Node } from "parse5/dist/tree-adapters/default";
-import { getChildNodes, isElement } from "../util/html";
+import { getChildNodes, isElement } from "../../html-manipulation/util";
 import { htmlEventAttributes } from "./htmlEventAttributes";
 
 export interface ExtractedInlineScript {
@@ -9,9 +9,7 @@ export interface ExtractedInlineScript {
 }
 
 export const extractInlineScripts = (html: string): ExtractedInlineScript[] => {
-  const document = parse5.parse(html);
-
-  return findInlineScripts(document);
+  return findInlineScripts(parse5.parse(html));
 };
 
 const findInlineScripts = (node: Node): ExtractedInlineScript[] => {

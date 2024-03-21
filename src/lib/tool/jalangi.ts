@@ -3,12 +3,12 @@ import { mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 import { jalangiPath } from "../env";
-import { Transformer } from "../PuppeteerAgent";
-import { identifyTransformer } from "./identifyTransformer";
+import { ResponseTransformer } from "../ResponseTransformer";
+import { identifyResponseTransformer } from "./util";
 
-export const transformWithJalangi: Transformer = identifyTransformer(
+export const transformWithJalangi: ResponseTransformer = identifyResponseTransformer(
   "Jalangi",
-  async (content, contentType) => {
+  async (content, { contentType }) => {
     switch (contentType) {
       case "html":
         return await esnstrument(content, "html");
@@ -25,8 +25,8 @@ export const esnstrument = async (
   const tmpDir = await mkdtemp(join(tmpdir(), "jal"));
   const originalPath = join(tmpDir, `index.${extension}`);
   const modifiedPath = join(tmpDir, `index-mod.${extension}`);
-  let stdoutData = "";
 
+  let logData = "";
   try {
     await writeFile(originalPath, code);
 
@@ -50,24 +50,22 @@ export const esnstrument = async (
     );
 
     childProcess.stdout?.on("data", (data) => {
-      stdoutData += data.toString();
+      logData += data.toString();
     });
 
-    await new Promise((resolve, reject) => {
-      childProcess.on("exit", function (code, signal) {
-        resolve({ code: code, signal: signal });
+    await new Promise<void>((resolve, reject) => {
+      childProcess.on("exit", () => {
+        resolve();
       });
 
-      childProcess.on("error", function (err) {
+      childProcess.on("error", (err) => {
         reject(err);
       });
     });
 
-    const modified = (await readFile(modifiedPath)).toString();
-
-    return modified;
+    return (await readFile(modifiedPath)).toString();
   } catch (e) {
-    throw new Error(`${String(e)}\n\n${stdoutData}`);
+    throw new Error(`${String(e)}\n\n${logData}`);
   } finally {
     await rm(tmpDir, { force: true, recursive: true });
   }

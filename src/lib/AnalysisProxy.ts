@@ -2,7 +2,8 @@ import { randomUUID } from "crypto";
 import { lookup as dnsLookup } from "dns/promises";
 import { Headers, Mockttp as MockttpServer } from "mockttp";
 import { PassThroughHandlerOptions } from "mockttp/dist/rules/requests/request-handler-definitions";
-import { injectScripts } from "./injectScripts";
+import { injectScripts } from "../html-manipulation/injectScripts";
+import { transformHtml } from "../html-manipulation/transformHtml";
 
 export type ContentType = "html" | "javascript";
 
@@ -128,6 +129,10 @@ const configure = async (
         body,
       } = mockttpRes;
 
+      if (statusCode >= 300 && statusCode <= 399) {
+        return;
+      }
+
       const ctHeader = headers["content-type"];
       const ctHeaderIncludes = (searchString: string): boolean =>
         !!ctHeader && ctHeader.toString().includes(searchString);
@@ -158,9 +163,9 @@ const configure = async (
       }
 
       if (initScripts && contentType === "html") {
-        bodyText = injectScripts(
+        bodyText = await transformHtml(
           bodyText,
-          initScripts.map(({ url }) => url)
+          injectScripts(initScripts.map(({ url }) => url))
         );
       }
 

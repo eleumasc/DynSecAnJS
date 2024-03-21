@@ -12,7 +12,6 @@ import { Fallible } from "./util/Fallible";
 import { DataAttachment } from "./ArchiveWriter";
 import Deferred from "./util/Deferred";
 import { randomUUID } from "crypto";
-import { ContentType } from "./AnalysisProxy";
 import { useProxiedMonitor } from "./useProxiedMonitor";
 import { Agent, RunOptions } from "./Agent";
 import { ProxyHooksProvider } from "./ProxyHooks";
@@ -23,11 +22,6 @@ export interface Options<T> {
   certificationAuthority: CertificationAuthority;
   proxyHooksProvider: ProxyHooksProvider<T>;
 }
-
-export type Transformer = (
-  content: string,
-  contentType: ContentType
-) => Promise<string>;
 
 export class PuppeteerAgent<T> implements Agent<T> {
   constructor(readonly browser: Browser, readonly options: Options<T>) {}
