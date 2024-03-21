@@ -11,6 +11,7 @@ import { SeleniumAgent } from "./SeleniumAgent";
 import { Browser } from "selenium-webdriver";
 import { headless } from "./env";
 import { transformWithJEST } from "./tool/jest";
+import { transformWithIFTranspiler } from "./tool/ifTranspiler";
 
 export const createToolAnalysis = (toolName: string): ToolAnalysis => {
   switch (toolName) {
@@ -64,7 +65,7 @@ export const createToolAnalysis = (toolName: string): ToolAnalysis => {
             )
         ),
         {
-          supportedESVersion: ESVersion.ES5,
+          supportedESVersion: ESVersion.ES2018,
           analysisRepeat: defaultAnalysisRepeat + 60_000,
         }
       );
@@ -89,7 +90,7 @@ export const createToolAnalysis = (toolName: string): ToolAnalysis => {
             )
         ),
         {
-          supportedESVersion: ESVersion.ES5,
+          supportedESVersion: ESVersion.ES2022,
           analysisRepeat: defaultAnalysisRepeat,
         }
       );
@@ -102,6 +103,23 @@ export const createToolAnalysis = (toolName: string): ToolAnalysis => {
               certificationAuthority: CertificationAuthority.read(),
               proxyHooksProvider:
                 createExecutionProxyHooksProvider(transformWithJEST),
+            })
+        ),
+        {
+          supportedESVersion: ESVersion.ES5,
+          analysisRepeat: defaultAnalysisRepeat,
+        }
+      );
+
+    case "IFTranspiler":
+      return new DefaultToolAnalysis(
+        new FaultAwareAgent(
+          async () =>
+            await PuppeteerAgent.create(defaultPptrLaunchOptions, {
+              certificationAuthority: CertificationAuthority.read(),
+              proxyHooksProvider: createExecutionProxyHooksProvider(
+                transformWithIFTranspiler
+              ),
             })
         ),
         {

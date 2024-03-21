@@ -9,12 +9,11 @@ import { spawnStdio } from "../util/spawnStdio";
 export const transformWithJEST: ResponseTransformer =
   identifyResponseTransformer("JEST", async (content, { contentType, req }) => {
     switch (contentType) {
-      case "html": {
+      case "html":
         return await jest(
           await transformHtml(content, inlineExternalScripts(req.url)),
           "html"
         );
-      }
       case "javascript":
         return content;
     }
