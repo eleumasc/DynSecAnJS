@@ -6,9 +6,8 @@ import { transformHtml } from "../../html-manipulation/transformHtml";
 import { inlineExternalScripts } from "../../html-manipulation/inlineExternalScripts";
 import { spawnStdio } from "../util/spawnStdio";
 
-export const transformWithJEST: ResponseTransformer = identifyResponseTransformer(
-  "JEST",
-  async (content, { contentType, req }) => {
+export const transformWithJEST: ResponseTransformer =
+  identifyResponseTransformer("JEST", async (content, { contentType, req }) => {
     switch (contentType) {
       case "html": {
         return await jest(
@@ -19,20 +18,15 @@ export const transformWithJEST: ResponseTransformer = identifyResponseTransforme
       case "javascript":
         return content;
     }
-  }
-);
+  });
 
 export const jest = async (
   code: string,
   extension: "html" | "js"
 ): Promise<string> => {
-  try {
-    return await spawnStdio(
-      join(jestPath, "jest"),
-      ["--browser", `--${extension}`],
-      code
-    );
-  } catch (e) {
-    throw new Error(String(e));
-  }
+  return await spawnStdio(
+    join(jestPath, "jest"),
+    ["--browser", `--${extension}`],
+    code
+  );
 };

@@ -1,4 +1,4 @@
-import { SpawnOptions, spawn } from "child_process";
+import { spawn } from "child_process";
 
 export const spawnStdio = async (
   command: string,
@@ -33,10 +33,9 @@ export const spawnStdio = async (
         if (code === 0) {
           resolve();
         } else {
-          reject(stderrData);
+          reject(new Error(stderrData));
         }
       });
-
       childProcess.on("error", function (err) {
         reject(err);
       });
