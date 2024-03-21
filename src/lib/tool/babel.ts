@@ -1,8 +1,8 @@
 import { transformAsync } from "@babel/core";
 import { ResponseTransformer } from "../ResponseTransformer";
-import { transformInlineScripts } from "../../html-manipulation/transformInlineScripts";
+import { transformInlineScripts } from "../html-manipulation/transformInlineScripts";
 import { identifyResponseTransformer } from "./util";
-import { transformHtml } from "../../html-manipulation/transformHtml";
+import { transformHtml } from "../html-manipulation/transformHtml";
 
 export const transpileWithBabel: ResponseTransformer = identifyResponseTransformer(
   "Babel.js",

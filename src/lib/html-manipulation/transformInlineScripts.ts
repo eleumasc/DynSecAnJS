@@ -1,6 +1,6 @@
 import { Node } from "parse5/dist/tree-adapters/default";
 import { getChildNodes, isElement } from "./util";
-import { htmlEventAttributes } from "../lib/compatibility/htmlEventAttributes";
+import { htmlEventAttributes } from "../compatibility/htmlEventAttributes";
 import { HtmlTransformer } from "./HtmlTransformer";
 
 export const transformInlineScripts = (
