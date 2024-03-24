@@ -15,7 +15,7 @@ export const transformWithIFTranspiler: ResponseTransformer =
     "IFTranspiler",
     async (content, { contentType }) => {
       switch (contentType) {
-        case "html": {
+        case "html":
           return await transformHtml(
             content,
             composeHtmlTransformers([
@@ -31,7 +31,6 @@ export const transformWithIFTranspiler: ResponseTransformer =
               ]),
             ])
           );
-        }
         case "javascript":
           return await ifTranspiler(content);
       }
@@ -45,7 +44,7 @@ export const ifTranspiler = async (code: string): Promise<string> => {
     code
   );
 
-  if (result.startsWith("Warning: ")) {
+  while (result.startsWith("Warning: ")) {
     result = result.substring(result.indexOf("\n") + 1);
   }
 
@@ -56,7 +55,7 @@ const SETUP = `
 var $Γ = { global: { scope: null, Σ: 0 } };
 var _$tmp, $tmp, $rf;
 
-$Γ["global"].$this = $Γ["global"];
+$Γ["global"]["window"] = $Γ["global"].$this = $Γ["global"];
 
 var $Λ = [{ l: 0, id: "global" }];
 var $Δ = [];

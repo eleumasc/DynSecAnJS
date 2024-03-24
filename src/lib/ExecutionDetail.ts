@@ -1,7 +1,7 @@
 import FeatureSet from "./FeatureSet";
 
 export interface ExecutionDetail {
-  actuallyCompatible: boolean;
+  eventuallyCompatible: boolean;
   transformLogs: string[];
   pageUrl: string;
   screenshotFile?: string;

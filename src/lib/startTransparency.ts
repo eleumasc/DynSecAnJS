@@ -11,7 +11,7 @@ import { ExecutionDetail } from "./ExecutionDetail";
 import FeatureSet from "./FeatureSet";
 import { Fallible, isSuccess, isFailure } from "./util/Fallible";
 import { avg, stdev } from "./util/math";
-import { equalSets, isSubsetOf } from "./util/set";
+import { isSubsetOf } from "./util/set";
 
 export interface TransparencyArgs {
   originalArchivePath: string;
@@ -40,8 +40,19 @@ export const startTransparency = async (args: TransparencyArgs) => {
       continue;
     }
     const originalLogfile = originalArchive.load(site);
-    const toolLogfile = toolArchive.load(site);
-    tableRows.push([site, ...measure(originalLogfile.data, toolLogfile.data)]);
+    // const toolLogfile = toolArchive.load(site);
+    // tableRows.push([site, ...measure(originalLogfile.data, toolLogfile.data)]);
+
+    let toolLogfile = null;
+    try {
+      toolLogfile = toolArchive.load(site);
+    } catch (e) {}
+    if (toolLogfile !== null) {
+      tableRows.push([
+        site,
+        ...measure(originalLogfile.data, toolLogfile.data),
+      ]);
+    }
   }
 
   console.table(tableRows);
@@ -85,7 +96,9 @@ export const measure = (
     .map((successExecution) => successExecution.val)
     .filter((execution) => execution.loadingCompleted);
 
-  if (!toolExecutions.every(({ actuallyCompatible }) => actuallyCompatible)) {
+  if (
+    !toolExecutions.every(({ eventuallyCompatible }) => eventuallyCompatible)
+  ) {
     return ["NON-COMPATIBLE"];
   }
 

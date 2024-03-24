@@ -12,16 +12,23 @@ import {
   ToolAnalysisResult,
   serializeToolAnalysisResult,
 } from "./ToolAnalysis";
-import { Fallible, isFailure, isSuccess } from "./util/Fallible";
+import { Fallible, isSuccess } from "./util/Fallible";
+import { intersectSitelists, readSitelistFromFile } from "./sitelist";
 
 export interface ToolAnalysisArgs {
   toolName: string;
   originalArchivePath: string;
+  intersectSitelistPath?: string;
   concurrencyLevel: number;
 }
 
 export const startToolAnalysis = async (args: ToolAnalysisArgs) => {
-  const { toolName, originalArchivePath, concurrencyLevel } = args;
+  const {
+    toolName,
+    originalArchivePath,
+    intersectSitelistPath,
+    concurrencyLevel,
+  } = args;
 
   const analysisId = `${Date.now().toString()}-${toolName}`;
   console.log(`Analysis ID is ${analysisId}`);
@@ -31,7 +38,12 @@ export const startToolAnalysis = async (args: ToolAnalysisArgs) => {
     "original-analysis",
     deserializeOriginalAnalysisResult
   );
-  const sitelist = originalArchive.getSitelist();
+  const sitelist = intersectSitelistPath
+    ? intersectSitelists(
+        originalArchive.getSitelist(),
+        readSitelistFromFile(intersectSitelistPath)
+      )
+    : originalArchive.getSitelist();
   console.log(sitelist);
   console.log(`${sitelist.length} sites`);
 

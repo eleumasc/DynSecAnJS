@@ -36,6 +36,10 @@ yargs(process.argv.slice(2))
           type: "string",
           demandOption: true,
         })
+        .option("intersectSitelistPath", {
+          type: "string",
+          demandOption: false,
+        })
         .option("concurrencyLevel", {
           type: "number",
           default: 1,

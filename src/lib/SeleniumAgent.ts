@@ -13,6 +13,7 @@ import { DataAttachment } from "./ArchiveWriter";
 import { generateSPKIFingerprint } from "mockttp";
 import chrome from "selenium-webdriver/chrome";
 import firefox from "selenium-webdriver/firefox";
+import { AddressInfo } from "net";
 
 export interface Options<T> {
   thisHost: string;
@@ -91,70 +92,20 @@ export class SeleniumAgent<T> implements Agent<T> {
               serverHost: thisHost,
             },
             async (tcpTunnelAddress) => {
-              const createBuilder = () => {
-                const { browser, server, binaryPath, args, headless } =
-                  webDriverOptions;
-                const builder = new Builder()
-                  .forBrowser(browser)
-                  .usingServer(server);
-                switch (browser) {
-                  case Browser.CHROME:
-                    return builder.setChromeOptions(
-                      new chrome.Options()
-                        .setChromeBinaryPath(binaryPath)
-                        .addArguments(
-                          ...args,
-                          `--proxy-server=${tcpTunnelAddress.address}:${tcpTunnelAddress.port}`,
-                          `--ignore-certificate-errors-spki-list=${generateSPKIFingerprint(
-                            certificationAuthority.getCertificate()
-                          )}`,
-                          ...(headless ?? true ? ["--headless=new"] : [])
-                        )
-                    );
-                  case Browser.FIREFOX: {
-                    const profile = new firefox.Profile();
-                    profile.setPreference("network.proxy.type", 1);
-                    profile.setPreference(
-                      "network.proxy.http",
-                      tcpTunnelAddress.address
-                    );
-                    profile.setPreference(
-                      "network.proxy.http_port",
-                      tcpTunnelAddress.port
-                    );
-                    profile.setPreference(
-                      "network.proxy.ssl",
-                      tcpTunnelAddress.address
-                    );
-                    profile.setPreference(
-                      "network.proxy.ssl_port",
-                      tcpTunnelAddress.port
-                    );
-                    const capabilities = Capabilities.firefox();
-                    capabilities.set("acceptInsecureCerts", true);
-                    return builder
-                      .setFirefoxOptions(
-                        new firefox.Options()
-                          .setBinary(binaryPath)
-                          .addArguments(
-                            ...(headless ?? true ? ["--headless"] : [])
-                          )
-                          .setProfile(profile)
-                      )
-                      .withCapabilities(capabilities);
-                  }
-                  default:
-                    throw new Error(`Unknown browser: ${browser}`);
+              return useWebDriver(
+                createWebDriverBuilder(
+                  webDriverOptions,
+                  tcpTunnelAddress,
+                  certificationAuthority
+                ),
+                async (driver) => {
+                  const executionDetail = await runPage(driver);
+                  return {
+                    status: "success",
+                    val: executionDetail,
+                  };
                 }
-              };
-
-              return useWebDriver(createBuilder(), async (driver) => {
-                const executionDetail = await runPage(driver);
-                return {
-                  status: "success",
-                  val: executionDetail,
-                };
-              });
+              );
             }
           )
       );
@@ -175,3 +126,55 @@ export class SeleniumAgent<T> implements Agent<T> {
     return new SeleniumAgent(webDriverOptions, options);
   }
 }
+
+const createWebDriverBuilder = (
+  webDriverOptions: WebDriverOptions,
+  tcpTunnelAddress: AddressInfo,
+  certificationAuthority: CertificationAuthority
+) => {
+  const { browser, server, binaryPath, args, headless } = webDriverOptions;
+  const builder = new Builder().forBrowser(browser).usingServer(server);
+  switch (browser) {
+    case Browser.CHROME:
+      return builder.setChromeOptions(
+        new chrome.Options()
+          .setChromeBinaryPath(binaryPath)
+          .addArguments(
+            ...args,
+            `--proxy-server=${tcpTunnelAddress.address}:${tcpTunnelAddress.port}`,
+            `--ignore-certificate-errors-spki-list=${generateSPKIFingerprint(
+              certificationAuthority.getCertificate()
+            )}`,
+            ...(headless ?? true ? ["--headless=new"] : [])
+          )
+      );
+
+    case Browser.FIREFOX: {
+      const rawPrefs = {
+        "network.proxy.type": 1,
+        "network.proxy.http": tcpTunnelAddress.address,
+        "network.proxy.http_port": tcpTunnelAddress.port,
+        "network.proxy.ssl": tcpTunnelAddress.address,
+        "network.proxy.ssl_port": tcpTunnelAddress.port,
+        "network.captive-portal-service.enabled": false,
+      };
+      const profile = new firefox.Profile();
+      for (const [key, value] of Object.entries(rawPrefs)) {
+        profile.setPreference(key, value as any);
+      }
+      const capabilities = Capabilities.firefox();
+      capabilities.set("acceptInsecureCerts", true);
+      return builder
+        .setFirefoxOptions(
+          new firefox.Options()
+            .setBinary(binaryPath)
+            .addArguments(...(headless ?? true ? ["--headless"] : []))
+            .setProfile(profile)
+        )
+        .withCapabilities(capabilities);
+    }
+
+    default:
+      throw new Error(`Unknown browser: ${browser}`);
+  }
+};

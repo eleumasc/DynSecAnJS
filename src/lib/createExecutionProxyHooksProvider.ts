@@ -11,7 +11,7 @@ export const createExecutionProxyHooksProvider =
     directTransform?: ResponseTransformer
   ): ProxyHooksProvider<ExecutionDetail> =>
   (willCompleteAnalysis, compatMode) => {
-    let actuallyCompatible: boolean = true;
+    let eventuallyCompatible: boolean = true;
     const transformLogs: string[] = [];
     const targetSites = new Set<string>();
     const includedScriptUrls = new Set<string>();
@@ -29,7 +29,7 @@ export const createExecutionProxyHooksProvider =
           loadingCompleted,
         } = monitorReport;
         willCompleteAnalysis.resolve({
-          actuallyCompatible,
+          eventuallyCompatible,
           transformLogs,
           pageUrl,
           featureSet: new FeatureSet(
@@ -47,7 +47,11 @@ export const createExecutionProxyHooksProvider =
         });
       },
       requestListener: (req) => {
-        targetSites.add(req.url.hostname);
+        const { hostname } = req.url;
+        if (hostname.endsWith(".services.mozilla.com")) {
+          return;
+        }
+        targetSites.add(hostname);
       },
       responseTransformer: async (res) => {
         const { contentType, body, req } = res;
@@ -61,7 +65,7 @@ export const createExecutionProxyHooksProvider =
           try {
             return await transform(body, res);
           } catch (e) {
-            actuallyCompatible = false;
+            eventuallyCompatible = false;
             transformLogs.push(`[${req.url}] ${e}`);
           }
         }

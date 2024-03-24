@@ -4,9 +4,8 @@ import { transformInlineScripts } from "../html-manipulation/transformInlineScri
 import { identifyResponseTransformer } from "./util";
 import { transformHtml } from "../html-manipulation/transformHtml";
 
-export const transpileWithBabel: ResponseTransformer = identifyResponseTransformer(
-  "Babel.js",
-  async (content, { contentType }) => {
+export const transpileWithBabel: ResponseTransformer =
+  identifyResponseTransformer("Babel.js", async (content, { contentType }) => {
     switch (contentType) {
       case "html":
         return await transformHtml(
@@ -19,16 +18,15 @@ export const transpileWithBabel: ResponseTransformer = identifyResponseTransform
       case "javascript":
         return await transpile(content);
     }
-  }
-);
+  });
 
 const transpile = async (
   code: string,
   isInlineEventHandler: boolean = false
 ): Promise<string> => {
   const result = await transformAsync(code, {
-    presets: ["@babel/preset-env"],
-    sourceType: "script",
+    presets: [["@babel/preset-env", { modules: false }]],
+    sourceType: "unambiguous",
     parserOpts: {
       allowReturnOutsideFunction: isInlineEventHandler,
     },
