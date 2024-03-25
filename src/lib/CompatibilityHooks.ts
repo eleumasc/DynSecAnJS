@@ -1,23 +1,33 @@
-import { MonitorReport } from "../lib/monitor";
 import {
   Category,
   CompatibilityDetail,
   ExternalScriptDetail,
   InlineScriptDetail,
   ScriptDetail,
-} from "./CompatibilityDetail";
-import { extractInlineScripts } from "./extractInlineScripts";
-import { ESVersion, maxESVersion } from "./ESVersion";
-import { analyzeScript } from "./analyzeScript";
-import { ProxyHooksProvider } from "../lib/ProxyHooks";
+} from "../compatibility/CompatibilityDetail";
+import { extractInlineScripts } from "../compatibility/extractInlineScripts";
+import { ESVersion, maxESVersion } from "../compatibility/ESVersion";
+import { analyzeScript } from "../compatibility/analyzeScript";
+import { ProxiedMonitorHooks } from "./ProxiedMonitorHooks";
+import Deferred from "../util/Deferred";
 
-export const createCompatibilityProxyHooksProvider =
-  (): ProxyHooksProvider<CompatibilityDetail> => (willCompleteAnalysis) => {
+export interface CompatibilityHooks {
+  hooks: ProxiedMonitorHooks;
+  willCompleteAnalysis: Promise<CompatibilityDetail>;
+}
+
+export type CompatibilityHooksProvider = () => CompatibilityHooks;
+
+export const createCompatibilityHooksProvider =
+  (): CompatibilityHooksProvider => () => {
+    const deferredCompleteAnalysis = new Deferred<CompatibilityDetail>();
+
     const scripts: ScriptDetail[] = [];
-    return {
-      reportCallback: (monitorReport: MonitorReport) => {
-        const { pageUrl } = monitorReport;
-        willCompleteAnalysis.resolve({
+
+    const hooks = <ProxiedMonitorHooks>{
+      reportCallback: (report) => {
+        const { pageUrl } = report;
+        deferredCompleteAnalysis.resolve({
           pageUrl,
           minimumESVersion: maxESVersion(
             scripts.map(({ minimumESVersion }) => minimumESVersion)
@@ -25,6 +35,7 @@ export const createCompatibilityProxyHooksProvider =
           scripts,
         });
       },
+
       responseTransformer: async (res) => {
         const tryAnalyzeScript = (
           callback: (
@@ -73,5 +84,14 @@ export const createCompatibilityProxyHooksProvider =
         }
         return body;
       },
+
+      dnsLookupErrorListener: (err) => {
+        deferredCompleteAnalysis.reject(err);
+      },
+    };
+
+    return {
+      hooks,
+      willCompleteAnalysis: deferredCompleteAnalysis.promise,
     };
   };

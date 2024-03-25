@@ -1,6 +1,8 @@
 import * as parse5 from "parse5";
+
 import { Element, Node } from "parse5/dist/tree-adapters/default";
 import { getChildNodes, isElement } from "./util";
+
 import { HtmlTransformer } from "./HtmlTransformer";
 
 export const injectScripts =

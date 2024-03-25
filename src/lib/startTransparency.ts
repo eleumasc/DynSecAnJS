@@ -1,4 +1,4 @@
-import ArchiveReader from "./ArchiveReader";
+import { Fallible, isFailure, isSuccess } from "../util/Fallible";
 import {
   OriginalAnalysisResult,
   deserializeOriginalAnalysisResult,
@@ -7,11 +7,15 @@ import {
   ToolAnalysisResult,
   deserializeToolAnalysisResult,
 } from "./ToolAnalysis";
-import { ExecutionDetail } from "./ExecutionDetail";
-import FeatureSet from "./FeatureSet";
-import { Fallible, isSuccess, isFailure } from "../util/Fallible";
 import { avg, stdev } from "../util/math";
-import { isSubsetOf } from "../util/set";
+import {
+  brokenExecutionTraces,
+  createExecutionTrace,
+  findPredominantExecutionTrace,
+} from "./ExecutionTrace";
+
+import ArchiveReader from "./ArchiveReader";
+import { ExecutionDetail } from "./ExecutionDetail";
 
 export interface TransparencyArgs {
   originalArchivePath: string;
@@ -73,7 +77,7 @@ export const measure = (
     val: { originalExecutions: fallibleOriginalExecutions },
   } = fallibleOriginalResult;
   const {
-    val: { compatible, toolExecutions: fallibleToolExecutions },
+    val: { toolName, toolExecutions: fallibleToolExecutions },
   } = fallibleToolResult;
 
   // if (!compatible) {
@@ -96,9 +100,15 @@ export const measure = (
     .map((successExecution) => successExecution.val)
     .filter((execution) => execution.loadingCompleted);
 
-  if (
-    !toolExecutions.every(({ eventuallyCompatible }) => eventuallyCompatible)
-  ) {
+  const isEventuallyCompatible = (): boolean => {
+    return false; // TODO: implement
+
+    // switch (toolName) {
+    //   case 'Jalangi':
+    //     ...
+    // }
+  };
+  if (!isEventuallyCompatible()) {
     return ["NON-COMPATIBLE"];
   }
 
@@ -107,24 +117,27 @@ export const measure = (
     originalExecutions: ExecutionDetail[],
     toolExecutions: ExecutionDetail[]
   ): string => {
-    const originalFeatureSet = getPredominantFeatureSet(
-      originalExecutions.map((execution) => execution.featureSet),
+    const originalExecutionTrace = findPredominantExecutionTrace(
+      originalExecutions.map((execution) => createExecutionTrace(execution)),
       THRESHOLD
     );
-    const toolFeatureSet = getPredominantFeatureSet(
-      toolExecutions.map((execution) => execution.featureSet),
+    const toolExecutionTrace = findPredominantExecutionTrace(
+      toolExecutions.map((execution) => createExecutionTrace(execution)),
       THRESHOLD
     );
 
-    if (!originalFeatureSet || !toolFeatureSet) {
+    if (!originalExecutionTrace || !toolExecutionTrace) {
       return (
         "NO-PRED" +
-        (!originalFeatureSet ? "-ORIG" : "") +
-        (!toolFeatureSet ? "-TOOL" : "")
+        (!originalExecutionTrace ? "-ORIG" : "") +
+        (!toolExecutionTrace ? "-TOOL" : "")
       );
     }
 
-    const brokenFeatures = broken(originalFeatureSet, toolFeatureSet);
+    const brokenFeatures = brokenExecutionTraces(
+      originalExecutionTrace,
+      toolExecutionTrace
+    );
     if (brokenFeatures.size === 0) {
       return "TRANSPARENT";
     } else {
@@ -149,51 +162,4 @@ export const measure = (
     measurePerformance(originalExecutions),
     measurePerformance(toolExecutions),
   ];
-};
-
-const broken = (orig: FeatureSet, tool: FeatureSet): Set<string> => {
-  const brokenSet = new Set<string>();
-
-  if (!isSubsetOf(tool.uncaughtErrors, orig.uncaughtErrors)) {
-    brokenSet.add("uncaughtErrors");
-  }
-  if (!isSubsetOf(tool.consoleMessages, orig.consoleMessages)) {
-    brokenSet.add("consoleMessages");
-  }
-  // if (!equalSets(orig.calledBuiltinMethods, tool.calledBuiltinMethods)) {
-  //   brokenSet.add("calledBuiltinMethods");
-  // }
-  if (!isSubsetOf(tool.cookieKeys, orig.cookieKeys)) {
-    brokenSet.add("cookieKeys");
-  }
-  if (!isSubsetOf(tool.localStorageKeys, orig.localStorageKeys)) {
-    brokenSet.add("localStorageKeys");
-  }
-  if (!isSubsetOf(tool.sessionStorageKeys, orig.sessionStorageKeys)) {
-    brokenSet.add("sessionStorageKeys");
-  }
-  if (!isSubsetOf(tool.targetSites, orig.targetSites)) {
-    brokenSet.add("targetSites");
-  }
-  if (!isSubsetOf(tool.includedScriptUrls, orig.includedScriptUrls)) {
-    brokenSet.add("includedScriptUrls");
-  }
-
-  return brokenSet;
-};
-
-const getPredominantFeatureSet = (
-  featureSets: FeatureSet[],
-  threshold: number
-): FeatureSet | null => {
-  const eqClasses: FeatureSet[][] = [];
-  for (const featureSet of featureSets) {
-    const eqClass = eqClasses.find((eqClass) => eqClass[0].equals(featureSet));
-    if (eqClass) {
-      eqClass.push(featureSet);
-    } else {
-      eqClasses.push([featureSet]);
-    }
-  }
-  return eqClasses.find((eqClass) => eqClass.length >= threshold)?.[0] ?? null;
 };

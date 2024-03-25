@@ -1,17 +1,17 @@
-import CertificationAuthority from "./CertificationAuthority";
-import { DefaultToolAnalysis } from "./DefaultToolAnalysis";
-import { PuppeteerAgent } from "./PuppeteerAgent";
-import { transformWithJalangi } from "../tool/jalangi";
 import { defaultAnalysisRepeat, defaultPptrLaunchOptions } from "./defaults";
-import { ToolAnalysis } from "./ToolAnalysis";
+
+import { Browser } from "selenium-webdriver";
+import { DefaultToolAnalysis } from "./DefaultToolAnalysis";
 import { ESVersion } from "../compatibility/ESVersion";
 import FaultAwareAgent from "./FaultAwareAgent";
-import { createExecutionProxyHooksProvider } from "./createExecutionProxyHooksProvider";
+import { PuppeteerAgent } from "./PuppeteerAgent";
 import { SeleniumAgent } from "./SeleniumAgent";
-import { Browser } from "selenium-webdriver";
+import { ToolAnalysis } from "./ToolAnalysis";
+import { createExecutionHooksProvider } from "./ExecutionHooks";
 import { headless } from "./env";
-import { transformWithJEST } from "../tool/jest";
 import { transformWithIFTranspiler } from "../tool/ifTranspiler";
+import { transformWithJEST } from "../tool/jest";
+import { transformWithJalangi } from "../tool/jalangi";
 
 export const createToolAnalysis = (toolName: string): ToolAnalysis => {
   switch (toolName) {
@@ -19,8 +19,8 @@ export const createToolAnalysis = (toolName: string): ToolAnalysis => {
       return new DefaultToolAnalysis(
         new FaultAwareAgent(
           async () =>
-            await SeleniumAgent.create(
-              {
+            await SeleniumAgent.create({
+              webDriverOptions: {
                 browser: Browser.CHROME,
                 server: "http://192.168.42.2:9515/wd/hub",
                 binaryPath:
@@ -32,14 +32,12 @@ export const createToolAnalysis = (toolName: string): ToolAnalysis => {
                 ],
                 headless,
               },
-              {
-                thisHost: "192.168.42.1",
-                certificationAuthority: CertificationAuthority.read(),
-                proxyHooksProvider: createExecutionProxyHooksProvider(),
-              }
-            )
+              localHost: "192.168.42.1",
+            })
         ),
         {
+          toolName,
+          executionHooksProvider: createExecutionHooksProvider(),
           supportedESVersion: ESVersion.ES5,
           analysisRepeat: defaultAnalysisRepeat,
         }
@@ -49,22 +47,20 @@ export const createToolAnalysis = (toolName: string): ToolAnalysis => {
       return new DefaultToolAnalysis(
         new FaultAwareAgent(
           async () =>
-            await SeleniumAgent.create(
-              {
+            await SeleniumAgent.create({
+              webDriverOptions: {
                 browser: Browser.CHROME,
                 server: "http://192.168.42.3:9515/wd/hub",
                 binaryPath: "/home/essentialfp/chromium/src/out/Default/chrome",
                 args: ["--no-sandbox", "--disable-hang-monitor"],
                 headless,
               },
-              {
-                thisHost: "192.168.42.1",
-                certificationAuthority: CertificationAuthority.read(),
-                proxyHooksProvider: createExecutionProxyHooksProvider(),
-              }
-            )
+              localHost: "192.168.42.1",
+            })
         ),
         {
+          toolName,
+          executionHooksProvider: createExecutionHooksProvider(),
           supportedESVersion: ESVersion.ES2018,
           analysisRepeat: defaultAnalysisRepeat + 60_000,
         }
@@ -74,22 +70,20 @@ export const createToolAnalysis = (toolName: string): ToolAnalysis => {
       return new DefaultToolAnalysis(
         new FaultAwareAgent(
           async () =>
-            await SeleniumAgent.create(
-              {
+            await SeleniumAgent.create({
+              webDriverOptions: {
                 browser: Browser.FIREFOX,
                 server: "http://127.0.0.1:4444/",
                 binaryPath: "/home/osboxes/foxhound/foxhound",
                 args: [],
                 headless,
               },
-              {
-                thisHost: "127.0.0.1",
-                certificationAuthority: CertificationAuthority.read(),
-                proxyHooksProvider: createExecutionProxyHooksProvider(),
-              }
-            )
+              localHost: "127.0.0.1",
+            })
         ),
         {
+          toolName,
+          executionHooksProvider: createExecutionHooksProvider(),
           supportedESVersion: ESVersion.ES2022,
           analysisRepeat: defaultAnalysisRepeat,
         }
@@ -99,13 +93,14 @@ export const createToolAnalysis = (toolName: string): ToolAnalysis => {
       return new DefaultToolAnalysis(
         new FaultAwareAgent(
           async () =>
-            await PuppeteerAgent.create(defaultPptrLaunchOptions, {
-              certificationAuthority: CertificationAuthority.read(),
-              proxyHooksProvider:
-                createExecutionProxyHooksProvider(transformWithJEST),
+            await PuppeteerAgent.create({
+              pptrLaunchOptions: defaultPptrLaunchOptions,
             })
         ),
         {
+          toolName,
+          executionHooksProvider:
+            createExecutionHooksProvider(transformWithJEST),
           supportedESVersion: ESVersion.ES5,
           analysisRepeat: defaultAnalysisRepeat,
         }
@@ -115,14 +110,15 @@ export const createToolAnalysis = (toolName: string): ToolAnalysis => {
       return new DefaultToolAnalysis(
         new FaultAwareAgent(
           async () =>
-            await PuppeteerAgent.create(defaultPptrLaunchOptions, {
-              certificationAuthority: CertificationAuthority.read(),
-              proxyHooksProvider: createExecutionProxyHooksProvider(
-                transformWithIFTranspiler
-              ),
+            await PuppeteerAgent.create({
+              pptrLaunchOptions: defaultPptrLaunchOptions,
             })
         ),
         {
+          toolName,
+          executionHooksProvider: createExecutionHooksProvider(
+            transformWithIFTranspiler
+          ),
           supportedESVersion: ESVersion.ES5,
           analysisRepeat: defaultAnalysisRepeat,
         }
@@ -132,13 +128,14 @@ export const createToolAnalysis = (toolName: string): ToolAnalysis => {
       return new DefaultToolAnalysis(
         new FaultAwareAgent(
           async () =>
-            await PuppeteerAgent.create(defaultPptrLaunchOptions, {
-              certificationAuthority: CertificationAuthority.read(),
-              proxyHooksProvider:
-                createExecutionProxyHooksProvider(transformWithJalangi),
+            await PuppeteerAgent.create({
+              pptrLaunchOptions: defaultPptrLaunchOptions,
             })
         ),
         {
+          toolName,
+          executionHooksProvider:
+            createExecutionHooksProvider(transformWithJalangi),
           supportedESVersion: ESVersion.ES5,
           analysisRepeat: defaultAnalysisRepeat,
         }

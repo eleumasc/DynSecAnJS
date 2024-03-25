@@ -1,21 +1,24 @@
-import { spawn } from "child_process";
-import { existsSync } from "fs";
 import { mkdtemp, readFile, rm, writeFile } from "fs/promises";
-import { tmpdir } from "os";
-import { join } from "path";
-import { jalangiPath } from "../lib/env";
-import { ResponseTransformer } from "../lib/ResponseTransformer";
-import { identifyResponseTransformer } from "./util";
 
-export const transformWithJalangi: ResponseTransformer =
-  identifyResponseTransformer("Jalangi", async (content, { contentType }) => {
+import { BodyTransformer } from "../lib/ExecutionHooks";
+import { existsSync } from "fs";
+import { identifyBodyTransformer } from "./util";
+import { jalangiPath } from "../lib/env";
+import { join } from "path";
+import { spawn } from "child_process";
+import { tmpdir } from "os";
+
+export const transformWithJalangi: BodyTransformer = identifyBodyTransformer(
+  "Jalangi",
+  async (content, { contentType }) => {
     switch (contentType) {
       case "html":
         return await esnstrument(content, "html");
       case "javascript":
         return await esnstrument(content, "js");
     }
-  });
+  }
+);
 
 export const esnstrument = async (
   code: string,

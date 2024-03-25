@@ -1,9 +1,10 @@
+import { incrementMapEntry, sortCountingMap } from "../util/Map";
+
 import ArchiveReader from "./ArchiveReader";
 import { deserializeOriginalAnalysisResult } from "./OriginalAnalysis";
+import { distinctArray } from "../util/Array";
 import { isSuccess } from "../util/Fallible";
 import { maxESVersion } from "../compatibility/ESVersion";
-import { distinctArray } from "../util/array";
-import { incrementMapEntry, sortCountingMap, sortMap } from "../util/map";
 
 export interface CompatibilityArgs {
   originalArchivePath: string;

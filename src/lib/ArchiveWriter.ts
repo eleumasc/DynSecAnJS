@@ -1,4 +1,3 @@
-import { join, resolve } from "path";
 import { Logfile, serializeLogfile } from "./Logfile";
 import {
   copyFileSync,
@@ -7,8 +6,10 @@ import {
   unlinkSync,
   writeFileSync,
 } from "fs";
-import { writeSitelistToFile } from "./sitelist";
+import { join, resolve } from "path";
+
 import { tmpdir } from "os";
+import { writeSitelistToFile } from "./sitelist";
 
 export default class ArchiveWriter<Kind extends string, Data> {
   protected sitelist: string[] = [];

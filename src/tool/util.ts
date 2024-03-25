@@ -1,7 +1,7 @@
-import { ResponseTransformer } from "../lib/ResponseTransformer";
+import { BodyTransformer } from "../lib/ExecutionHooks";
 
-export const composeResponseTransformers =
-  (x: ResponseTransformer, y?: ResponseTransformer): ResponseTransformer =>
+export const composeBodyTransformers =
+  (x: BodyTransformer, y?: BodyTransformer): BodyTransformer =>
   async (content, res) => {
     const intermediateContent = await x(content, res);
     if (y) {
@@ -11,10 +11,10 @@ export const composeResponseTransformers =
     }
   };
 
-export const identifyResponseTransformer = (
+export const identifyBodyTransformer = (
   name: string,
-  transformer: ResponseTransformer
-): ResponseTransformer => {
+  transformer: BodyTransformer
+): BodyTransformer => {
   return async (content, res) => {
     try {
       return await transformer(content, res);
@@ -23,4 +23,3 @@ export const identifyResponseTransformer = (
     }
   };
 };
- 

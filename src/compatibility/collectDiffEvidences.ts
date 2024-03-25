@@ -1,7 +1,3 @@
-import acorn from "acorn";
-import walk from "acorn-walk";
-import { ESVersion } from "./ESVersion";
-import { DiffEvidence } from "./DiffEvidence";
 import { DiffCheckersBuilder, combineDiffCheckersArray } from "./DiffCheckers";
 import {
   DiffVisitors,
@@ -11,12 +7,17 @@ import {
 import {
   excludingNull,
   inArray,
-  isNode,
   isLiteral,
+  isNode,
+  isNull,
   not,
   union,
-  isNull,
 } from "./TypeChecker";
+
+import { DiffEvidence } from "./DiffEvidence";
+import { ESVersion } from "./ESVersion";
+import acorn from "acorn";
+import walk from "acorn-walk";
 
 export const collectDiffEvidences = (
   program: acorn.Program

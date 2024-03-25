@@ -1,8 +1,5 @@
 import { getLocal } from "mockttp";
 import AnalysisProxy, {
-  DnsLookupErrorListener,
-  RequestListener,
-  ResponseTransformer,
   createExposedCallback,
   createInitScript,
   useAnalysisProxy,
@@ -11,19 +8,17 @@ import {
   Options as WebPageReplayOptions,
   useWebPageReplay,
 } from "./WebPageReplay";
-import { SendReporter, MonitorWaitUntil, bundleMonitor } from "./monitor";
-import CertificationAuthority from "./CertificationAuthority";
+import { SendReporter, bundleMonitor, MonitorConfig } from "./monitor";
+import CA from "./CA";
+import { ProxiedMonitorHooks } from "./ProxiedMonitorHooks";
 
 interface Options {
-  reportCallback: (data: any) => void;
-  requestListener?: RequestListener;
-  responseTransformer?: ResponseTransformer;
-  dnsLookupErrorListener?: DnsLookupErrorListener;
+  hooks: ProxiedMonitorHooks;
+  monitorConfig: Pick<
+    MonitorConfig,
+    "waitUntil" | "loadingTimeoutMs" | "timeSeedMs"
+  >;
   wprOptions: Pick<WebPageReplayOptions, "operation" | "archivePath">;
-  loadingTimeoutMs: number;
-  timeSeedMs: number;
-  waitUntil: MonitorWaitUntil;
-  certificationAuthority: CertificationAuthority;
 }
 
 export const useProxiedMonitor = async <T>(
@@ -31,21 +26,19 @@ export const useProxiedMonitor = async <T>(
   cb: (analysisProxy: AnalysisProxy) => Promise<T>
 ): Promise<T> => {
   const {
-    reportCallback,
-    requestListener,
-    responseTransformer,
-    dnsLookupErrorListener,
+    hooks: {
+      reportCallback,
+      requestListener,
+      responseTransformer,
+      dnsLookupErrorListener,
+    },
+    monitorConfig,
     wprOptions,
-    loadingTimeoutMs,
-    timeSeedMs,
-    waitUntil,
-    certificationAuthority,
   } = options;
 
   return await useWebPageReplay(
     {
       ...wprOptions,
-      certificationAuthority,
       injectDeterministic: false,
     },
     async (wpr) => {
@@ -57,16 +50,14 @@ export const useProxiedMonitor = async <T>(
             type: "SendReporter",
             url: reportExposedCallback.url,
           },
-          loadingTimeoutMs,
-          timeSeedMs,
-          waitUntil,
+          ...monitorConfig,
         })
       );
 
       const mockttpServer = getLocal({
         https: {
-          cert: certificationAuthority.getCertificate(),
-          key: certificationAuthority.getKey(),
+          cert: CA.get().getCertificate(),
+          key: CA.get().getKey(),
         },
         recordTraffic: false,
       });

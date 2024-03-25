@@ -1,6 +1,8 @@
 import * as parse5 from "parse5";
-import { Node } from "parse5/dist/tree-adapters/default";
+
 import { getChildNodes, isElement } from "../html-manipulation/util";
+
+import { Node } from "parse5/dist/tree-adapters/default";
 import { htmlEventAttributes } from "./htmlEventAttributes";
 
 export interface ExtractedInlineScript {

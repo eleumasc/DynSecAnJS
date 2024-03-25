@@ -1,8 +1,9 @@
-import { join, resolve } from "path";
 import { Logfile, deserializeLogfile } from "./Logfile";
+import { join, resolve } from "path";
+
+import assert from "assert";
 import { readFileSync } from "fs";
 import { readSitelistFromFile } from "./sitelist";
-import assert from "assert";
 
 export default class ArchiveReader<Kind extends string, Data> {
   constructor(

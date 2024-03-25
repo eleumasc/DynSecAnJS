@@ -1,8 +1,8 @@
-import yargs from "yargs/yargs";
+import { startCompatibility } from "./lib/startCompatibility";
 import { startOriginalAnalysis } from "./lib/startOriginalAnalysis";
 import { startToolAnalysis } from "./lib/startToolAnalysis";
 import { startTransparency } from "./lib/startTransparency";
-import { startCompatibility } from "./lib/startCompatibility";
+import yargs from "yargs/yargs";
 
 yargs(process.argv.slice(2))
   .command(

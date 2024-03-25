@@ -1,24 +1,17 @@
-import { Buffer } from "buffer";
-import { timeBomb } from "../util/async";
-import CertificationAuthority from "./CertificationAuthority";
-import { Fallible } from "../util/Fallible";
-import Deferred from "../util/Deferred";
-import { useProxiedMonitor } from "./useProxiedMonitor";
-import { Agent, RunOptions } from "./Agent";
-import { ProxyHooksProvider } from "./ProxyHooks";
-import { useTcpTunnel } from "../util/useTcpTunnel";
+import { Agent, PageController, UsePageOptions } from "./Agent";
 import { Browser, Builder, Capabilities, WebDriver } from "selenium-webdriver";
-import { useWebDriver } from "./useWebDriver";
-import { DataAttachment } from "./ArchiveWriter";
-import { generateSPKIFingerprint } from "mockttp";
+
+import { AddressInfo } from "net";
+import { Buffer } from "buffer";
+import CA from "./CA";
 import chrome from "selenium-webdriver/chrome";
 import firefox from "selenium-webdriver/firefox";
-import { AddressInfo } from "net";
+import { useTcpTunnel } from "../util/TcpTunnel";
+import { useWebDriver } from "./WebDriver";
 
-export interface Options<T> {
-  thisHost: string;
-  certificationAuthority: CertificationAuthority;
-  proxyHooksProvider: ProxyHooksProvider<T>;
+export interface Options {
+  webDriverOptions: WebDriverOptions;
+  localHost: string;
 }
 
 export interface WebDriverOptions {
@@ -29,108 +22,52 @@ export interface WebDriverOptions {
   headless?: boolean;
 }
 
-export class SeleniumAgent<T> implements Agent<T> {
-  constructor(
-    readonly webDriverOptions: WebDriverOptions,
-    readonly options: Options<T>
-  ) {}
+export class SeleniumAgent implements Agent {
+  constructor(readonly options: Options) {}
 
-  async run(runOptions: RunOptions): Promise<Fallible<T>> {
-    const { webDriverOptions } = this;
-    const { thisHost, certificationAuthority, proxyHooksProvider } =
-      this.options;
-    const {
-      url,
-      wprOptions,
-      timeSeedMs,
-      loadingTimeoutMs,
-      waitUntil,
-      delayMs,
-      attachmentList,
-      compatMode,
-    } = runOptions;
+  usePage<T>(
+    options: UsePageOptions,
+    cb: (page: PageController) => Promise<T>
+  ): Promise<T> {
+    const { webDriverOptions, localHost } = this.options;
+    const { proxyPort } = options;
 
-    const willCompleteAnalysis = new Deferred<T>();
-
-    const runPage = async (driver: WebDriver): Promise<T> => {
-      await driver.executeScript(`location.href = ${JSON.stringify(url)}`);
-
-      const result = await timeBomb(
-        willCompleteAnalysis.promise,
-        loadingTimeoutMs + delayMs
-      );
-
-      attachmentList?.add(
-        "screenshot.png",
-        new DataAttachment(Buffer.from(await driver.takeScreenshot(), "base64"))
-      );
-
-      return result;
-    };
-
-    try {
-      const { reportCallback, requestListener, responseTransformer } =
-        proxyHooksProvider(willCompleteAnalysis, compatMode);
-
-      return await useProxiedMonitor(
-        {
-          reportCallback,
-          requestListener,
-          responseTransformer,
-          dnsLookupErrorListener: (err, req) => {},
-          wprOptions,
-          loadingTimeoutMs,
-          timeSeedMs,
-          waitUntil,
-          certificationAuthority,
-        },
-        (analysisProxy) =>
-          useTcpTunnel(
-            {
-              targetPort: analysisProxy.getPort(),
-              targetHost: "127.0.0.1",
-              serverHost: thisHost,
-            },
-            async (tcpTunnelAddress) => {
-              return useWebDriver(
-                createWebDriverBuilder(
-                  webDriverOptions,
-                  tcpTunnelAddress,
-                  certificationAuthority
-                ),
-                async (driver) => {
-                  const executionDetail = await runPage(driver);
-                  return {
-                    status: "success",
-                    val: executionDetail,
-                  };
-                }
-              );
-            }
-          )
-      );
-    } catch (e) {
-      return {
-        status: "failure",
-        reason: String(e),
-      };
-    }
+    return useTcpTunnel(
+      {
+        targetPort: proxyPort,
+        targetHost: "127.0.0.1",
+        serverHost: localHost,
+      },
+      (tcpTunnelAddress) =>
+        useWebDriver(
+          createWebDriverBuilder(webDriverOptions, tcpTunnelAddress),
+          (driver) => cb(new SeleniumPageController(driver))
+        )
+    );
   }
 
   async terminate(): Promise<void> {}
 
-  static async create<T>(
-    webDriverOptions: WebDriverOptions,
-    options: Options<T>
-  ): Promise<SeleniumAgent<T>> {
-    return new SeleniumAgent(webDriverOptions, options);
+  static async create(options: Options): Promise<SeleniumAgent> {
+    return new SeleniumAgent(options);
+  }
+}
+
+export class SeleniumPageController implements PageController {
+  constructor(protected driver: WebDriver) {}
+
+  async navigate(url: string): Promise<void> {
+    await this.driver.executeScript(`location.href = ${JSON.stringify(url)}`);
+  }
+
+  async screenshot(): Promise<Buffer> {
+    return Buffer.from(await this.driver.takeScreenshot(), "base64");
   }
 }
 
 const createWebDriverBuilder = (
   webDriverOptions: WebDriverOptions,
-  tcpTunnelAddress: AddressInfo,
-  certificationAuthority: CertificationAuthority
+  tcpTunnelAddress: AddressInfo
 ) => {
   const { browser, server, binaryPath, args, headless } = webDriverOptions;
   const builder = new Builder().forBrowser(browser).usingServer(server);
@@ -142,9 +79,7 @@ const createWebDriverBuilder = (
           .addArguments(
             ...args,
             `--proxy-server=${tcpTunnelAddress.address}:${tcpTunnelAddress.port}`,
-            `--ignore-certificate-errors-spki-list=${generateSPKIFingerprint(
-              certificationAuthority.getCertificate()
-            )}`,
+            `--ignore-certificate-errors-spki-list=${CA.get().getSPKIFingerprint()}`,
             ...(headless ?? true ? ["--headless=new"] : [])
           )
       );

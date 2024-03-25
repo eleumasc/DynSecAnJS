@@ -3,17 +3,18 @@ import ArchiveWriter, {
   DefaultAttachmentList,
   PrefixAttachmentList,
 } from "./ArchiveWriter";
-import { createToolAnalysis } from "./createToolAnalysis";
-import { deployAnalysis } from "./deployAnalysis";
-import { resolve } from "path";
-import ArchiveReader from "./ArchiveReader";
-import { deserializeOriginalAnalysisResult } from "./OriginalAnalysis";
+import { Fallible, isSuccess } from "../util/Fallible";
 import {
   ToolAnalysisResult,
   serializeToolAnalysisResult,
 } from "./ToolAnalysis";
-import { Fallible, isSuccess } from "../util/Fallible";
 import { intersectSitelists, readSitelistFromFile } from "./sitelist";
+
+import ArchiveReader from "./ArchiveReader";
+import { createToolAnalysis } from "./createToolAnalysis";
+import { deployAnalysis } from "./deployAnalysis";
+import { deserializeOriginalAnalysisResult } from "./OriginalAnalysis";
+import { resolve } from "path";
 
 export interface ToolAnalysisArgs {
   toolName: string;

@@ -1,9 +1,10 @@
-import assert from "assert";
 import {
   Fallible,
   deserializeFallible,
   serializeFallible,
 } from "../util/Fallible";
+
+import assert from "assert";
 
 export interface Logfile<Kind extends string, Data> {
   site: string;

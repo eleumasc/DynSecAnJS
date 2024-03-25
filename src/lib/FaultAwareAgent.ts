@@ -1,29 +1,29 @@
-import { Agent, AgentFactory, RunOptions } from "./Agent";
+import { Agent, AgentFactory, PageController, UsePageOptions } from "./Agent";
+
 import { defaultFaultAwarenessTimeoutMs } from "./defaults";
-import { Failure, Fallible } from "../util/Fallible";
 import { timeBomb } from "../util/async";
 
-export default class FaultAwareAgent<T> implements Agent<T> {
-  protected agent: Agent<T> | null = null;
+export default class FaultAwareAgent implements Agent {
+  protected agent: Agent | null = null;
 
-  constructor(readonly agentFactory: AgentFactory<T>) {}
+  constructor(readonly agentFactory: AgentFactory) {}
 
-  async run(runOptions: RunOptions): Promise<Fallible<T>> {
+  async usePage<T>(
+    options: UsePageOptions,
+    cb: (page: PageController) => Promise<T>
+  ): Promise<T> {
     if (this.agent === null) {
       this.agent = await this.agentFactory.call(null);
     }
     const { agent } = this;
     try {
       return await timeBomb(
-        agent.run(runOptions),
+        agent.usePage(options, cb),
         defaultFaultAwarenessTimeoutMs
       );
     } catch (e) {
       await this.terminate();
-      return <Failure>{
-        status: "failure",
-        reason: String(e),
-      };
+      throw e;
     }
   }
 

@@ -3,10 +3,11 @@ import ArchiveWriter, {
   DefaultAttachmentList,
   PrefixAttachmentList,
 } from "./ArchiveWriter";
-import { readSitelistFromFile } from "./sitelist";
-import { deployAnalysis } from "./deployAnalysis";
-import { resolve } from "path";
+
 import { createOriginalAnalysis } from "./createOriginalAnalysis";
+import { deployAnalysis } from "./deployAnalysis";
+import { readSitelistFromFile } from "./sitelist";
+import { resolve } from "path";
 import { serializeOriginalAnalysisResult } from "./OriginalAnalysis";
 
 export interface OriginalAnalysisArgs {

@@ -1,24 +1,31 @@
-import { RunOptions, ToolAnalysis, ToolAnalysisResult } from "./ToolAnalysis";
-import { ExecutionDetail } from "./ExecutionDetail";
-import { Fallible, isFailure } from "../util/Fallible";
-import { Agent } from "./Agent";
 import { ESVersion, lessOrEqualToESVersion } from "../compatibility/ESVersion";
-import { PrefixAttachmentList } from "./ArchiveWriter";
+import { Fallible, isFailure } from "../util/Fallible";
+import { RunOptions, ToolAnalysis, ToolAnalysisResult } from "./ToolAnalysis";
 import { defaultDelayMs, defaultLoadingTimeoutMs } from "./defaults";
 
+import { Agent } from "./Agent";
+import { ExecutionDetail } from "./ExecutionDetail";
+import { ExecutionHooksProvider } from "./ExecutionHooks";
+import { PrefixAttachmentList } from "./ArchiveWriter";
+import { runExecutionAnalysis } from "./runExecutionAnalysis";
+
 export interface Options {
+  toolName: string;
+  executionHooksProvider: ExecutionHooksProvider;
   supportedESVersion: ESVersion;
   analysisRepeat: number;
 }
 
 export class DefaultToolAnalysis implements ToolAnalysis {
-  constructor(
-    readonly toolAgent: Agent<ExecutionDetail>,
-    readonly options: Options
-  ) {}
+  constructor(readonly agent: Agent, readonly options: Options) {}
 
   async run(runOptions: RunOptions): Promise<Fallible<ToolAnalysisResult>> {
-    const { supportedESVersion, analysisRepeat } = this.options;
+    const {
+      toolName,
+      executionHooksProvider,
+      supportedESVersion,
+      analysisRepeat,
+    } = this.options;
     const {
       site,
       minimumESVersion: siteMinimumESVersion,
@@ -31,35 +38,42 @@ export class DefaultToolAnalysis implements ToolAnalysis {
       siteMinimumESVersion,
       supportedESVersion
     );
+    const compatMode = !compatible;
 
     const url = `http://${site}/`;
 
-    let toolExecutions: Fallible<ExecutionDetail>[] = [];
+    let executions: Fallible<ExecutionDetail>[] = [];
     for (let i = 0; i < analysisRepeat; i += 1) {
-      const toolExecution = await this.toolAgent.run({
+      const execution = await runExecutionAnalysis({
         url,
-        wprOptions: { operation: "replay", archivePath: wprArchivePath },
-        loadingTimeoutMs: defaultLoadingTimeoutMs,
-        timeSeedMs,
-        waitUntil: "load",
+        agent: this.agent,
+        hooksProvider: executionHooksProvider,
+        compatMode,
+        monitorConfig: {
+          waitUntil: "load",
+          loadingTimeoutMs: defaultLoadingTimeoutMs,
+          timeSeedMs,
+        },
+        wprOptions: {
+          operation: "replay",
+          archivePath: wprArchivePath,
+        },
         delayMs: defaultDelayMs,
-        attachmentList: new PrefixAttachmentList(attachmentList, `t${i}-`),
-        compatMode: !compatible,
+        attachmentList: new PrefixAttachmentList(attachmentList, `t${i}`),
       });
-
-      toolExecutions.push(toolExecution);
-      if (isFailure(toolExecution)) {
+      executions.push(execution);
+      if (isFailure(execution)) {
         break;
       }
     }
 
     return {
       status: "success",
-      val: { compatible, toolExecutions },
+      val: { toolName, compatible, toolExecutions: executions },
     };
   }
 
   async terminate(): Promise<void> {
-    await Promise.all([this.toolAgent.terminate()]);
+    await this.agent.terminate();
   }
 }

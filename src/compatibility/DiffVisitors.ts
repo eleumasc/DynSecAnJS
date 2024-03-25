@@ -1,6 +1,7 @@
-import { SimpleVisitors } from "acorn-walk";
-import { DiffEvidence } from "./DiffEvidence";
 import { DiffCheckers, VisitorType, VisitorTypeName } from "./DiffCheckers";
+
+import { DiffEvidence } from "./DiffEvidence";
+import { SimpleVisitors } from "acorn-walk";
 
 export type DiffVisitors = SimpleVisitors<DiffVisitorsState>;
 

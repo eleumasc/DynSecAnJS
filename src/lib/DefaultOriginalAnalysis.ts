@@ -1,28 +1,34 @@
-import { ExecutionDetail } from "./ExecutionDetail";
 import { Fallible, isFailure } from "../util/Fallible";
-import { Agent } from "./Agent";
-import { PrefixAttachmentList, FileAttachment } from "./ArchiveWriter";
+import { FileAttachment, PrefixAttachmentList } from "./ArchiveWriter";
 import {
   OriginalAnalysis,
   OriginalAnalysisResult,
   RunOptions,
 } from "./OriginalAnalysis";
-import { CompatibilityDetail } from "../compatibility/CompatibilityDetail";
 import { defaultDelayMs, defaultLoadingTimeoutMs } from "./defaults";
 
+import { Agent } from "./Agent";
+import { CompatibilityHooksProvider } from "./CompatibilityHooks";
+import { ExecutionDetail } from "./ExecutionDetail";
+import { ExecutionHooksProvider } from "./ExecutionHooks";
+import { runCompatibilityAnalysis } from "./runCompatibilityAnalysis";
+import { runExecutionAnalysis } from "./runExecutionAnalysis";
+
 export interface Options {
+  compatibilityHooksProvider: CompatibilityHooksProvider;
+  executionHooksProvider: ExecutionHooksProvider;
   analysisRepeat: number;
 }
 
 export class DefaultOriginalAnalysis implements OriginalAnalysis {
-  constructor(
-    readonly compatibilityAgent: Agent<CompatibilityDetail>,
-    readonly originalAgent: Agent<ExecutionDetail>,
-    readonly options: Options
-  ) {}
+  constructor(readonly agent: Agent, readonly options: Options) {}
 
   async run(runOptions: RunOptions): Promise<Fallible<OriginalAnalysisResult>> {
-    const { analysisRepeat } = this.options;
+    const {
+      compatibilityHooksProvider,
+      executionHooksProvider,
+      analysisRepeat,
+    } = this.options;
     const { site, attachmentList } = runOptions;
 
     const url = `http://${site}/`;
@@ -34,33 +40,47 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
     );
     const wprArchivePath = wprArchiveAttachment.getTempPath();
     const timeSeedMs = Date.now();
-    const compatibility = await this.compatibilityAgent.run({
+
+    const compatibility = await runCompatibilityAnalysis({
       url,
-      wprOptions: { operation: "record", archivePath: wprArchivePath },
-      loadingTimeoutMs: defaultLoadingTimeoutMs,
-      timeSeedMs,
-      waitUntil: "load",
+      agent: this.agent,
+      hooksProvider: compatibilityHooksProvider,
+      monitorConfig: {
+        waitUntil: "load",
+        loadingTimeoutMs: defaultLoadingTimeoutMs,
+        timeSeedMs,
+      },
+      wprOptions: {
+        operation: "record",
+        archivePath: wprArchivePath,
+      },
       delayMs: defaultDelayMs,
-      compatMode: false,
     });
     if (isFailure(compatibility)) {
       return compatibility;
     }
 
-    let originalExecutions: Fallible<ExecutionDetail>[] = [];
+    let executions: Fallible<ExecutionDetail>[] = [];
     for (let i = 0; i < analysisRepeat; i += 1) {
-      const originalExecution = await this.originalAgent.run({
+      const execution = await runExecutionAnalysis({
         url,
-        wprOptions: { operation: "replay", archivePath: wprArchivePath },
-        loadingTimeoutMs: defaultLoadingTimeoutMs,
-        timeSeedMs,
-        waitUntil: "load",
+        agent: this.agent,
+        hooksProvider: executionHooksProvider,
+        compatMode: false,
+        monitorConfig: {
+          waitUntil: "load",
+          loadingTimeoutMs: defaultLoadingTimeoutMs,
+          timeSeedMs,
+        },
+        wprOptions: {
+          operation: "replay",
+          archivePath: wprArchivePath,
+        },
         delayMs: defaultDelayMs,
         attachmentList: new PrefixAttachmentList(attachmentList, `r${i}`),
-        compatMode: false,
       });
-      originalExecutions.push(originalExecution);
-      if (isFailure(originalExecution)) {
+      executions.push(execution);
+      if (isFailure(execution)) {
         break;
       }
     }
@@ -71,15 +91,12 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
         compatibility: compatibility.val,
         wprArchiveFile: wprArchiveFile,
         timeSeedMs,
-        originalExecutions,
+        originalExecutions: executions,
       },
     };
   }
 
   async terminate(): Promise<void> {
-    await Promise.all([
-      this.compatibilityAgent.terminate(),
-      this.originalAgent.terminate(),
-    ]);
+    await this.agent.terminate();
   }
 }

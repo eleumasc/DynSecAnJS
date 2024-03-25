@@ -1,41 +1,39 @@
-import { join } from "path";
-import { ifTranspilerPath } from "../lib/env";
-import { ResponseTransformer } from "../lib/ResponseTransformer";
-import { identifyResponseTransformer } from "./util";
 import {
   composeHtmlTransformers,
   transformHtml,
 } from "../html-manipulation/transformHtml";
+
+import { BodyTransformer } from "../lib/ExecutionHooks";
+import { identifyBodyTransformer } from "./util";
+import { ifTranspilerPath } from "../lib/env";
+import { injectScripts } from "../html-manipulation/injectScripts";
+import { join } from "path";
 import { spawnStdio } from "../util/spawnStdio";
 import { transformInlineScripts } from "../html-manipulation/transformInlineScripts";
-import { injectScripts } from "../html-manipulation/injectScripts";
 
-export const transformWithIFTranspiler: ResponseTransformer =
-  identifyResponseTransformer(
-    "IFTranspiler",
-    async (content, { contentType }) => {
-      switch (contentType) {
-        case "html":
-          return await transformHtml(
-            content,
-            composeHtmlTransformers([
-              transformInlineScripts(async (code, isEventHandler) => {
-                if (isEventHandler) {
-                  return code;
-                }
-                return await ifTranspiler(code);
-              }),
-              injectScripts([
-                "data:text/javascript;base64," +
-                  Buffer.from(SETUP).toString("base64"),
-              ]),
-            ])
-          );
-        case "javascript":
-          return await ifTranspiler(content);
-      }
+export const transformWithIFTranspiler: BodyTransformer =
+  identifyBodyTransformer("IFTranspiler", async (content, { contentType }) => {
+    switch (contentType) {
+      case "html":
+        return await transformHtml(
+          content,
+          composeHtmlTransformers([
+            transformInlineScripts(async (code, isEventHandler) => {
+              if (isEventHandler) {
+                return code;
+              }
+              return await ifTranspiler(code);
+            }),
+            injectScripts([
+              "data:text/javascript;base64," +
+                Buffer.from(SETUP).toString("base64"),
+            ]),
+          ])
+        );
+      case "javascript":
+        return await ifTranspiler(content);
     }
-  );
+  });
 
 export const ifTranspiler = async (code: string): Promise<string> => {
   let result = await spawnStdio(

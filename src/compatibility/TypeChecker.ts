@@ -1,7 +1,7 @@
-import assert from "assert";
-import acorn from "acorn";
-import walk from "acorn-walk";
 import { VisitorTypeName } from "./DiffCheckers";
+import acorn from "acorn";
+import assert from "assert";
+import walk from "acorn-walk";
 
 export type TypeChecker<T> = (input: T) => boolean;
 

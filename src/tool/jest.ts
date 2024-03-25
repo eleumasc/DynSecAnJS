@@ -1,13 +1,14 @@
-import { join } from "path";
-import { jestPath } from "../lib/env";
-import { ResponseTransformer } from "../lib/ResponseTransformer";
-import { identifyResponseTransformer } from "./util";
-import { transformHtml } from "../html-manipulation/transformHtml";
+import { BodyTransformer } from "../lib/ExecutionHooks";
+import { identifyBodyTransformer } from "./util";
 import { inlineExternalScripts } from "../html-manipulation/inlineExternalScripts";
+import { jestPath } from "../lib/env";
+import { join } from "path";
 import { spawnStdio } from "../util/spawnStdio";
+import { transformHtml } from "../html-manipulation/transformHtml";
 
-export const transformWithJEST: ResponseTransformer =
-  identifyResponseTransformer("JEST", async (content, { contentType, req }) => {
+export const transformWithJEST: BodyTransformer = identifyBodyTransformer(
+  "JEST",
+  async (content, { contentType, req }) => {
     switch (contentType) {
       case "html":
         return await jest(
@@ -17,7 +18,8 @@ export const transformWithJEST: ResponseTransformer =
       case "javascript":
         return content;
     }
-  });
+  }
+);
 
 export const jest = async (
   code: string,

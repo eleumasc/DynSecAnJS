@@ -1,22 +1,18 @@
-import { AttachmentList } from "./ArchiveWriter";
-import { Fallible } from "../util/Fallible";
-import { Options as WebPageReplayOptions } from "./WebPageReplay";
-import { MonitorWaitUntil } from "./monitor";
-
-export interface RunOptions {
-  url: string;
-  wprOptions: Pick<WebPageReplayOptions, "operation" | "archivePath">;
-  timeSeedMs: number;
-  loadingTimeoutMs: number;
-  waitUntil: MonitorWaitUntil;
-  delayMs: number;
-  attachmentList?: AttachmentList;
-  compatMode: boolean;
+export interface PageController {
+  navigate: (url: string) => Promise<void>;
+  screenshot: () => Promise<Buffer>;
 }
 
-export interface Agent<AnalysisResult> {
-  run(runOptions: RunOptions): Promise<Fallible<AnalysisResult>>;
+export interface UsePageOptions {
+  proxyPort: number;
+}
+
+export interface Agent {
+  usePage<T>(
+    options: UsePageOptions,
+    cb: (page: PageController) => Promise<T>
+  ): Promise<T>;
   terminate(): Promise<void>;
 }
 
-export type AgentFactory<AnalysisResult> = () => Promise<Agent<AnalysisResult>>;
+export type AgentFactory = () => Promise<Agent>;

@@ -13,3 +13,4 @@ export const divideArray = <T>(array: T[], size: number): T[][] => {
   }
   return result;
 };
+ 

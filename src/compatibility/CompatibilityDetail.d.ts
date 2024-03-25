@@ -1,4 +1,4 @@
-import { ESVersion, maxESVersion } from "./ESVersion";
+import { ESVersion } from "./ESVersion";
 
 export interface CompatibilityDetail {
   pageUrl: string;
@@ -26,15 +26,3 @@ export interface InlineScriptDetail extends ScriptDetail {
   kind: "inline";
   isEventHandler: boolean;
 }
-
-export const serializeCompatibilityDetail = (
-  cooked: CompatibilityDetail
-): any => {
-  return cooked;
-};
-
-export const deserializeCompatibilityDetail = (
-  raw: any
-): CompatibilityDetail => {
-  return raw;
-};

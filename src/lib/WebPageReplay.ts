@@ -1,15 +1,15 @@
 import { ChildProcess, spawn } from "child_process";
-import { getTcpPort, waitUntilUsed } from "../util/net";
-import Deferred from "../util/Deferred";
 import { debugMode, wprgoPath } from "./env";
-import CertificationAuthority from "./CertificationAuthority";
+import { getTcpPort, waitUntilUsed } from "../util/net";
+
+import CA from "./CA";
+import Deferred from "../util/Deferred";
 
 export type WebPageReplayOperation = "replay" | "record";
 
 export interface Options {
   operation: WebPageReplayOperation;
   archivePath: string;
-  certificationAuthority: CertificationAuthority;
   injectDeterministic?: boolean;
 }
 
@@ -18,7 +18,7 @@ export default class WebPageReplay {
     readonly httpHost: string,
     readonly httpsHost: string,
     readonly subprocess: ChildProcess,
-    readonly willSubprocessExit: Deferred<void>
+    readonly deferredSubprocessExit: Deferred<void>
   ) {}
 
   getHttpHost(): string {
@@ -31,16 +31,11 @@ export default class WebPageReplay {
 
   async stop(): Promise<void> {
     this.subprocess.kill("SIGINT");
-    await this.willSubprocessExit.promise;
+    await this.deferredSubprocessExit.promise;
   }
 
   static async start(options: Options): Promise<WebPageReplay> {
-    const {
-      operation,
-      archivePath,
-      certificationAuthority,
-      injectDeterministic,
-    } = options;
+    const { operation, archivePath, injectDeterministic } = options;
 
     const ports = await Promise.all([getTcpPort(), getTcpPort()]);
     const [httpPort, httpsPort] = ports;
@@ -51,8 +46,8 @@ export default class WebPageReplay {
         operation,
         `--http_port=${httpPort}`,
         `--https_port=${httpsPort}`,
-        `--https_cert_file=${certificationAuthority.getCertificatePath()}`,
-        `--https_key_file=${certificationAuthority.getKeyPath()}`,
+        `--https_cert_file=${CA.get().getCertificatePath()}`,
+        `--https_key_file=${CA.get().getKeyPath()}`,
         ...(injectDeterministic ?? true ? [] : ["--inject_scripts="]),
         archivePath,
       ],
@@ -67,16 +62,16 @@ export default class WebPageReplay {
 
     await waitUntilUsed(httpPort, 500, 30_000);
 
-    const willSubprocessExit = new Deferred<void>();
+    const deferredSubprocessExit = new Deferred<void>();
     child.on("exit", async () => {
-      willSubprocessExit.resolve();
+      deferredSubprocessExit.resolve();
     });
 
     return new WebPageReplay(
       `127.0.0.1:${httpPort}`,
       `127.0.0.1:${httpsPort}`,
       child,
-      willSubprocessExit
+      deferredSubprocessExit
     );
   }
 }

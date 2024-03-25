@@ -1,5 +1,6 @@
-import assert from "assert";
 import "dotenv/config";
+
+import assert from "assert";
 
 const get = (key: string): string => {
   const value = process.env[key] as string | undefined;

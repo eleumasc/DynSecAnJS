@@ -24,6 +24,23 @@ export const isFailure = <T>(fallible: Fallible<T>): fallible is Failure => {
   return fallible.status === "failure";
 };
 
+export const toFallible = async <T>(
+  cb: () => Promise<T>
+): Promise<Fallible<T>> => {
+  try {
+    const val = await cb();
+    return {
+      status: "success",
+      val,
+    };
+  } catch (e) {
+    return {
+      status: "failure",
+      reason: String(e),
+    };
+  }
+};
+
 export const serializeFallible = <T>(
   cooked: Fallible<T>,
   serializeVal: (cookedVal: T) => any

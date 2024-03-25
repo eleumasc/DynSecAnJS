@@ -1,7 +1,9 @@
-import { readFileSync } from "fs";
 import { join, resolve } from "path";
 
-export default class CertificationAuthority {
+import { generateSPKIFingerprint } from "mockttp";
+import { readFileSync } from "fs";
+
+export default class CA {
   constructor(
     readonly certificate: string,
     readonly certificatePath: string,
@@ -25,9 +27,13 @@ export default class CertificationAuthority {
     return this.keyPath;
   }
 
-  protected static instance: CertificationAuthority | null = null;
+  getSPKIFingerprint(): string {
+    return generateSPKIFingerprint(this.certificate);
+  }
 
-  static read(): CertificationAuthority {
+  protected static instance: CA | null = null;
+
+  static get(): CA {
     if (this.instance) {
       return this.instance;
     }
@@ -40,12 +46,7 @@ export default class CertificationAuthority {
     const keyPath = join(caDir, "key.pem");
     const key = readFileSync(keyPath).toString();
 
-    this.instance = new CertificationAuthority(
-      certificate,
-      certificatePath,
-      key,
-      keyPath
-    );
+    this.instance = new CA(certificate, certificatePath, key, keyPath);
     return this.instance;
   }
 }

@@ -1,28 +1,24 @@
-import CertificationAuthority from "./CertificationAuthority";
+import { defaultAnalysisRepeat, defaultPptrLaunchOptions } from "./defaults";
+
 import { DefaultOriginalAnalysis } from "./DefaultOriginalAnalysis";
 import FaultAwareAgent from "./FaultAwareAgent";
 import { OriginalAnalysis } from "./OriginalAnalysis";
-import { createCompatibilityProxyHooksProvider } from "../compatibility/createCompatibilityProxyHooksProvider";
-import { createExecutionProxyHooksProvider } from "./createExecutionProxyHooksProvider";
 import { PuppeteerAgent } from "./PuppeteerAgent";
-import { defaultAnalysisRepeat, defaultPptrLaunchOptions } from "./defaults";
+import { createCompatibilityHooksProvider } from "./CompatibilityHooks";
+import { createExecutionHooksProvider } from "./ExecutionHooks";
 
 export const createOriginalAnalysis = (): OriginalAnalysis => {
   return new DefaultOriginalAnalysis(
     new FaultAwareAgent(
       async () =>
-        await PuppeteerAgent.create(defaultPptrLaunchOptions, {
-          certificationAuthority: CertificationAuthority.read(),
-          proxyHooksProvider: createCompatibilityProxyHooksProvider(),
+        await PuppeteerAgent.create({
+          pptrLaunchOptions: defaultPptrLaunchOptions,
         })
     ),
-    new FaultAwareAgent(
-      async () =>
-        await PuppeteerAgent.create(defaultPptrLaunchOptions, {
-          certificationAuthority: CertificationAuthority.read(),
-          proxyHooksProvider: createExecutionProxyHooksProvider(),
-        })
-    ),
-    { analysisRepeat: defaultAnalysisRepeat }
+    {
+      compatibilityHooksProvider: createCompatibilityHooksProvider(),
+      executionHooksProvider: createExecutionHooksProvider(),
+      analysisRepeat: defaultAnalysisRepeat,
+    }
   );
 };
