@@ -1,3 +1,4 @@
+import assert from "assert";
 import * as parse5 from "parse5";
 import { Node } from "parse5/dist/tree-adapters/default";
 import { getChildNodes, isElement } from "./util";
@@ -28,6 +29,10 @@ export const inlineExternalScripts = (baseUrl: URL): HtmlTransformer =>
             const inlineScriptNode = parse5.parseFragment(
               `<script>${scriptContent}</script>`
             ).childNodes[0];
+            assert(isElement(inlineScriptNode));
+            inlineScriptNode.attrs = node.attrs.filter(
+              (attr) => attr.name !== "src"
+            );
             const parent = node.parentNode!;
             parent.childNodes[parent.childNodes.indexOf(node)] =
               inlineScriptNode;
