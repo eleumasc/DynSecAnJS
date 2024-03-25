@@ -12,7 +12,7 @@ import {
   ToolAnalysisResult,
   serializeToolAnalysisResult,
 } from "./ToolAnalysis";
-import { Fallible, isSuccess } from "./util/Fallible";
+import { Fallible, isSuccess } from "../util/Fallible";
 import { intersectSitelists, readSitelistFromFile } from "./sitelist";
 
 export interface ToolAnalysisArgs {

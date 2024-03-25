@@ -3,8 +3,8 @@ import { MonitorReport } from "./monitor";
 import FeatureSet from "./FeatureSet";
 import { ResponseTransformer } from "./ResponseTransformer";
 import { ProxyHooksProvider } from "./ProxyHooks";
-import { transpileWithBabel } from "./tool/babel";
-import { composeResponseTransformers } from "./tool/util";
+import { transpileWithBabel } from "../tool/babel";
+import { composeResponseTransformers } from "../tool/util";
 
 export const createExecutionProxyHooksProvider =
   (

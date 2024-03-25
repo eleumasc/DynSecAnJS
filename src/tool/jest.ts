@@ -1,6 +1,6 @@
 import { join } from "path";
-import { jestPath } from "../env";
-import { ResponseTransformer } from "../ResponseTransformer";
+import { jestPath } from "../lib/env";
+import { ResponseTransformer } from "../lib/ResponseTransformer";
 import { identifyResponseTransformer } from "./util";
 import { transformHtml } from "../html-manipulation/transformHtml";
 import { inlineExternalScripts } from "../html-manipulation/inlineExternalScripts";

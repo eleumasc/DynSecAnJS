@@ -1,6 +1,6 @@
 import { join } from "path";
-import { ifTranspilerPath } from "../env";
-import { ResponseTransformer } from "../ResponseTransformer";
+import { ifTranspilerPath } from "../lib/env";
+import { ResponseTransformer } from "../lib/ResponseTransformer";
 import { identifyResponseTransformer } from "./util";
 import {
   composeHtmlTransformers,

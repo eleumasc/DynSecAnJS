@@ -4,7 +4,7 @@ import {
   CompatibilityDetail,
   deserializeCompatibilityDetail,
   serializeCompatibilityDetail,
-} from "./compatibility/CompatibilityDetail";
+} from "../compatibility/CompatibilityDetail";
 import {
   deserializeExecutionDetail,
   ExecutionDetail,
@@ -14,7 +14,7 @@ import {
   deserializeFallible,
   Fallible,
   serializeFallible,
-} from "./util/Fallible";
+} from "../util/Fallible";
 
 export interface RunOptions {
   site: string;

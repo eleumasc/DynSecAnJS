@@ -1,5 +1,5 @@
 import { AttachmentList } from "./ArchiveWriter";
-import { Fallible } from "./util/Fallible";
+import { Fallible } from "../util/Fallible";
 import { Options as WebPageReplayOptions } from "./WebPageReplay";
 import { MonitorWaitUntil } from "./monitor";
 

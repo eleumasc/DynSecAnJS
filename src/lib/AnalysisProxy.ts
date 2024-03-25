@@ -2,8 +2,8 @@ import { randomUUID } from "crypto";
 import { lookup as dnsLookup } from "dns/promises";
 import { Headers, Mockttp as MockttpServer } from "mockttp";
 import { PassThroughHandlerOptions } from "mockttp/dist/rules/requests/request-handler-definitions";
-import { injectScripts } from "./html-manipulation/injectScripts";
-import { transformHtml } from "./html-manipulation/transformHtml";
+import { injectScripts } from "../html-manipulation/injectScripts";
+import { transformHtml } from "../html-manipulation/transformHtml";
 
 export type ContentType = "html" | "javascript";
 

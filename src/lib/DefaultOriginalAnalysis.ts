@@ -1,5 +1,5 @@
 import { ExecutionDetail } from "./ExecutionDetail";
-import { Fallible, isFailure } from "./util/Fallible";
+import { Fallible, isFailure } from "../util/Fallible";
 import { Agent } from "./Agent";
 import { PrefixAttachmentList, FileAttachment } from "./ArchiveWriter";
 import {
@@ -7,7 +7,7 @@ import {
   OriginalAnalysisResult,
   RunOptions,
 } from "./OriginalAnalysis";
-import { CompatibilityDetail } from "./compatibility/CompatibilityDetail";
+import { CompatibilityDetail } from "../compatibility/CompatibilityDetail";
 import { defaultDelayMs, defaultLoadingTimeoutMs } from "./defaults";
 
 export interface Options {

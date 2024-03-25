@@ -1,17 +1,17 @@
 import CertificationAuthority from "./CertificationAuthority";
 import { DefaultToolAnalysis } from "./DefaultToolAnalysis";
 import { PuppeteerAgent } from "./PuppeteerAgent";
-import { transformWithJalangi } from "./tool/jalangi";
+import { transformWithJalangi } from "../tool/jalangi";
 import { defaultAnalysisRepeat, defaultPptrLaunchOptions } from "./defaults";
 import { ToolAnalysis } from "./ToolAnalysis";
-import { ESVersion } from "./compatibility/ESVersion";
+import { ESVersion } from "../compatibility/ESVersion";
 import FaultAwareAgent from "./FaultAwareAgent";
 import { createExecutionProxyHooksProvider } from "./createExecutionProxyHooksProvider";
 import { SeleniumAgent } from "./SeleniumAgent";
 import { Browser } from "selenium-webdriver";
 import { headless } from "./env";
-import { transformWithJEST } from "./tool/jest";
-import { transformWithIFTranspiler } from "./tool/ifTranspiler";
+import { transformWithJEST } from "../tool/jest";
+import { transformWithIFTranspiler } from "../tool/ifTranspiler";
 
 export const createToolAnalysis = (toolName: string): ToolAnalysis => {
   switch (toolName) {

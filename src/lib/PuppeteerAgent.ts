@@ -5,12 +5,12 @@ import puppeteer, {
   PuppeteerLaunchOptions,
   TimeoutError,
 } from "puppeteer";
-import { timeBomb } from "./util/async";
-import { useBrowserContext, usePage } from "./util/browser";
+import { timeBomb } from "../util/async";
+import { useBrowserContext, usePage } from "../util/browser";
 import CertificationAuthority from "./CertificationAuthority";
-import { Fallible } from "./util/Fallible";
+import { Fallible } from "../util/Fallible";
 import { DataAttachment } from "./ArchiveWriter";
-import Deferred from "./util/Deferred";
+import Deferred from "../util/Deferred";
 import { randomUUID } from "crypto";
 import { useProxiedMonitor } from "./useProxiedMonitor";
 import { Agent, RunOptions } from "./Agent";

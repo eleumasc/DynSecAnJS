@@ -1,5 +1,5 @@
 import { transformAsync } from "@babel/core";
-import { ResponseTransformer } from "../ResponseTransformer";
+import { ResponseTransformer } from "../lib/ResponseTransformer";
 import { transformInlineScripts } from "../html-manipulation/transformInlineScripts";
 import { identifyResponseTransformer } from "./util";
 import { transformHtml } from "../html-manipulation/transformHtml";

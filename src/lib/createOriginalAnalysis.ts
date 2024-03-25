@@ -2,7 +2,7 @@ import CertificationAuthority from "./CertificationAuthority";
 import { DefaultOriginalAnalysis } from "./DefaultOriginalAnalysis";
 import FaultAwareAgent from "./FaultAwareAgent";
 import { OriginalAnalysis } from "./OriginalAnalysis";
-import { createCompatibilityProxyHooksProvider } from "./compatibility/createCompatibilityProxyHooksProvider";
+import { createCompatibilityProxyHooksProvider } from "../compatibility/createCompatibilityProxyHooksProvider";
 import { createExecutionProxyHooksProvider } from "./createExecutionProxyHooksProvider";
 import { PuppeteerAgent } from "./PuppeteerAgent";
 import { defaultAnalysisRepeat, defaultPptrLaunchOptions } from "./defaults";

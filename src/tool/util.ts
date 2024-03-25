@@ -1,4 +1,4 @@
-import { ResponseTransformer } from "../ResponseTransformer";
+import { ResponseTransformer } from "../lib/ResponseTransformer";
 
 export const composeResponseTransformers =
   (x: ResponseTransformer, y?: ResponseTransformer): ResponseTransformer =>

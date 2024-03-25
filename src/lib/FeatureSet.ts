@@ -1,4 +1,4 @@
-import { equalSets, isSubsetOf } from "./util/set";
+import { equalSets, isSubsetOf } from "../util/set";
 
 export interface FeatureSetData {
   uncaughtErrors: string[];

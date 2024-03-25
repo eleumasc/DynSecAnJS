@@ -1,7 +1,7 @@
 import { Agent, AgentFactory, RunOptions } from "./Agent";
 import { defaultFaultAwarenessTimeoutMs } from "./defaults";
-import { Failure, Fallible } from "./util/Fallible";
-import { timeBomb } from "./util/async";
+import { Failure, Fallible } from "../util/Fallible";
+import { timeBomb } from "../util/async";
 
 export default class FaultAwareAgent<T> implements Agent<T> {
   protected agent: Agent<T> | null = null;

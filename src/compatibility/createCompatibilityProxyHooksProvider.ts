@@ -1,4 +1,4 @@
-import { MonitorReport } from "../monitor";
+import { MonitorReport } from "../lib/monitor";
 import {
   Category,
   CompatibilityDetail,
@@ -9,7 +9,7 @@ import {
 import { extractInlineScripts } from "./extractInlineScripts";
 import { ESVersion, maxESVersion } from "./ESVersion";
 import { analyzeScript } from "./analyzeScript";
-import { ProxyHooksProvider } from "../ProxyHooks";
+import { ProxyHooksProvider } from "../lib/ProxyHooks";
 
 export const createCompatibilityProxyHooksProvider =
   (): ProxyHooksProvider<CompatibilityDetail> => (willCompleteAnalysis) => {

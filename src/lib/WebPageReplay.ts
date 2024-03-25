@@ -1,6 +1,6 @@
 import { ChildProcess, spawn } from "child_process";
-import { getTcpPort, waitUntilUsed } from "./util/net";
-import Deferred from "./util/Deferred";
+import { getTcpPort, waitUntilUsed } from "../util/net";
+import Deferred from "../util/Deferred";
 import { debugMode, wprgoPath } from "./env";
 import CertificationAuthority from "./CertificationAuthority";
 

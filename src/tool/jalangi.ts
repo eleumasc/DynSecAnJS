@@ -3,8 +3,8 @@ import { existsSync } from "fs";
 import { mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
-import { jalangiPath } from "../env";
-import { ResponseTransformer } from "../ResponseTransformer";
+import { jalangiPath } from "../lib/env";
+import { ResponseTransformer } from "../lib/ResponseTransformer";
 import { identifyResponseTransformer } from "./util";
 
 export const transformWithJalangi: ResponseTransformer =

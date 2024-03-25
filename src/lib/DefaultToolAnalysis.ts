@@ -1,8 +1,8 @@
 import { RunOptions, ToolAnalysis, ToolAnalysisResult } from "./ToolAnalysis";
 import { ExecutionDetail } from "./ExecutionDetail";
-import { Fallible, isFailure } from "./util/Fallible";
+import { Fallible, isFailure } from "../util/Fallible";
 import { Agent } from "./Agent";
-import { ESVersion, lessOrEqualToESVersion } from "./compatibility/ESVersion";
+import { ESVersion, lessOrEqualToESVersion } from "../compatibility/ESVersion";
 import { PrefixAttachmentList } from "./ArchiveWriter";
 import { defaultDelayMs, defaultLoadingTimeoutMs } from "./defaults";
 

@@ -1,12 +1,12 @@
 import { Buffer } from "buffer";
-import { timeBomb } from "./util/async";
+import { timeBomb } from "../util/async";
 import CertificationAuthority from "./CertificationAuthority";
-import { Fallible } from "./util/Fallible";
-import Deferred from "./util/Deferred";
+import { Fallible } from "../util/Fallible";
+import Deferred from "../util/Deferred";
 import { useProxiedMonitor } from "./useProxiedMonitor";
 import { Agent, RunOptions } from "./Agent";
 import { ProxyHooksProvider } from "./ProxyHooks";
-import { useTcpTunnel } from "./util/useTcpTunnel";
+import { useTcpTunnel } from "../util/useTcpTunnel";
 import { Browser, Builder, Capabilities, WebDriver } from "selenium-webdriver";
 import { useWebDriver } from "./useWebDriver";
 import { DataAttachment } from "./ArchiveWriter";

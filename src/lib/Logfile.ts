@@ -3,7 +3,7 @@ import {
   Fallible,
   deserializeFallible,
   serializeFallible,
-} from "./util/Fallible";
+} from "../util/Fallible";
 
 export interface Logfile<Kind extends string, Data> {
   site: string;

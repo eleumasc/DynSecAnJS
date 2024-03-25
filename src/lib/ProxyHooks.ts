@@ -1,4 +1,4 @@
-import Deferred from "./util/Deferred";
+import Deferred from "../util/Deferred";
 import { RequestListener, ResponseTransformer } from "./AnalysisProxy";
 
 export interface ProxyHooks {

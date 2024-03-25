@@ -9,9 +9,9 @@ import {
 } from "./ToolAnalysis";
 import { ExecutionDetail } from "./ExecutionDetail";
 import FeatureSet from "./FeatureSet";
-import { Fallible, isSuccess, isFailure } from "./util/Fallible";
-import { avg, stdev } from "./util/math";
-import { isSubsetOf } from "./util/set";
+import { Fallible, isSuccess, isFailure } from "../util/Fallible";
+import { avg, stdev } from "../util/math";
+import { isSubsetOf } from "../util/set";
 
 export interface TransparencyArgs {
   originalArchivePath: string;

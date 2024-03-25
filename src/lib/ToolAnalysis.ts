@@ -5,12 +5,12 @@ import {
   deserializeExecutionDetail,
 } from "./ExecutionDetail";
 import { ExecutionDetail } from "./ExecutionDetail";
-import { ESVersion } from "./compatibility/ESVersion";
+import { ESVersion } from "../compatibility/ESVersion";
 import {
   Fallible,
   serializeFallible,
   deserializeFallible,
-} from "./util/Fallible";
+} from "../util/Fallible";
 
 export interface RunOptions {
   site: string;
