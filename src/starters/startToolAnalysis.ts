@@ -14,7 +14,7 @@ import ArchiveReader from "../lib/ArchiveReader";
 import { deployAnalysis } from "../lib/deployAnalysis";
 import { deserializeOriginalAnalysisResult } from "../lib/OriginalAnalysis";
 import { getToolAnalysisFactory } from "../lib/ToolAnalysisFactory";
-import { resolve } from "path";
+import path from "path";
 
 export interface ToolAnalysisArgs {
   toolName: string;
@@ -35,7 +35,7 @@ export const startToolAnalysis = async (args: ToolAnalysisArgs) => {
   console.log(`Analysis ID is ${analysisId}`);
 
   const originalArchive = new ArchiveReader(
-    resolve(originalArchivePath),
+    path.resolve(originalArchivePath),
     "original-analysis",
     deserializeOriginalAnalysisResult
   );
@@ -49,7 +49,7 @@ export const startToolAnalysis = async (args: ToolAnalysisArgs) => {
   console.log(`${sitelist.length} sites`);
 
   const archive = new ArchiveWriter(
-    resolve("results", analysisId),
+    path.resolve("results", analysisId),
     "tool-analysis",
     serializeToolAnalysisResult
   );
@@ -73,7 +73,10 @@ export const startToolAnalysis = async (args: ToolAnalysisArgs) => {
         const {
           val: { compatibility, wprArchiveFile, timeSeedMs },
         } = originalLogfile.data;
-        const wprArchivePath = resolve(originalArchivePath, wprArchiveFile);
+        const wprArchivePath = path.resolve(
+          originalArchivePath,
+          wprArchiveFile
+        );
         result = await analysis.run({
           site,
           minimumESVersion: compatibility.minimumESVersion,

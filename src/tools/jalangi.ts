@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { BodyTransformer } from "../lib/ExecutionHooks";
 import { existsSync } from "fs";
 import { jalangiPath } from "../core/env";
-import { join } from "path";
+import path from "path";
 import { spawn } from "child_process";
 import { tmpdir } from "os";
 
@@ -22,9 +22,9 @@ export const jalangi = async (
   code: string,
   extension: "html" | "js"
 ): Promise<string> => {
-  const tmpDir = await mkdtemp(join(tmpdir(), "jal"));
-  const originalPath = join(tmpDir, `index.${extension}`);
-  const modifiedPath = join(tmpDir, `index-mod.${extension}`);
+  const tmpDir = await mkdtemp(path.join(tmpdir(), "jal"));
+  const originalPath = path.join(tmpDir, `index.${extension}`);
+  const modifiedPath = path.join(tmpDir, `index-mod.${extension}`);
 
   try {
     await writeFile(originalPath, code);
@@ -32,7 +32,7 @@ export const jalangi = async (
     const childProcess = spawn(
       "node",
       [
-        join(jalangiPath, "src", "js", "commands", "esnstrument_cli.js"),
+        path.join(jalangiPath, "src", "js", "commands", "esnstrument_cli.js"),
         "--inlineIID",
         "--inlineSource",
         "--noResultsGUI",

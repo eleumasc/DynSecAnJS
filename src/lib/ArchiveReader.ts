@@ -1,7 +1,7 @@
 import { Logfile, deserializeLogfile } from "./Logfile";
-import { join, resolve } from "path";
 
 import assert from "assert";
+import nodePath from "path";
 import { readFileSync } from "fs";
 import { readSitelistFromFile } from "../core/sitelist";
 
@@ -13,9 +13,11 @@ export default class ArchiveReader<Kind extends string, Data> {
   ) {}
 
   load(site: string): Logfile<Kind, Data> {
-    const outDir = resolve(this.path);
+    const outDir = nodePath.resolve(this.path);
     const logfile = deserializeLogfile(
-      JSON.parse(readFileSync(join(outDir, `${site}.json`)).toString()),
+      JSON.parse(
+        readFileSync(nodePath.join(outDir, `${site}.json`)).toString()
+      ),
       this.kind,
       this.deserializeData
     );
@@ -27,7 +29,7 @@ export default class ArchiveReader<Kind extends string, Data> {
   }
 
   getSitelist(): string[] {
-    const outDir = resolve(this.path);
-    return readSitelistFromFile(join(outDir, "sites.txt"));
+    const outDir = nodePath.resolve(this.path);
+    return readSitelistFromFile(nodePath.join(outDir, "sites.txt"));
   }
 }

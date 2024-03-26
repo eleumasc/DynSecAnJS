@@ -6,8 +6,8 @@ import {
   unlinkSync,
   writeFileSync,
 } from "fs";
-import { join, resolve } from "path";
 
+import nodePath from "path";
 import { tmpdir } from "os";
 import { writeSitelistToFile } from "../core/sitelist";
 
@@ -22,17 +22,17 @@ export default class ArchiveWriter<Kind extends string, Data> {
 
   store(logfile: Logfile<Kind, Data>, attachmentList?: AttachmentList): void {
     const { site } = logfile;
-    const outDir = resolve(this.path);
+    const outDir = nodePath.resolve(this.path);
     mkdirSync(outDir, { recursive: true });
     writeFileSync(
-      join(outDir, `${site}.json`),
+      nodePath.join(outDir, `${site}.json`),
       JSON.stringify(serializeLogfile(logfile, this.serializeData))
     );
     if (attachmentList) {
       attachmentList.store(outDir);
     }
     this.sitelist = [...this.sitelist, site];
-    writeSitelistToFile(join(outDir, "sites.txt"), this.sitelist);
+    writeSitelistToFile(nodePath.join(outDir, "sites.txt"), this.sitelist);
   }
 }
 
@@ -70,7 +70,7 @@ export class FileAttachment implements Attachment {
   }
 
   static create(): FileAttachment {
-    const tempPath = join(tmpdir(), crypto.randomUUID());
+    const tempPath = nodePath.join(tmpdir(), crypto.randomUUID());
     return new FileAttachment(tempPath);
   }
 }
@@ -90,7 +90,7 @@ export class DefaultAttachmentList implements AttachmentList {
 
   async store(outDir: string): Promise<void> {
     for (const { filename, attachment } of this.entries) {
-      const path = join(outDir, filename);
+      const path = nodePath.join(outDir, filename);
       await attachment.store(path);
     }
   }

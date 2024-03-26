@@ -3,7 +3,7 @@ import { createJavascriptDataUrl, injectScripts } from "../html/injectScripts";
 
 import { BodyTransformer } from "../lib/ExecutionHooks";
 import { ifTranspilerPath } from "../core/env";
-import { join } from "path";
+import path from "path";
 import { spawnStdio } from "../core/spawnStdio";
 import { transformInlineScripts } from "../html/transformInlineScripts";
 
@@ -32,7 +32,7 @@ export const transformWithIFTranspiler =
 export const ifTranspiler = async (code: string): Promise<string> => {
   let result = await spawnStdio(
     "node",
-    [join(ifTranspilerPath, "if-transpiler.js"), "--inline"],
+    [path.join(ifTranspilerPath, "if-transpiler.js"), "--inline"],
     code
   );
 

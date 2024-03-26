@@ -6,8 +6,8 @@ import ArchiveWriter, {
 
 import { deployAnalysis } from "../lib/deployAnalysis";
 import { getOriginalAnalysisFactory } from "../lib/OriginalAnalysisFactory";
+import path from "path";
 import { readSitelistFromFile } from "../core/sitelist";
-import { resolve } from "path";
 import { serializeOriginalAnalysisResult } from "../lib/OriginalAnalysis";
 
 export interface OriginalAnalysisArgs {
@@ -26,7 +26,7 @@ export const startOriginalAnalysis = async (args: OriginalAnalysisArgs) => {
   console.log(`${sitelist.length} sites`);
 
   const archive = new ArchiveWriter(
-    resolve("results", analysisId),
+    path.resolve("results", analysisId),
     "original-analysis",
     serializeOriginalAnalysisResult
   );

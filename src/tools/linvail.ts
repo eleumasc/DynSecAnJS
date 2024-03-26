@@ -6,7 +6,7 @@ import {
 
 import { BodyTransformer } from "../lib/ExecutionHooks";
 import { aranLinvailPath } from "../core/env";
-import { join } from "path";
+import path from "path";
 import { readFileSync } from "fs";
 import { spawnStdio } from "../core/spawnStdio";
 import { transformInlineScripts } from "../html/transformInlineScripts";
@@ -36,7 +36,7 @@ export const transformWithLinvail =
 export const aranLinvail = async (code: string): Promise<string> => {
   const result = await spawnStdio(
     "node",
-    [join(aranLinvailPath, "lib", "instrument.js")],
+    [path.join(aranLinvailPath, "lib", "instrument.js")],
     code
   );
   return `(function () { ${result} })();`;
@@ -44,6 +44,6 @@ export const aranLinvail = async (code: string): Promise<string> => {
 
 export const getSetupCodeForLinvail = (): string => {
   return readFileSync(
-    join(aranLinvailPath, "generated", "bundle.js")
+    path.join(aranLinvailPath, "generated", "bundle.js")
   ).toString();
 };

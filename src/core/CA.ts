@@ -1,6 +1,5 @@
-import { join, resolve } from "path";
-
 import { generateSPKIFingerprint } from "mockttp";
+import path from "path";
 import { readFileSync } from "fs";
 
 export default class CA {
@@ -38,12 +37,12 @@ export default class CA {
       return this.instance;
     }
 
-    const caDir = resolve("ca");
+    const caDir = path.resolve("ca");
 
-    const certificatePath = join(caDir, "cert.pem");
+    const certificatePath = path.join(caDir, "cert.pem");
     const certificate = readFileSync(certificatePath).toString();
 
-    const keyPath = join(caDir, "key.pem");
+    const keyPath = path.join(caDir, "key.pem");
     const key = readFileSync(keyPath).toString();
 
     this.instance = new CA(certificate, certificatePath, key, keyPath);

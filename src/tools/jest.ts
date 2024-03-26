@@ -1,7 +1,7 @@
 import { BodyTransformer } from "../lib/ExecutionHooks";
 import { inlineExternalScripts } from "../html/inlineExternalScripts";
 import { jestPath } from "../core/env";
-import { join } from "path";
+import path from "path";
 import { spawnStdio } from "../core/spawnStdio";
 import { transformHtml } from "../html/transformHtml";
 
@@ -24,7 +24,7 @@ export const jest = async (
   extension: "html" | "js"
 ): Promise<string> => {
   return await spawnStdio(
-    join(jestPath, "jest"),
+    path.join(jestPath, "jest"),
     ["--browser", `--${extension}`],
     code
   );
