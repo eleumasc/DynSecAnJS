@@ -1,8 +1,8 @@
-import { Analysis } from "./Analysis";
 import { AttachmentList } from "./ArchiveWriter";
 import { CompatibilityDetail } from "../compatibility/CompatibilityDetail";
 import { ExecutionDetail } from "./ExecutionDetail";
 import { Fallible } from "../core/Fallible";
+import { RunnableAnalysis } from "./Analysis";
 
 export interface RunOptions {
   site: string;
@@ -10,7 +10,7 @@ export interface RunOptions {
 }
 
 export interface OriginalAnalysis
-  extends Analysis<RunOptions, OriginalAnalysisResult> {}
+  extends RunnableAnalysis<RunOptions, OriginalAnalysisResult> {}
 
 export interface OriginalAnalysisResult {
   compatibility: CompatibilityDetail;

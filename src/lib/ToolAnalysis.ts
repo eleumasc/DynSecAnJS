@@ -1,8 +1,8 @@
-import { Analysis } from "./Analysis";
 import { AttachmentList } from "./ArchiveWriter";
 import { ESVersion } from "../compatibility/ESVersion";
 import { ExecutionDetail } from "./ExecutionDetail";
 import { Fallible } from "../core/Fallible";
+import { RunnableAnalysis } from "./Analysis";
 
 export interface RunOptions {
   site: string;
@@ -13,7 +13,7 @@ export interface RunOptions {
 }
 
 export interface ToolAnalysis
-  extends Analysis<RunOptions, ToolAnalysisResult> {}
+  extends RunnableAnalysis<RunOptions, ToolAnalysisResult> {}
 
 export interface ToolAnalysisResult {
   toolName: string;

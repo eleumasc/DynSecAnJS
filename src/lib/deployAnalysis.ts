@@ -4,10 +4,10 @@ export interface Options {
   concurrencyLevel: number;
 }
 
-export const deployAnalysis = async <TAnalysis extends Analysis<any, any>>(
-  analysisFactory: () => TAnalysis,
+export const deployAnalysis = async <T extends Analysis>(
+  analysisFactory: () => T,
   options: Options,
-  tasks: Iterable<(analysis: TAnalysis) => Promise<void>>
+  tasks: Iterable<(analysis: T) => Promise<void>>
 ): Promise<void> => {
   const { concurrencyLevel } = options;
 
@@ -17,7 +17,7 @@ export const deployAnalysis = async <TAnalysis extends Analysis<any, any>>(
     }
   })();
 
-  const processNext = async (analysis: TAnalysis) => {
+  const processNext = async (analysis: T) => {
     const it = generator.next();
     if (it.done) {
       return false;
