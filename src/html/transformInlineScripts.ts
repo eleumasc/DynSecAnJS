@@ -2,7 +2,7 @@ import { getChildNodes, isElement } from "./util";
 
 import { HtmlTransformer } from "./HtmlTransformer";
 import { Node } from "parse5/dist/tree-adapters/default";
-import { htmlEventAttributes } from "../compatibility/htmlEventAttributes";
+import { htmlEventAttributes } from "./htmlEventAttributes";
 
 export const transformInlineScripts = (
   transform: (code: string, isEventHandler: boolean) => Promise<string>

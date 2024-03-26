@@ -1,6 +1,6 @@
 import * as parse5 from "parse5";
 
-import { getChildNodes, isElement } from "../html/util";
+import { getChildNodes, isElement } from "./util";
 
 import { Node } from "parse5/dist/tree-adapters/default";
 import { htmlEventAttributes } from "./htmlEventAttributes";

@@ -5,7 +5,7 @@ import {
   InlineScriptDetail,
   ScriptDetail,
 } from "../compatibility/CompatibilityDetail";
-import { extractInlineScripts } from "../compatibility/extractInlineScripts";
+import { extractInlineScripts } from "../html/extractInlineScripts";
 import { ESVersion, maxESVersion } from "../compatibility/ESVersion";
 import { analyzeScript } from "../compatibility/analyzeScript";
 import { ProxiedMonitorHooks } from "./ProxiedMonitorHooks";
