@@ -77,7 +77,7 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
           archivePath: wprArchivePath,
         },
         delayMs: defaultDelayMs,
-        attachmentList: new PrefixAttachmentList(attachmentList, `r${i}`),
+        // attachmentList: new PrefixAttachmentList(attachmentList, `r${i}`),
       });
       executions.push(execution);
       if (isFailure(execution)) {

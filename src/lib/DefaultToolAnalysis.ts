@@ -59,7 +59,7 @@ export class DefaultToolAnalysis implements ToolAnalysis {
           archivePath: wprArchivePath,
         },
         delayMs: defaultDelayMs,
-        attachmentList: new PrefixAttachmentList(attachmentList, `t${i}`),
+        // attachmentList: new PrefixAttachmentList(attachmentList, `t${i}`),
       });
       executions.push(execution);
       if (isFailure(execution)) {
