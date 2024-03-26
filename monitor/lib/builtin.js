@@ -1,5 +1,3 @@
-var global = window;
-
 var GetPrototypeOf = Object.getPrototypeOf;
 var GetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 var DefineProperty = Object.defineProperty;
