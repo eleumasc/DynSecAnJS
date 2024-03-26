@@ -41,7 +41,7 @@ export const createToolAnalysis = (toolName: string): ToolAnalysis => {
         {
           toolName,
           executionHooksProvider: createExecutionHooksProvider(),
-          supportedESVersion: ESVersion.ES5,
+          supportedESVersion: ESVersion.ES2016,
           analysisRepeat: defaultAnalysisRepeat,
         }
       );
