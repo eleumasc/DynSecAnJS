@@ -3,10 +3,10 @@ import { Browser, Builder, Capabilities, WebDriver } from "selenium-webdriver";
 
 import { AddressInfo } from "net";
 import { Buffer } from "buffer";
-import CA from "./CA";
+import CA from "../core/CA";
 import chrome from "selenium-webdriver/chrome";
 import firefox from "selenium-webdriver/firefox";
-import { useTcpTunnel } from "../util/TcpTunnel";
+import { useTcpTunnel } from "../core/TcpTunnel";
 import { useWebDriver } from "./WebDriver";
 
 export interface Options {

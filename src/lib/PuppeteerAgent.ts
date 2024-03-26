@@ -7,8 +7,8 @@ import puppeteer, {
   PuppeteerLaunchOptions,
 } from "puppeteer";
 
-import CA from "./CA";
-import { timeBomb } from "../util/async";
+import CA from "../core/CA";
+import { timeBomb } from "../core/async";
 
 export interface Options {
   pptrLaunchOptions?: PuppeteerLaunchOptions;

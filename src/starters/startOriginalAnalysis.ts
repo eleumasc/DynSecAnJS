@@ -2,13 +2,13 @@ import ArchiveWriter, {
   AttachmentList,
   DefaultAttachmentList,
   PrefixAttachmentList,
-} from "./ArchiveWriter";
+} from "../lib/ArchiveWriter";
 
-import { createOriginalAnalysis } from "./createOriginalAnalysis";
-import { deployAnalysis } from "./deployAnalysis";
-import { readSitelistFromFile } from "./sitelist";
+import { createOriginalAnalysis } from "../lib/createOriginalAnalysis";
+import { deployAnalysis } from "../lib/deployAnalysis";
+import { readSitelistFromFile } from "../core/sitelist";
 import { resolve } from "path";
-import { serializeOriginalAnalysisResult } from "./OriginalAnalysis";
+import { serializeOriginalAnalysisResult } from "../lib/OriginalAnalysis";
 
 export interface OriginalAnalysisArgs {
   sitelistPath: string;

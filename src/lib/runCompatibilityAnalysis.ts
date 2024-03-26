@@ -1,11 +1,11 @@
-import { Fallible, toFallible } from "../util/Fallible";
+import { Fallible, toFallible } from "../core/Fallible";
 
 import { Agent } from "./Agent";
 import { CompatibilityDetail } from "../compatibility/CompatibilityDetail";
 import { CompatibilityHooksProvider } from "./CompatibilityHooks";
 import { MonitorConfig } from "./monitor";
 import { Options as WebPageReplayOptions } from "./WebPageReplay";
-import { timeBomb } from "../util/async";
+import { timeBomb } from "../core/async";
 import { useProxiedMonitor } from "./ProxiedMonitor";
 
 export interface Options {

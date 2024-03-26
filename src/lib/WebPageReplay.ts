@@ -1,9 +1,9 @@
 import { ChildProcess, spawn } from "child_process";
-import { debugMode, wprgoPath } from "./env";
-import { getTcpPort, waitUntilUsed } from "../util/net";
+import { debugMode, wprgoPath } from "../core/env";
+import { getTcpPort, waitUntilUsed } from "../core/net";
 
-import CA from "./CA";
-import Deferred from "../util/Deferred";
+import CA from "../core/CA";
+import Deferred from "../core/Deferred";
 
 export type WebPageReplayOperation = "replay" | "record";
 

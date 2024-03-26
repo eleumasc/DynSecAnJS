@@ -1,11 +1,11 @@
-import { Fallible, isFailure } from "../util/Fallible";
+import { Fallible, isFailure } from "../core/Fallible";
 import { FileAttachment, PrefixAttachmentList } from "./ArchiveWriter";
 import {
   OriginalAnalysis,
   OriginalAnalysisResult,
   RunOptions,
 } from "./OriginalAnalysis";
-import { defaultDelayMs, defaultLoadingTimeoutMs } from "./defaults";
+import { defaultDelayMs, defaultLoadingTimeoutMs } from "../core/defaults";
 
 import { Agent } from "./Agent";
 import { CompatibilityHooksProvider } from "./CompatibilityHooks";

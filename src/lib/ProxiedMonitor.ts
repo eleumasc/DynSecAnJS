@@ -9,7 +9,7 @@ import {
   useWebPageReplay,
 } from "./WebPageReplay";
 import { SendReporter, bundleMonitor, MonitorConfig } from "./monitor";
-import CA from "./CA";
+import CA from "../core/CA";
 import { ProxiedMonitorHooks } from "./ProxiedMonitorHooks";
 
 interface Options {

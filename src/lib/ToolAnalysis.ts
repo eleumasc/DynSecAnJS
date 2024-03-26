@@ -2,7 +2,7 @@ import { Analysis } from "./Analysis";
 import { AttachmentList } from "./ArchiveWriter";
 import { ESVersion } from "../compatibility/ESVersion";
 import { ExecutionDetail } from "./ExecutionDetail";
-import { Fallible } from "../util/Fallible";
+import { Fallible } from "../core/Fallible";
 
 export interface RunOptions {
   site: string;

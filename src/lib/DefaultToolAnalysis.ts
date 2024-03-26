@@ -1,7 +1,7 @@
 import { ESVersion, lessOrEqualToESVersion } from "../compatibility/ESVersion";
-import { Fallible, isFailure } from "../util/Fallible";
+import { Fallible, isFailure } from "../core/Fallible";
 import { RunOptions, ToolAnalysis, ToolAnalysisResult } from "./ToolAnalysis";
-import { defaultDelayMs, defaultLoadingTimeoutMs } from "./defaults";
+import { defaultDelayMs, defaultLoadingTimeoutMs } from "../core/defaults";
 
 import { Agent } from "./Agent";
 import { ExecutionDetail } from "./ExecutionDetail";

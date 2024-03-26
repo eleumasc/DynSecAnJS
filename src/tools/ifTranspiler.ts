@@ -1,15 +1,12 @@
-import {
-  composeHtmlTransformers,
-  transformHtml,
-} from "../html-manipulation/transformHtml";
+import { composeHtmlTransformers, transformHtml } from "../html/transformHtml";
 
 import { BodyTransformer } from "../lib/ExecutionHooks";
 import { identifyBodyTransformer } from "./util";
-import { ifTranspilerPath } from "../lib/env";
-import { injectScripts } from "../html-manipulation/injectScripts";
+import { ifTranspilerPath } from "../core/env";
+import { injectScripts } from "../html/injectScripts";
 import { join } from "path";
-import { spawnStdio } from "../util/spawnStdio";
-import { transformInlineScripts } from "../html-manipulation/transformInlineScripts";
+import { spawnStdio } from "../core/spawnStdio";
+import { transformInlineScripts } from "../html/transformInlineScripts";
 
 export const transformWithIFTranspiler: BodyTransformer =
   identifyBodyTransformer("IFTranspiler", async (content, { contentType }) => {

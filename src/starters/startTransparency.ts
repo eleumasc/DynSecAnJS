@@ -1,21 +1,21 @@
-import { Fallible, isFailure, isSuccess } from "../util/Fallible";
+import { Fallible, isFailure, isSuccess } from "../core/Fallible";
 import {
   OriginalAnalysisResult,
   deserializeOriginalAnalysisResult,
-} from "./OriginalAnalysis";
+} from "../lib/OriginalAnalysis";
 import {
   ToolAnalysisResult,
   deserializeToolAnalysisResult,
-} from "./ToolAnalysis";
-import { avg, stdev } from "../util/math";
+} from "../lib/ToolAnalysis";
+import { avg, stdev } from "../core/math";
 import {
   brokenExecutionTraces,
   createExecutionTrace,
   findPredominantExecutionTrace,
-} from "./ExecutionTrace";
+} from "../lib/ExecutionTrace";
 
-import ArchiveReader from "./ArchiveReader";
-import { ExecutionDetail } from "./ExecutionDetail";
+import ArchiveReader from "../lib/ArchiveReader";
+import { ExecutionDetail } from "../lib/ExecutionDetail";
 
 export interface TransparencyArgs {
   originalArchivePath: string;

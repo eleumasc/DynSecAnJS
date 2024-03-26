@@ -2,7 +2,7 @@ import {
   Fallible,
   deserializeFallible,
   serializeFallible,
-} from "../util/Fallible";
+} from "../core/Fallible";
 
 import assert from "assert";
 

@@ -1,4 +1,7 @@
-import { defaultAnalysisRepeat, defaultPptrLaunchOptions } from "./defaults";
+import {
+  defaultAnalysisRepeat,
+  defaultPptrLaunchOptions,
+} from "../core/defaults";
 
 import { DefaultOriginalAnalysis } from "./DefaultOriginalAnalysis";
 import FaultAwareAgent from "./FaultAwareAgent";

@@ -9,7 +9,7 @@ import {
 import { join, resolve } from "path";
 
 import { tmpdir } from "os";
-import { writeSitelistToFile } from "./sitelist";
+import { writeSitelistToFile } from "../core/sitelist";
 
 export default class ArchiveWriter<Kind extends string, Data> {
   protected sitelist: string[] = [];

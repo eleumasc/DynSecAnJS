@@ -1,4 +1,7 @@
-import { defaultAnalysisRepeat, defaultPptrLaunchOptions } from "./defaults";
+import {
+  defaultAnalysisRepeat,
+  defaultPptrLaunchOptions,
+} from "../core/defaults";
 
 import { Browser } from "selenium-webdriver";
 import { DefaultToolAnalysis } from "./DefaultToolAnalysis";
@@ -8,10 +11,10 @@ import { PuppeteerAgent } from "./PuppeteerAgent";
 import { SeleniumAgent } from "./SeleniumAgent";
 import { ToolAnalysis } from "./ToolAnalysis";
 import { createExecutionHooksProvider } from "./ExecutionHooks";
-import { headless } from "./env";
-import { transformWithIFTranspiler } from "../tool/ifTranspiler";
-import { transformWithJEST } from "../tool/jest";
-import { transformWithJalangi } from "../tool/jalangi";
+import { headless } from "../core/env";
+import { transformWithIFTranspiler } from "../tools/ifTranspiler";
+import { transformWithJEST } from "../tools/jest";
+import { transformWithJalangi } from "../tools/jalangi";
 
 export const createToolAnalysis = (toolName: string): ToolAnalysis => {
   switch (toolName) {

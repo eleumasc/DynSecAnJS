@@ -1,7 +1,7 @@
 import { Options as ParseOptions, Program, parse } from "acorn";
 import { Category } from "./CompatibilityDetail";
 import { collectDiffEvidences } from "./collectDiffEvidences";
-import { distinctArray } from "../util/Array";
+import { distinctArray } from "../core/Array";
 
 export const analyzeScript = (
   code: string,

@@ -1,10 +1,10 @@
 import { BodyTransformer } from "../lib/ExecutionHooks";
 import { identifyBodyTransformer } from "./util";
-import { inlineExternalScripts } from "../html-manipulation/inlineExternalScripts";
-import { jestPath } from "../lib/env";
+import { inlineExternalScripts } from "../html/inlineExternalScripts";
+import { jestPath } from "../core/env";
 import { join } from "path";
-import { spawnStdio } from "../util/spawnStdio";
-import { transformHtml } from "../html-manipulation/transformHtml";
+import { spawnStdio } from "../core/spawnStdio";
+import { transformHtml } from "../html/transformHtml";
 
 export const transformWithJEST: BodyTransformer = identifyBodyTransformer(
   "JEST",

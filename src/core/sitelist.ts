@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from "fs";
-import { intersectSets } from "../util/Set";
+
+import { intersectSets } from "./Set";
 
 export const readSitelistFromFile = (path: string): string[] => {
   return readFileSync(path)

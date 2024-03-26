@@ -9,7 +9,7 @@ import { extractInlineScripts } from "../compatibility/extractInlineScripts";
 import { ESVersion, maxESVersion } from "../compatibility/ESVersion";
 import { analyzeScript } from "../compatibility/analyzeScript";
 import { ProxiedMonitorHooks } from "./ProxiedMonitorHooks";
-import Deferred from "../util/Deferred";
+import Deferred from "../core/Deferred";
 
 export interface CompatibilityHooks {
   hooks: ProxiedMonitorHooks;

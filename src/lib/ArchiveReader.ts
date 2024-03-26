@@ -3,7 +3,7 @@ import { join, resolve } from "path";
 
 import assert from "assert";
 import { readFileSync } from "fs";
-import { readSitelistFromFile } from "./sitelist";
+import { readSitelistFromFile } from "../core/sitelist";
 
 export default class ArchiveReader<Kind extends string, Data> {
   constructor(

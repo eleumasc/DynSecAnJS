@@ -1,12 +1,12 @@
 import { AttachmentList, DataAttachment } from "./ArchiveWriter";
-import { Fallible, toFallible } from "../util/Fallible";
+import { Fallible, toFallible } from "../core/Fallible";
 
 import { Agent } from "./Agent";
 import { ExecutionDetail } from "./ExecutionDetail";
 import { ExecutionHooksProvider } from "./ExecutionHooks";
 import { MonitorConfig } from "./monitor";
 import { Options as WebPageReplayOptions } from "./WebPageReplay";
-import { timeBomb } from "../util/async";
+import { timeBomb } from "../core/async";
 import { useProxiedMonitor } from "./ProxiedMonitor";
 
 export interface Options {

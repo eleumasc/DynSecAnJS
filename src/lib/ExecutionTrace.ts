@@ -1,4 +1,4 @@
-import { equalSets, isSubsetOf } from "../util/Set";
+import { equalSets, isSubsetOf } from "../core/Set";
 
 import { ExecutionDetail } from "./ExecutionDetail";
 

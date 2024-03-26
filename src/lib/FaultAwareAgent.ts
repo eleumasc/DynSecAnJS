@@ -1,7 +1,7 @@
 import { Agent, AgentFactory, PageController, UsePageOptions } from "./Agent";
 
-import { defaultFaultAwarenessTimeoutMs } from "./defaults";
-import { timeBomb } from "../util/async";
+import { defaultFaultAwarenessTimeoutMs } from "../core/defaults";
+import { timeBomb } from "../core/async";
 
 export default class FaultAwareAgent implements Agent {
   protected agent: Agent | null = null;

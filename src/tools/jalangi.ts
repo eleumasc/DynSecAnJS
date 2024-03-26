@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { BodyTransformer } from "../lib/ExecutionHooks";
 import { existsSync } from "fs";
 import { identifyBodyTransformer } from "./util";
-import { jalangiPath } from "../lib/env";
+import { jalangiPath } from "../core/env";
 import { join } from "path";
 import { spawn } from "child_process";
 import { tmpdir } from "os";

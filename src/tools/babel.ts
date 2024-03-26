@@ -1,8 +1,8 @@
 import { BodyTransformer } from "../lib/ExecutionHooks";
 import { identifyBodyTransformer } from "./util";
 import { transformAsync } from "@babel/core";
-import { transformHtml } from "../html-manipulation/transformHtml";
-import { transformInlineScripts } from "../html-manipulation/transformInlineScripts";
+import { transformHtml } from "../html/transformHtml";
+import { transformInlineScripts } from "../html/transformInlineScripts";
 
 export const transpileWithBabel: BodyTransformer = identifyBodyTransformer(
   "Babel.js",

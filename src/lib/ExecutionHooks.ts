@@ -1,8 +1,8 @@
 import { ExecutionDetail } from "./ExecutionDetail";
-import { transpileWithBabel } from "../tool/babel";
-import { composeBodyTransformers } from "../tool/util";
+import { transpileWithBabel } from "../tools/babel";
+import { composeBodyTransformers } from "../tools/util";
 import { Response } from "./AnalysisProxy";
-import Deferred from "../util/Deferred";
+import Deferred from "../core/Deferred";
 import { ProxiedMonitorHooks } from "./ProxiedMonitorHooks";
 
 export type BodyTransformer = (
