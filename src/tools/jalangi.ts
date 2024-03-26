@@ -2,25 +2,23 @@ import { mkdtemp, readFile, rm, writeFile } from "fs/promises";
 
 import { BodyTransformer } from "../lib/ExecutionHooks";
 import { existsSync } from "fs";
-import { identifyBodyTransformer } from "./util";
 import { jalangiPath } from "../core/env";
 import { join } from "path";
 import { spawn } from "child_process";
 import { tmpdir } from "os";
 
-export const transformWithJalangi: BodyTransformer = identifyBodyTransformer(
-  "Jalangi",
+export const transformWithJalangi =
+  (): BodyTransformer =>
   async (content, { contentType }) => {
     switch (contentType) {
       case "html":
-        return await esnstrument(content, "html");
+        return await jalangi(content, "html");
       case "javascript":
-        return await esnstrument(content, "js");
+        return await jalangi(content, "js");
     }
-  }
-);
+  };
 
-export const esnstrument = async (
+export const jalangi = async (
   code: string,
   extension: "html" | "js"
 ): Promise<string> => {

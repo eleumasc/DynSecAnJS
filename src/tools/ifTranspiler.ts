@@ -1,15 +1,15 @@
 import { composeHtmlTransformers, transformHtml } from "../html/transformHtml";
+import { createJavascriptDataUrl, injectScripts } from "../html/injectScripts";
 
 import { BodyTransformer } from "../lib/ExecutionHooks";
-import { identifyBodyTransformer } from "./util";
 import { ifTranspilerPath } from "../core/env";
-import { injectScripts } from "../html/injectScripts";
 import { join } from "path";
 import { spawnStdio } from "../core/spawnStdio";
 import { transformInlineScripts } from "../html/transformInlineScripts";
 
-export const transformWithIFTranspiler: BodyTransformer =
-  identifyBodyTransformer("IFTranspiler", async (content, { contentType }) => {
+export const transformWithIFTranspiler =
+  (setupCode: string): BodyTransformer =>
+  async (content, { contentType }) => {
     switch (contentType) {
       case "html":
         return await transformHtml(
@@ -21,16 +21,13 @@ export const transformWithIFTranspiler: BodyTransformer =
               }
               return await ifTranspiler(code);
             }),
-            injectScripts([
-              "data:text/javascript;base64," +
-                Buffer.from(SETUP).toString("base64"),
-            ]),
+            injectScripts([createJavascriptDataUrl(setupCode)]),
           ])
         );
       case "javascript":
         return await ifTranspiler(content);
     }
-  });
+  };
 
 export const ifTranspiler = async (code: string): Promise<string> => {
   let result = await spawnStdio(
@@ -46,7 +43,7 @@ export const ifTranspiler = async (code: string): Promise<string> => {
   return result;
 };
 
-const SETUP = `
+export const getSetupCodeForIFTranspiler = (): string => `
 var $Γ = { global: { scope: null, Σ: 0 } };
 var _$tmp, $tmp, $rf;
 

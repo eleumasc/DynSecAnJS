@@ -1,13 +1,12 @@
 import { BodyTransformer } from "../lib/ExecutionHooks";
-import { identifyBodyTransformer } from "./util";
 import { inlineExternalScripts } from "../html/inlineExternalScripts";
 import { jestPath } from "../core/env";
 import { join } from "path";
 import { spawnStdio } from "../core/spawnStdio";
 import { transformHtml } from "../html/transformHtml";
 
-export const transformWithJEST: BodyTransformer = identifyBodyTransformer(
-  "JEST",
+export const transformWithJEST =
+  (): BodyTransformer =>
   async (content, { contentType, req }) => {
     switch (contentType) {
       case "html":
@@ -18,8 +17,7 @@ export const transformWithJEST: BodyTransformer = identifyBodyTransformer(
       case "javascript":
         return content;
     }
-  }
-);
+  };
 
 export const jest = async (
   code: string,

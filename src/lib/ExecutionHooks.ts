@@ -1,6 +1,9 @@
 import { ExecutionDetail } from "./ExecutionDetail";
 import { transpileWithBabel } from "../tools/babel";
-import { composeBodyTransformers } from "../tools/util";
+import {
+  composeBodyTransformers,
+  identifyBodyTransformer,
+} from "../tools/util";
 import { Response } from "./AnalysisProxy";
 import Deferred from "../core/Deferred";
 import { ProxiedMonitorHooks } from "./ProxiedMonitorHooks";
@@ -45,7 +48,10 @@ export const createExecutionHooksProvider =
   (directTransform?: BodyTransformer): ExecutionHooksProvider =>
   (compatMode) => {
     const transform = compatMode
-      ? composeBodyTransformers(transpileWithBabel, directTransform)
+      ? composeBodyTransformers(
+          identifyBodyTransformer("Babel", transpileWithBabel()),
+          directTransform
+        )
       : directTransform;
 
     const deferredCompleteAnalysis = new Deferred<ExecutionDetailCompleter>();

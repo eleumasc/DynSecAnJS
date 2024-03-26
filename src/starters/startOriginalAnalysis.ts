@@ -4,8 +4,8 @@ import ArchiveWriter, {
   PrefixAttachmentList,
 } from "../lib/ArchiveWriter";
 
-import { createOriginalAnalysis } from "../lib/createOriginalAnalysis";
 import { deployAnalysis } from "../lib/deployAnalysis";
+import { getOriginalAnalysisFactory } from "../lib/OriginalAnalysisFactory";
 import { readSitelistFromFile } from "../core/sitelist";
 import { resolve } from "path";
 import { serializeOriginalAnalysisResult } from "../lib/OriginalAnalysis";
@@ -31,8 +31,9 @@ export const startOriginalAnalysis = async (args: OriginalAnalysisArgs) => {
     serializeOriginalAnalysisResult
   );
 
+  const analysisFactory = getOriginalAnalysisFactory();
   await deployAnalysis(
-    () => createOriginalAnalysis(),
+    analysisFactory,
     { concurrencyLevel },
     sitelist.map((site, i) => async (analysis) => {
       console.log(`begin analysis ${site} [${i} / ${sitelist.length}]`);

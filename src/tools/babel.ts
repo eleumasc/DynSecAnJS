@@ -1,28 +1,25 @@
 import { BodyTransformer } from "../lib/ExecutionHooks";
-import { identifyBodyTransformer } from "./util";
 import { transformAsync } from "@babel/core";
 import { transformHtml } from "../html/transformHtml";
 import { transformInlineScripts } from "../html/transformInlineScripts";
 
-export const transpileWithBabel: BodyTransformer = identifyBodyTransformer(
-  "Babel.js",
+export const transpileWithBabel =
+  (): BodyTransformer =>
   async (content, { contentType }) => {
     switch (contentType) {
       case "html":
         return await transformHtml(
           content,
           transformInlineScripts(
-            async (code, isEventHandler) =>
-              await transpile(code, isEventHandler)
+            async (code, isEventHandler) => await babel(code, isEventHandler)
           )
         );
       case "javascript":
-        return await transpile(content);
+        return await babel(content);
     }
-  }
-);
+  };
 
-const transpile = async (
+const babel = async (
   code: string,
   isInlineEventHandler: boolean = false
 ): Promise<string> => {

@@ -33,3 +33,4 @@ export const wprgoPath = get("WPRGO_PATH");
 export const jestPath = get("JEST_PATH");
 export const ifTranspilerPath = get("IFTRANSPILER_PATH");
 export const jalangiPath = get("JALANGI_PATH");
+export const aranLinvailPath = get("ARAN_LINVAIL_PATH");

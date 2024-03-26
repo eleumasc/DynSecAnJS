@@ -38,3 +38,6 @@ const findHeadNode = (node: Node): Element | null => {
 
   return null;
 };
+
+export const createJavascriptDataUrl = (code: string): string =>
+  `data:text/javascript;base64,${Buffer.from(code).toString("base64")}`;

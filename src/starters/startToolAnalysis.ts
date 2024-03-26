@@ -11,9 +11,9 @@ import {
 import { intersectSitelists, readSitelistFromFile } from "../core/sitelist";
 
 import ArchiveReader from "../lib/ArchiveReader";
-import { createToolAnalysis } from "../lib/createToolAnalysis";
 import { deployAnalysis } from "../lib/deployAnalysis";
 import { deserializeOriginalAnalysisResult } from "../lib/OriginalAnalysis";
+import { getToolAnalysisFactory } from "../lib/ToolAnalysisFactory";
 import { resolve } from "path";
 
 export interface ToolAnalysisArgs {
@@ -54,8 +54,9 @@ export const startToolAnalysis = async (args: ToolAnalysisArgs) => {
     serializeToolAnalysisResult
   );
 
+  const analysisFactory = getToolAnalysisFactory(toolName);
   await deployAnalysis(
-    () => createToolAnalysis(toolName),
+    analysisFactory,
     { concurrencyLevel },
     sitelist.map((site, i) => async (analysis) => {
       console.log(`begin analysis ${site} [${i} / ${sitelist.length}]`);
