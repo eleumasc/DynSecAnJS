@@ -1,12 +1,11 @@
 import { ESVersion, lessOrEqualToESVersion } from "../compatibility/ESVersion";
 import { Fallible, isFailure } from "../core/Fallible";
 import { RunOptions, ToolAnalysis, ToolAnalysisResult } from "./ToolAnalysis";
-import { defaultDelayMs, defaultLoadingTimeoutMs } from "../core/defaults";
 
 import { Agent } from "./Agent";
 import { ExecutionDetail } from "./ExecutionDetail";
 import { ExecutionHooksProvider } from "./ExecutionHooks";
-import { PrefixAttachmentList } from "./ArchiveWriter";
+import { defaultDelayMs } from "../core/defaults";
 import { runExecutionAnalysis } from "./runExecutionAnalysis";
 
 export interface Options {
@@ -14,6 +13,7 @@ export interface Options {
   executionHooksProvider: ExecutionHooksProvider;
   supportedESVersion: ESVersion;
   analysisRepeat: number;
+  loadingTimeoutMs: number;
 }
 
 export class DefaultToolAnalysis implements ToolAnalysis {
@@ -25,13 +25,14 @@ export class DefaultToolAnalysis implements ToolAnalysis {
       executionHooksProvider,
       supportedESVersion,
       analysisRepeat,
+      loadingTimeoutMs,
     } = this.options;
     const {
       site,
       minimumESVersion: siteMinimumESVersion,
       wprArchivePath,
       timeSeedMs,
-      attachmentList,
+      // attachmentList,
     } = runOptions;
 
     const compatible = lessOrEqualToESVersion(
@@ -51,7 +52,7 @@ export class DefaultToolAnalysis implements ToolAnalysis {
         compatMode,
         monitorConfig: {
           waitUntil: "load",
-          loadingTimeoutMs: defaultLoadingTimeoutMs,
+          loadingTimeoutMs,
           timeSeedMs,
         },
         wprOptions: {

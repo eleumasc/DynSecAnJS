@@ -21,6 +21,7 @@ export interface ToolAnalysisArgs {
   originalArchivePath: string;
   intersectSitelistPath?: string;
   concurrencyLevel: number;
+  preAnalysis: boolean;
 }
 
 export const startToolAnalysis = async (args: ToolAnalysisArgs) => {
@@ -29,9 +30,11 @@ export const startToolAnalysis = async (args: ToolAnalysisArgs) => {
     originalArchivePath,
     intersectSitelistPath,
     concurrencyLevel,
+    preAnalysis,
   } = args;
 
-  const analysisId = `${Date.now().toString()}-${toolName}`;
+  const analysisId =
+    `${Date.now().toString()}-${toolName}` + (preAnalysis ? "-pre" : "");
   console.log(`Analysis ID is ${analysisId}`);
 
   const originalArchive = new ArchiveReader(
@@ -54,7 +57,7 @@ export const startToolAnalysis = async (args: ToolAnalysisArgs) => {
     serializeToolAnalysisResult
   );
 
-  const analysisFactory = getToolAnalysisFactory(toolName);
+  const analysisFactory = getToolAnalysisFactory(toolName, preAnalysis);
   await deployAnalysis(
     analysisFactory,
     { concurrencyLevel },

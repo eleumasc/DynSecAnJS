@@ -1,16 +1,16 @@
 import { Fallible, isFailure } from "../core/Fallible";
-import { FileAttachment, PrefixAttachmentList } from "./ArchiveWriter";
 import {
   OriginalAnalysis,
   OriginalAnalysisResult,
   RunOptions,
 } from "./OriginalAnalysis";
-import { defaultDelayMs, defaultLoadingTimeoutMs } from "../core/defaults";
 
 import { Agent } from "./Agent";
 import { CompatibilityHooksProvider } from "./CompatibilityHooks";
 import { ExecutionDetail } from "./ExecutionDetail";
 import { ExecutionHooksProvider } from "./ExecutionHooks";
+import { FileAttachment } from "./ArchiveWriter";
+import { defaultDelayMs } from "../core/defaults";
 import { runCompatibilityAnalysis } from "./runCompatibilityAnalysis";
 import { runExecutionAnalysis } from "./runExecutionAnalysis";
 
@@ -18,6 +18,7 @@ export interface Options {
   compatibilityHooksProvider: CompatibilityHooksProvider;
   executionHooksProvider: ExecutionHooksProvider;
   analysisRepeat: number;
+  loadingTimeoutMs: number;
 }
 
 export class DefaultOriginalAnalysis implements OriginalAnalysis {
@@ -28,6 +29,7 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
       compatibilityHooksProvider,
       executionHooksProvider,
       analysisRepeat,
+      loadingTimeoutMs,
     } = this.options;
     const { site, attachmentList } = runOptions;
 
@@ -47,7 +49,7 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
       hooksProvider: compatibilityHooksProvider,
       monitorConfig: {
         waitUntil: "load",
-        loadingTimeoutMs: defaultLoadingTimeoutMs,
+        loadingTimeoutMs,
         timeSeedMs,
       },
       wprOptions: {
@@ -69,7 +71,7 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
         compatMode: false,
         monitorConfig: {
           waitUntil: "load",
-          loadingTimeoutMs: defaultLoadingTimeoutMs,
+          loadingTimeoutMs,
           timeSeedMs,
         },
         wprOptions: {

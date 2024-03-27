@@ -4,6 +4,8 @@ import {
 } from "./ExecutionHooks";
 import {
   defaultAnalysisRepeat,
+  defaultFaultAwarenessDeltaMs,
+  defaultLoadingTimeoutMs,
   defaultPptrLaunchOptions,
 } from "../core/defaults";
 import {
@@ -28,7 +30,8 @@ import { transformWithJalangi } from "../tools/jalangi";
 export type ToolAnalysisFactory = () => ToolAnalysis;
 
 export const getToolAnalysisFactory = (
-  toolName: string
+  toolName: string,
+  preAnalysis: boolean
 ): ToolAnalysisFactory => {
   interface DefaultFactoryOptions {
     agentFactory: AgentFactory;
@@ -40,14 +43,26 @@ export const getToolAnalysisFactory = (
     (options: DefaultFactoryOptions): ToolAnalysisFactory =>
     () => {
       const { agentFactory, bodyTransformer, supportedESVersion } = options;
-      return new DefaultToolAnalysis(new FaultAwareAgent(agentFactory), {
-        toolName,
-        executionHooksProvider: createExecutionHooksProvider(
-          bodyTransformer && identifyBodyTransformer(toolName, bodyTransformer)
-        ),
-        supportedESVersion,
-        analysisRepeat: defaultAnalysisRepeat,
-      });
+      const analysisRepeat = preAnalysis ? 1 : defaultAnalysisRepeat;
+      const loadingTimeoutMs = preAnalysis
+        ? 5 * 60_000
+        : defaultLoadingTimeoutMs;
+      const faultAwarenessTimeoutMs =
+        loadingTimeoutMs + defaultFaultAwarenessDeltaMs;
+
+      return new DefaultToolAnalysis(
+        new FaultAwareAgent(faultAwarenessTimeoutMs, agentFactory),
+        {
+          toolName,
+          executionHooksProvider: createExecutionHooksProvider(
+            bodyTransformer &&
+              identifyBodyTransformer(toolName, bodyTransformer)
+          ),
+          supportedESVersion,
+          analysisRepeat,
+          loadingTimeoutMs,
+        }
+      );
     };
 
   switch (toolName) {

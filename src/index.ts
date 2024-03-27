@@ -43,6 +43,10 @@ yargs(process.argv.slice(2))
         .option("concurrencyLevel", {
           type: "number",
           default: 1,
+        })
+        .option("preAnalysis", {
+          type: "boolean",
+          default: false,
         });
     },
     (argv) => {

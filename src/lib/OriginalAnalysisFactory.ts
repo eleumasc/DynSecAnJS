@@ -1,5 +1,7 @@
 import {
   defaultAnalysisRepeat,
+  defaultFaultAwarenessDeltaMs,
+  defaultLoadingTimeoutMs,
   defaultPptrLaunchOptions,
 } from "../core/defaults";
 
@@ -13,9 +15,15 @@ import { createExecutionHooksProvider } from "./ExecutionHooks";
 export type OriginalAnalysisFactory = () => OriginalAnalysis;
 
 export const getOriginalAnalysisFactory = (): OriginalAnalysisFactory => {
-  return () =>
-    new DefaultOriginalAnalysis(
+  return () => {
+    const analysisRepeat = defaultAnalysisRepeat;
+    const loadingTimeoutMs = defaultLoadingTimeoutMs;
+    const faultAwarenessTimeoutMs =
+      loadingTimeoutMs + defaultFaultAwarenessDeltaMs;
+
+    return new DefaultOriginalAnalysis(
       new FaultAwareAgent(
+        faultAwarenessTimeoutMs,
         async () =>
           await PuppeteerAgent.create({
             pptrLaunchOptions: defaultPptrLaunchOptions,
@@ -24,7 +32,9 @@ export const getOriginalAnalysisFactory = (): OriginalAnalysisFactory => {
       {
         compatibilityHooksProvider: createCompatibilityHooksProvider(),
         executionHooksProvider: createExecutionHooksProvider(),
-        analysisRepeat: defaultAnalysisRepeat,
+        analysisRepeat,
+        loadingTimeoutMs,
       }
     );
+  };
 };

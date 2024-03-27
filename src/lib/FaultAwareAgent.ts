@@ -1,12 +1,14 @@
 import { Agent, AgentFactory, PageController, UsePageOptions } from "./Agent";
 
-import { defaultFaultAwarenessTimeoutMs } from "../core/defaults";
 import { timeBomb } from "../core/async";
 
 export default class FaultAwareAgent implements Agent {
   protected agent: Agent | null = null;
 
-  constructor(readonly agentFactory: AgentFactory) {}
+  constructor(
+    readonly timeoutMs: number,
+    readonly agentFactory: AgentFactory
+  ) {}
 
   async usePage<T>(
     options: UsePageOptions,
@@ -17,10 +19,7 @@ export default class FaultAwareAgent implements Agent {
     }
     const { agent } = this;
     try {
-      return await timeBomb(
-        agent.usePage(options, cb),
-        defaultFaultAwarenessTimeoutMs
-      );
+      return await timeBomb(agent.usePage(options, cb), this.timeoutMs);
     } catch (e) {
       await this.terminate();
       throw e;
