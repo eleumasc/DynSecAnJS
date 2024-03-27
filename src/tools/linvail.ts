@@ -39,7 +39,7 @@ export const aranLinvail = async (code: string): Promise<string> => {
     [path.join(aranLinvailPath, "lib", "instrument.js")],
     code
   );
-  return `(function () { ${result} })();`;
+  return `(function () {\n${result}\n})();`;
 };
 
 export const getSetupCodeForLinvail = (): string => {
