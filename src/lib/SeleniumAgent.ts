@@ -1,4 +1,9 @@
-import { Agent, PageController, UsePageOptions } from "./Agent";
+import {
+  Agent,
+  NavigateOptions,
+  PageController,
+  UsePageOptions,
+} from "./Agent";
 import { Browser, Builder, Capabilities, WebDriver } from "selenium-webdriver";
 
 import { AddressInfo } from "net";
@@ -56,8 +61,11 @@ export class SeleniumAgent implements Agent {
 export class SeleniumPageController implements PageController {
   constructor(protected driver: WebDriver) {}
 
-  async navigate(url: string): Promise<void> {
-    await this.driver.executeScript(`location.href = ${JSON.stringify(url)}`);
+  async navigate(url: string, { timeoutMs }: NavigateOptions): Promise<void> {
+    this.driver.manage().timeouts().pageLoadTimeout(timeoutMs);
+    try {
+      await this.driver.get(url);
+    } catch {}
   }
 
   async screenshot(): Promise<Buffer> {

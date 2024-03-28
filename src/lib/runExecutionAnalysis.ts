@@ -52,11 +52,10 @@ export const runExecutionAnalysis = (
           },
           async (page) => {
             const startTime = Date.now();
-            await page.navigate(url);
-            const completer = await timeBomb(
-              willCompleteAnalysis,
-              monitorConfig.loadingTimeoutMs + delayMs
-            );
+            await page.navigate(url, {
+              timeoutMs: monitorConfig.loadingTimeoutMs,
+            });
+            const completer = await timeBomb(willCompleteAnalysis, delayMs);
             const endTime = Date.now();
             const executionTimeMs = endTime - startTime;
 

@@ -1,12 +1,3 @@
-export interface PageController {
-  navigate: (url: string) => Promise<void>;
-  screenshot: () => Promise<Buffer>;
-}
-
-export interface UsePageOptions {
-  proxyPort: number;
-}
-
 export interface Agent {
   usePage<T>(
     options: UsePageOptions,
@@ -15,4 +6,17 @@ export interface Agent {
   terminate(): Promise<void>;
 }
 
+export interface UsePageOptions {
+  proxyPort: number;
+}
+
 export type AgentFactory = () => Promise<Agent>;
+
+export interface PageController {
+  navigate: (url: string, options: NavigateOptions) => Promise<void>;
+  screenshot: () => Promise<Buffer>;
+}
+
+export interface NavigateOptions {
+  timeoutMs: number;
+}

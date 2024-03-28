@@ -1,4 +1,9 @@
-import { Agent, PageController, UsePageOptions } from "./Agent";
+import {
+  Agent,
+  NavigateOptions,
+  PageController,
+  UsePageOptions,
+} from "./Agent";
 import puppeteer, {
   Browser,
   BrowserContext,
@@ -56,8 +61,10 @@ export class PuppeteerAgent implements Agent {
 export class PuppeteerPageController implements PageController {
   constructor(protected page: Page) {}
 
-  async navigate(url: string): Promise<void> {
-    await this.page.evaluate(`location.href = ${JSON.stringify(url)}`);
+  async navigate(url: string, { timeoutMs }: NavigateOptions): Promise<void> {
+    try {
+      await this.page.goto(url, { timeout: timeoutMs });
+    } catch {}
   }
 
   screenshot(): Promise<Buffer> {

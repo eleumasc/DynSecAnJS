@@ -40,11 +40,10 @@ export const runCompatibilityAnalysis = (
             proxyPort: analysisProxy.getPort(),
           },
           async (page) => {
-            await page.navigate(url);
-            const compatibility = await timeBomb(
-              willCompleteAnalysis,
-              monitorConfig.loadingTimeoutMs + delayMs
-            );
+            await page.navigate(url, {
+              timeoutMs: monitorConfig.loadingTimeoutMs,
+            });
+            const compatibility = await timeBomb(willCompleteAnalysis, delayMs);
 
             return compatibility;
           }
