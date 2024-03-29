@@ -11,9 +11,14 @@ import { readFileSync } from "fs";
 import { spawnStdio } from "../core/spawnStdio";
 import { transformInlineScripts } from "../html/transformInlineScripts";
 
-export const transformWithLinvail =
-  (setupCode: string): BodyTransformer =>
-  async (content, { contentType }) => {
+export const transformWithAranLinvail = (
+  analysisName: string
+): BodyTransformer => {
+  const setupCode = readFileSync(
+    path.join(aranLinvailPath, "build", analysisName, "bundle.js")
+  ).toString();
+
+  return async (content, { contentType }) => {
     switch (contentType) {
       case "html":
         return await transformHtml(
@@ -23,27 +28,26 @@ export const transformWithLinvail =
               if (isEventHandler) {
                 return code;
               }
-              return await aranLinvail(code);
+              return await aranLinvail(analysisName, code, true);
             }),
             injectScripts([createJavaScriptDataUrl(setupCode)]),
           ])
         );
       case "javascript":
-        return await aranLinvail(content);
+        return await aranLinvail(analysisName, content, true);
     }
   };
-
-export const aranLinvail = async (code: string): Promise<string> => {
-  const result = await spawnStdio(
-    "node",
-    [path.join(aranLinvailPath, "lib", "instrument.js")],
-    code
-  );
-  return `(function () {\n${result}\n})();`;
 };
 
-export const getSetupCodeForLinvail = (): string => {
-  return readFileSync(
-    path.join(aranLinvailPath, "generated", "bundle.js")
-  ).toString();
+export const aranLinvail = async (
+  analysisName: string,
+  code: string,
+  wrap: boolean = false
+): Promise<string> => {
+  const result = await spawnStdio(
+    "node",
+    [path.join(aranLinvailPath, "build", analysisName, "transform.js")],
+    code
+  );
+  return wrap ? `(function () {\n${result}\n})();` : result;
 };

@@ -8,11 +8,6 @@ import {
   defaultLoadingTimeoutMs,
   defaultPptrLaunchOptions,
 } from "../core/defaults";
-import {
-  getSetupCodeForIFTranspiler,
-  transformWithIFTranspiler,
-} from "../tools/ifTranspiler";
-import { getSetupCodeForLinvail, transformWithLinvail } from "../tools/linvail";
 
 import { AgentFactory } from "./Agent";
 import { Browser } from "selenium-webdriver";
@@ -24,6 +19,8 @@ import { SeleniumAgent } from "./SeleniumAgent";
 import { ToolAnalysis } from "./ToolAnalysis";
 import { headless } from "../core/env";
 import { identifyBodyTransformer } from "../tools/util";
+import { transformWithAranLinvail } from "../tools/aranLinvail";
+import { transformWithIFTranspiler } from "../tools/ifTranspiler";
 import { transformWithJEST } from "../tools/jest";
 import { transformWithJalangi } from "../tools/jalangi";
 
@@ -129,17 +126,25 @@ export const getToolAnalysisFactory = (
         supportedESVersion: ESVersion.ES5,
       });
 
-    case "IFTranspiler": {
-      const setupCode = getSetupCodeForIFTranspiler();
+    case "IFTranspiler":
       return getDefaultFactory({
         agentFactory: async () =>
           await PuppeteerAgent.create({
             pptrLaunchOptions: defaultPptrLaunchOptions,
           }),
-        bodyTransformer: transformWithIFTranspiler(setupCode),
+        bodyTransformer: transformWithIFTranspiler(),
         supportedESVersion: ESVersion.ES5,
       });
-    }
+
+    case "GIFC":
+      return getDefaultFactory({
+        agentFactory: async () =>
+          await PuppeteerAgent.create({
+            pptrLaunchOptions: defaultPptrLaunchOptions,
+          }),
+        bodyTransformer: transformWithAranLinvail("gifc"),
+        supportedESVersion: ESVersion.ES2018,
+      });
 
     case "Jalangi":
       return getDefaultFactory({
@@ -151,17 +156,15 @@ export const getToolAnalysisFactory = (
         supportedESVersion: ESVersion.ES5,
       });
 
-    case "Linvail": {
-      const setupCode = getSetupCodeForLinvail();
+    case "Linvail":
       return getDefaultFactory({
         agentFactory: async () =>
           await PuppeteerAgent.create({
             pptrLaunchOptions: defaultPptrLaunchOptions,
           }),
-        bodyTransformer: transformWithLinvail(setupCode),
-        supportedESVersion: ESVersion.ES5,
+        bodyTransformer: transformWithAranLinvail("identity"),
+        supportedESVersion: ESVersion.ES2018,
       });
-    }
 
     default:
       throw new Error(`Unknown tool: ${toolName}`);

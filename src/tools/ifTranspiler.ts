@@ -8,7 +8,7 @@ import { spawnStdio } from "../core/spawnStdio";
 import { transformInlineScripts } from "../html/transformInlineScripts";
 
 export const transformWithIFTranspiler =
-  (setupCode: string): BodyTransformer =>
+  (): BodyTransformer =>
   async (content, { contentType }) => {
     switch (contentType) {
       case "html":
@@ -43,7 +43,7 @@ export const ifTranspiler = async (code: string): Promise<string> => {
   return result;
 };
 
-export const getSetupCodeForIFTranspiler = (): string => `
+const setupCode = `
 var $Γ = { global: { scope: null, Σ: 0 } };
 var _$tmp, $tmp, $rf;
 
