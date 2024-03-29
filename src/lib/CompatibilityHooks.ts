@@ -13,7 +13,7 @@ import Deferred from "../core/Deferred";
 
 export interface CompatibilityHooks {
   hooks: ProxiedMonitorHooks;
-  willCompleteAnalysis: Promise<CompatibilityDetail>;
+  willCompleteAnalysis: () => Promise<CompatibilityDetail>;
 }
 
 export type CompatibilityHooksProvider = () => CompatibilityHooks;
@@ -92,6 +92,6 @@ export const createCompatibilityHooksProvider =
 
     return {
       hooks,
-      willCompleteAnalysis: deferredCompleteAnalysis.promise,
+      willCompleteAnalysis: () => deferredCompleteAnalysis.promise,
     };
   };

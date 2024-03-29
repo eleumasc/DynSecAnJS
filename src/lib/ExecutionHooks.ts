@@ -39,7 +39,7 @@ export type ExecutionDetailCompleter = (
 
 export interface ExecutionHooks {
   hooks: ProxiedMonitorHooks;
-  willCompleteAnalysis: Promise<ExecutionDetailCompleter>;
+  willCompleteAnalysis: () => Promise<ExecutionDetailCompleter>;
 }
 
 export type ExecutionHooksProvider = (compatMode: boolean) => ExecutionHooks;
@@ -118,6 +118,6 @@ export const createExecutionHooksProvider =
 
     return {
       hooks,
-      willCompleteAnalysis: deferredCompleteAnalysis.promise,
+      willCompleteAnalysis: () => deferredCompleteAnalysis.promise,
     };
   };

@@ -43,7 +43,10 @@ export const runCompatibilityAnalysis = (
             await page.navigate(url, {
               timeoutMs: monitorConfig.loadingTimeoutMs,
             });
-            const compatibility = await timeBomb(willCompleteAnalysis, delayMs);
+            const compatibility = await timeBomb(
+              willCompleteAnalysis(),
+              delayMs
+            );
 
             return compatibility;
           }

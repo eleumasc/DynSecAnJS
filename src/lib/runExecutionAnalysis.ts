@@ -55,7 +55,7 @@ export const runExecutionAnalysis = (
             await page.navigate(url, {
               timeoutMs: monitorConfig.loadingTimeoutMs,
             });
-            const completer = await timeBomb(willCompleteAnalysis, delayMs);
+            const completer = await timeBomb(willCompleteAnalysis(), delayMs);
             const endTime = Date.now();
             const executionTimeMs = endTime - startTime;
 
