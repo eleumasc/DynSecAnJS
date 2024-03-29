@@ -34,3 +34,5 @@ export const jestPath = get("JEST_PATH");
 export const ifTranspilerPath = get("IFTRANSPILER_PATH");
 export const jalangiPath = get("JALANGI_PATH");
 export const aranLinvailPath = get("ARAN_LINVAIL_PATH");
+export const projectFoxhoundPath = get("PROJECT_FOXHOUND_PATH");
+export const projectFoxhoundServer = get("PROJECT_FOXHOUND_SERVER");

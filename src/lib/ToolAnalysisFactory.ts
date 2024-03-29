@@ -8,6 +8,11 @@ import {
   defaultLoadingTimeoutMs,
   defaultPptrLaunchOptions,
 } from "../core/defaults";
+import {
+  headless,
+  projectFoxhoundPath,
+  projectFoxhoundServer,
+} from "../core/env";
 
 import { AgentFactory } from "./Agent";
 import { Browser } from "selenium-webdriver";
@@ -17,8 +22,8 @@ import FaultAwareAgent from "./FaultAwareAgent";
 import { PuppeteerAgent } from "./PuppeteerAgent";
 import { SeleniumAgent } from "./SeleniumAgent";
 import { ToolAnalysis } from "./ToolAnalysis";
-import { headless } from "../core/env";
 import { identifyBodyTransformer } from "../tools/util";
+import path from "path";
 import { transformWithAranLinvail } from "../tools/aranLinvail";
 import { transformWithIFTranspiler } from "../tools/ifTranspiler";
 import { transformWithJEST } from "../tools/jest";
@@ -106,8 +111,8 @@ export const getToolAnalysisFactory = (
           await SeleniumAgent.create({
             webDriverOptions: {
               browser: Browser.FIREFOX,
-              server: "http://127.0.0.1:4444/",
-              binaryPath: "/home/osboxes/foxhound/foxhound",
+              server: projectFoxhoundServer,
+              binaryPath: path.join(projectFoxhoundPath, "foxhound"),
               args: [],
               headless,
             },
