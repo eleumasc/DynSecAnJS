@@ -17,9 +17,17 @@ export const spawnStdio = async (
     stderrData += data.toString();
   });
 
-  const stdin = childProcess.stdin!;
-  stdin.write(stdinData);
-  stdin.end();
+  await new Promise<void>((resolve, reject) => {
+    const stdin = childProcess.stdin!;
+
+    stdin.on("error", (err) => {
+      reject(err);
+    });
+
+    stdin.write(stdinData);
+    stdin.end();
+    resolve();
+  });
 
   await Promise.all([
     new Promise<void>((resolve) => {
@@ -29,14 +37,14 @@ export const spawnStdio = async (
       childProcess.stderr?.on("end", () => resolve());
     }),
     new Promise<void>((resolve, reject) => {
-      childProcess.on("exit", function (code) {
+      childProcess.on("exit", (code) => {
         if (code === 0) {
           resolve();
         } else {
           reject(new Error(stderrData));
         }
       });
-      childProcess.on("error", function (err) {
+      childProcess.on("error", (err) => {
         reject(err);
       });
     }),

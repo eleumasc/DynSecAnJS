@@ -36,8 +36,8 @@ export const getTcpPort = async (): Promise<number> => {
   return port;
 };
 
-function checkTcpPortFree(port: number) {
-  return new Promise((resolve, reject) => {
+export const checkTcpPortFree = (port: number): Promise<boolean> => {
+  return new Promise<boolean>((resolve, reject) => {
     const socket = new Socket();
 
     socket.setTimeout(1000);
@@ -62,7 +62,7 @@ function checkTcpPortFree(port: number) {
 
     socket.connect(port, "127.0.0.1");
   });
-}
+};
 
 export const waitUntilFreeOrUsed =
   (free: boolean) =>
