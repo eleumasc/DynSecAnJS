@@ -1,5 +1,6 @@
 import { startCompatibility } from "./starters/startCompatibility";
 import { startOriginalAnalysis } from "./starters/startOriginalAnalysis";
+import { startSitelistRecovery } from "./starters/startSitelistRecovery";
 import { startToolAnalysis } from "./starters/startToolAnalysis";
 import { startTransparency } from "./starters/startTransparency";
 import yargs from "yargs/yargs";
@@ -83,6 +84,26 @@ yargs(process.argv.slice(2))
     (argv) => {
       startTransparency(argv);
     }
+  )
+  .command(
+    "sitelist-recovery <sitelistPath> <archivePath> <diffSitelistPath>",
+    "Start sitelist recovery",
+    (yargs) => {
+      return yargs
+        .positional("sitelistPath", {
+          type: "string",
+          demandOption: true,
+        })
+        .positional("archivePath", {
+          type: "string",
+          demandOption: true,
+        })
+        .positional("diffSitelistPath", {
+          type: "string",
+          demandOption: true,
+        });
+    },
+    (argv) => startSitelistRecovery(argv)
   )
   .strictCommands()
   .demandCommand(1)
