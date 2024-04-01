@@ -3,6 +3,7 @@ import {
   NavigateOptions,
   PageController,
   UsePageOptions,
+  Viewport,
 } from "./Agent";
 import { Browser, Builder, Capabilities, WebDriver } from "selenium-webdriver";
 
@@ -70,6 +71,28 @@ export class SeleniumPageController implements PageController {
 
   async screenshot(): Promise<Buffer> {
     return Buffer.from(await this.driver.takeScreenshot(), "base64");
+  }
+
+  async setViewport({ width, height }: Viewport): Promise<void> {
+    const WINDOW_SIZE_SCRIPT = `
+return [
+  window.outerWidth,
+  window.innerWidth,
+  window.outerHeight,
+  window.innerHeight
+];
+`;
+    const [outerWidth, innerWidth, outerHeight, innerHeight] =
+      (await this.driver.executeScript(
+        WINDOW_SIZE_SCRIPT
+      )) as unknown as number[];
+    await this.driver
+      .manage()
+      .window()
+      .setSize(
+        outerWidth - innerWidth + width,
+        outerHeight - innerHeight + height
+      );
   }
 }
 

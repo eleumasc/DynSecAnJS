@@ -3,6 +3,7 @@ import {
   NavigateOptions,
   PageController,
   UsePageOptions,
+  Viewport,
 } from "./Agent";
 import puppeteer, {
   Browser,
@@ -69,6 +70,10 @@ export class PuppeteerPageController implements PageController {
 
   screenshot(): Promise<Buffer> {
     return this.page.screenshot();
+  }
+
+  async setViewport({ width, height }: Viewport): Promise<void> {
+    await this.page.setViewport({ width, height });
   }
 }
 

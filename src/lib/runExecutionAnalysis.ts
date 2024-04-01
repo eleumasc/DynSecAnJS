@@ -6,6 +6,7 @@ import { ExecutionDetail } from "./ExecutionDetail";
 import { ExecutionHooksProvider } from "./ExecutionHooks";
 import { MonitorConfig } from "./monitor";
 import { Options as WebPageReplayOptions } from "./WebPageReplay";
+import { defaultViewport } from "../core/defaults";
 import { timeBomb } from "../core/async";
 import { useProxiedMonitor } from "./ProxiedMonitor";
 
@@ -51,6 +52,8 @@ export const runExecutionAnalysis = (
             proxyPort: analysisProxy.getPort(),
           },
           async (page) => {
+            await page.setViewport(defaultViewport);
+
             const startTime = Date.now();
             await page.navigate(url, {
               timeoutMs: monitorConfig.loadingTimeoutMs,

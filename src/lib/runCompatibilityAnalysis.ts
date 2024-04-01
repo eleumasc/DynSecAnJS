@@ -5,6 +5,7 @@ import { CompatibilityDetail } from "../compatibility/CompatibilityDetail";
 import { CompatibilityHooksProvider } from "./CompatibilityHooks";
 import { MonitorConfig } from "./monitor";
 import { Options as WebPageReplayOptions } from "./WebPageReplay";
+import { defaultViewport } from "../core/defaults";
 import { timeBomb } from "../core/async";
 import { useProxiedMonitor } from "./ProxiedMonitor";
 
@@ -40,6 +41,8 @@ export const runCompatibilityAnalysis = (
             proxyPort: analysisProxy.getPort(),
           },
           async (page) => {
+            await page.setViewport(defaultViewport);
+
             await page.navigate(url, {
               timeoutMs: monitorConfig.loadingTimeoutMs,
             });
