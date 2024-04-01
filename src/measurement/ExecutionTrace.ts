@@ -1,6 +1,6 @@
 import { equalSets, isSubsetOf } from "../core/Set";
 
-import { ExecutionDetail } from "./ExecutionDetail";
+import { ExecutionDetail } from "../lib/ExecutionDetail";
 
 export interface ExecutionTrace {
   uncaughtErrors: Set<string>;

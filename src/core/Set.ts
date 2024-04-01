@@ -6,4 +6,6 @@ export const isSubsetOf = <T>(a: Set<T>, b: Set<T>): boolean =>
 
 export const intersectSets = <T>(a: Set<T>, b: Set<T>): Set<T> =>
   new Set([...a].filter((value) => b.has(value)));
- 
+
+export const subtractSets = <T>(a: Set<T>, b: Set<T>): Set<T> =>
+  new Set([...a].filter((value) => !b.has(value)));
