@@ -9,9 +9,8 @@ import { Browser, Builder, Capabilities, WebDriver } from "selenium-webdriver";
 
 import { AddressInfo } from "net";
 import { Buffer } from "buffer";
-import CA from "../core/CA";
-import chrome from "selenium-webdriver/chrome";
 import firefox from "selenium-webdriver/firefox";
+import { useGeckoDriver } from "./GeckoDriver";
 import { useTcpTunnel } from "../core/TcpTunnel";
 import { useWebDriver } from "./WebDriver";
 
@@ -22,7 +21,7 @@ export interface Options {
 
 export interface WebDriverOptions {
   browser: string;
-  server: string;
+  // server: string;
   binaryPath: string;
   args: string[];
   headless?: boolean;
@@ -45,9 +44,15 @@ export class SeleniumAgent implements Agent {
         serverHost: localHost,
       },
       (tcpTunnelAddress) =>
-        useWebDriver(
-          createWebDriverBuilder(webDriverOptions, tcpTunnelAddress),
-          (driver) => cb(new SeleniumPageController(driver))
+        useGeckoDriver((geckoDriver) =>
+          useWebDriver(
+            createWebDriverBuilder(
+              webDriverOptions,
+              tcpTunnelAddress,
+              geckoDriver.getDriverHost()
+            ),
+            (driver) => cb(new SeleniumPageController(driver))
+          )
         )
     );
   }
@@ -63,8 +68,8 @@ export class SeleniumPageController implements PageController {
   constructor(protected driver: WebDriver) {}
 
   async navigate(url: string, { timeoutMs }: NavigateOptions): Promise<void> {
-    this.driver.manage().timeouts().pageLoadTimeout(timeoutMs);
     try {
+      await this.driver.manage().timeouts().pageLoadTimeout(timeoutMs);
       await this.driver.get(url);
     } catch {}
   }
@@ -98,22 +103,25 @@ return [
 
 const createWebDriverBuilder = (
   webDriverOptions: WebDriverOptions,
-  tcpTunnelAddress: AddressInfo
+  tcpTunnelAddress: AddressInfo,
+  driverHost: string
 ) => {
-  const { browser, server, binaryPath, args, headless } = webDriverOptions;
-  const builder = new Builder().forBrowser(browser).usingServer(server);
+  const { browser, binaryPath, args, headless } = webDriverOptions;
+  const builder = new Builder()
+    .forBrowser(browser)
+    .usingServer(`http://${driverHost}`);
   switch (browser) {
-    case Browser.CHROME:
-      return builder.setChromeOptions(
-        new chrome.Options()
-          .setChromeBinaryPath(binaryPath)
-          .addArguments(
-            ...args,
-            `--proxy-server=${tcpTunnelAddress.address}:${tcpTunnelAddress.port}`,
-            `--ignore-certificate-errors-spki-list=${CA.get().getSPKIFingerprint()}`,
-            ...(headless ?? true ? ["--headless=new"] : [])
-          )
-      );
+    // case Browser.CHROME:
+    //   return builder.setChromeOptions(
+    //     new chrome.Options()
+    //       .setChromeBinaryPath(binaryPath)
+    //       .addArguments(
+    //         ...args,
+    //         `--proxy-server=${tcpTunnelAddress.address}:${tcpTunnelAddress.port}`,
+    //         `--ignore-certificate-errors-spki-list=${CA.get().getSPKIFingerprint()}`,
+    //         ...(headless ?? true ? ["--headless=new"] : [])
+    //       )
+    //   );
 
     case Browser.FIREFOX: {
       const rawPrefs = {

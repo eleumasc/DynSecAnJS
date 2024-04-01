@@ -8,11 +8,7 @@ import {
   defaultLoadingTimeoutMs,
   defaultPptrLaunchOptions,
 } from "../core/defaults";
-import {
-  headless,
-  projectFoxhoundPath,
-  projectFoxhoundServer,
-} from "../core/env";
+import { headless, projectFoxhoundPath } from "../core/env";
 
 import { AgentFactory } from "./Agent";
 import { Browser } from "selenium-webdriver";
@@ -68,42 +64,42 @@ export const getToolAnalysisFactory = (
     };
 
   switch (toolName) {
-    case "ChromiumTaintTracking":
-      return getDefaultFactory({
-        agentFactory: async () =>
-          await SeleniumAgent.create({
-            webDriverOptions: {
-              browser: Browser.CHROME,
-              server: "http://192.168.42.2:9515/wd/hub",
-              binaryPath:
-                "/home/user/Documents/chromium_taint_tracking/src/out/Debug/chrome",
-              args: [
-                '--js-flags="--taint_log_file=/home/user/logfiles/logfile.txt --no-crankshaft --no-turbo --no-ignition"',
-                "--no-sandbox",
-                "--disable-hang-monitor",
-              ],
-              headless,
-            },
-            localHost: "192.168.42.1",
-          }),
-        supportedESVersion: ESVersion.ES2016,
-      });
+    // case "ChromiumTaintTracking":
+    //   return getDefaultFactory({
+    //     agentFactory: async () =>
+    //       await SeleniumAgent.create({
+    //         webDriverOptions: {
+    //           browser: Browser.CHROME,
+    //           server: "http://192.168.42.2:9515/wd/hub",
+    //           binaryPath:
+    //             "/home/user/Documents/chromium_taint_tracking/src/out/Debug/chrome",
+    //           args: [
+    //             '--js-flags="--taint_log_file=/home/user/logfiles/logfile.txt --no-crankshaft --no-turbo --no-ignition"',
+    //             "--no-sandbox",
+    //             "--disable-hang-monitor",
+    //           ],
+    //           headless,
+    //         },
+    //         localHost: "192.168.42.1",
+    //       }),
+    //     supportedESVersion: ESVersion.ES2016,
+    //   });
 
-    case "JSFlow":
-      return getDefaultFactory({
-        agentFactory: async () =>
-          await SeleniumAgent.create({
-            webDriverOptions: {
-              browser: Browser.CHROME,
-              server: "http://192.168.42.3:9515/wd/hub",
-              binaryPath: "/home/essentialfp/chromium/src/out/Default/chrome",
-              args: ["--no-sandbox", "--disable-hang-monitor"],
-              headless,
-            },
-            localHost: "192.168.42.1",
-          }),
-        supportedESVersion: ESVersion.ES2018,
-      });
+    // case "JSFlow":
+    //   return getDefaultFactory({
+    //     agentFactory: async () =>
+    //       await SeleniumAgent.create({
+    //         webDriverOptions: {
+    //           browser: Browser.CHROME,
+    //           server: "http://192.168.42.3:9515/wd/hub",
+    //           binaryPath: "/home/essentialfp/chromium/src/out/Default/chrome",
+    //           args: ["--no-sandbox", "--disable-hang-monitor"],
+    //           headless,
+    //         },
+    //         localHost: "192.168.42.1",
+    //       }),
+    //     supportedESVersion: ESVersion.ES2018,
+    //   });
 
     case "ProjectFoxhound":
       return getDefaultFactory({
@@ -111,7 +107,6 @@ export const getToolAnalysisFactory = (
           await SeleniumAgent.create({
             webDriverOptions: {
               browser: Browser.FIREFOX,
-              server: projectFoxhoundServer,
               binaryPath: path.join(projectFoxhoundPath, "foxhound"),
               args: [],
               headless,

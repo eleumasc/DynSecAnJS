@@ -41,7 +41,7 @@ export default class WebPageReplay {
     const [httpPort, httpsPort] = ports;
 
     const child = spawn(
-      `./wpr`,
+      "./wpr",
       [
         operation,
         `--http_port=${httpPort}`,
