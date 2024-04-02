@@ -43,7 +43,7 @@ export class PuppeteerAgent implements Agent {
     await this.browser.close();
   }
 
-  static async create<T>(options: Options): Promise<PuppeteerAgent> {
+  static async create(options: Options): Promise<PuppeteerAgent> {
     const { pptrLaunchOptions } = options;
 
     const browser = await puppeteer.launch({
