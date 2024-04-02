@@ -8,12 +8,12 @@ import {
   ToolAnalysisResult,
   serializeToolAnalysisResult,
 } from "../lib/ToolAnalysis";
-import { intersectSitelists, readSitelistFromFile } from "../core/sitelist";
 
 import ArchiveReader from "../lib/ArchiveReader";
 import { deployAnalysis } from "../lib/deployAnalysis";
 import { deserializeOriginalAnalysisResult } from "../lib/OriginalAnalysis";
 import { getToolAnalysisFactory } from "../lib/ToolAnalysisFactory";
+import { intersectSitelistsFromFile } from "../core/sitelist";
 import path from "path";
 
 export interface ToolAnalysisArgs {
@@ -42,12 +42,10 @@ export const startToolAnalysis = async (args: ToolAnalysisArgs) => {
     "original-analysis",
     deserializeOriginalAnalysisResult
   );
-  const sitelist = intersectSitelistPath
-    ? intersectSitelists(
-        originalArchive.getSitelist(),
-        readSitelistFromFile(intersectSitelistPath)
-      )
-    : originalArchive.getSitelist();
+  const sitelist = intersectSitelistsFromFile(
+    originalArchive.getSitelist(),
+    intersectSitelistPath
+  );
   console.log(sitelist);
   console.log(`${sitelist.length} sites`);
 

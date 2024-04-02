@@ -79,6 +79,10 @@ yargs(process.argv.slice(2))
         .positional("toolArchivePath", {
           type: "string",
           demandOption: true,
+        })
+        .option("intersectSitelistPath", {
+          type: "string",
+          demandOption: false,
         });
     },
     (argv) => {

@@ -19,3 +19,12 @@ export const intersectSitelists = (
 ): string[] => {
   return [...intersectSets(new Set(sitelist1), new Set(sitelist2))];
 };
+
+export const intersectSitelistsFromFile = (
+  sitelist: string[],
+  intersectSitelistPath?: string
+): string[] => {
+  return intersectSitelistPath
+    ? intersectSitelists(sitelist, readSitelistFromFile(intersectSitelistPath))
+    : sitelist;
+};

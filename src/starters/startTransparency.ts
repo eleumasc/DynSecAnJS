@@ -1,17 +1,22 @@
+import {
+  intersectSitelists,
+  intersectSitelistsFromFile,
+} from "../core/sitelist";
+
 import ArchiveReader from "../lib/ArchiveReader";
 import { createReport } from "../measurement/Report";
 import { deserializeOriginalAnalysisResult } from "../lib/OriginalAnalysis";
 import { deserializeToolAnalysisResult } from "../lib/ToolAnalysis";
 import { getSiteInfo } from "../measurement/SiteInfo";
-import { intersectSitelists } from "../core/sitelist";
 
 export interface TransparencyArgs {
   originalArchivePath: string;
   toolArchivePath: string;
+  intersectSitelistPath?: string;
 }
 
 export const startTransparency = async (args: TransparencyArgs) => {
-  const { originalArchivePath, toolArchivePath } = args;
+  const { originalArchivePath, toolArchivePath, intersectSitelistPath } = args;
 
   const originalArchive = new ArchiveReader(
     originalArchivePath,
@@ -25,7 +30,10 @@ export const startTransparency = async (args: TransparencyArgs) => {
     deserializeToolAnalysisResult
   );
   const toolSitelist = toolArchive.getSitelist();
-  const bothSitelist = intersectSitelists(originalSitelist, toolSitelist);
+  const bothSitelist = intersectSitelistsFromFile(
+    intersectSitelists(originalSitelist, toolSitelist),
+    intersectSitelistPath
+  );
 
   const siteInfos = bothSitelist.map((site) => {
     const originalLogfile = originalArchive.load(site);
