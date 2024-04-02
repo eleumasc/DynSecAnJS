@@ -15,14 +15,15 @@ import { subtractSets } from "../core/Set";
 export interface SiteInfo {
   site: string;
   accessible: boolean; // no general failure in original
-  analyzable: boolean; // no general failure in both original and tool and no execution failure in both original and tool, for all executions
+  analyzable: boolean; // no general failure in both original and tool and no execution failure in both original and tool, for at least one (the first) execution
   compatibility: CompatibilityInfo | null; // non-null if analyzable is true
 }
 
 export interface CompatibilityInfo {
   syntacticallyCompatible: boolean;
   eventuallyCompatible: boolean;
-  loadingCompleteness: LoadingCompletenessInfo | null; // non-null if eventuallyCompatible is true
+  transparencyAnalyzable: boolean; // no execution failure in both original and tool, for all executions
+  loadingCompleteness: LoadingCompletenessInfo | null; // non-null if both eventuallyCompatible and transparencyAnalyzable are true
 }
 
 export interface LoadingCompletenessInfo {
@@ -56,67 +57,60 @@ export const getSiteInfo = (
   fallibleToolResult: Fallible<ToolAnalysisResult>
 ): SiteInfo => {
   const accessible = isSuccess(fallibleOriginalResult);
-  const nonAnalyzableSiteInfo = (): SiteInfo => {
-    return { site, accessible, analyzable: false, compatibility: null };
-  };
   const semiAnalyzable =
     isSuccess(fallibleOriginalResult) && isSuccess(fallibleToolResult);
   if (!semiAnalyzable) {
-    return nonAnalyzableSiteInfo();
+    return { site, accessible, analyzable: false, compatibility: null };
   }
   const { val: originalResult } = fallibleOriginalResult;
   const { val: toolResult } = fallibleToolResult;
   const { originalExecutions: fallibleOriginalExecutions } = originalResult;
-  const {
-    toolName,
-    compatible: syntacticallyCompatible,
-    toolExecutions: fallibleToolExecutions,
-  } = toolResult;
+  const { toolExecutions: fallibleToolExecutions } = toolResult;
+  const successOriginalFirstExecution =
+    fallibleOriginalExecutions.find(isSuccess) ?? null;
+  const successToolFirstExecution =
+    fallibleToolExecutions.find(isSuccess) ?? null;
   const analyzable =
-    fallibleOriginalExecutions.every(isSuccess) &&
-    fallibleToolExecutions.every(isSuccess);
-  if (!analyzable) {
-    return nonAnalyzableSiteInfo();
-  }
+    successOriginalFirstExecution !== null &&
+    successToolFirstExecution !== null;
   return {
     site,
     accessible,
     analyzable,
     compatibility: analyzable
       ? getCompatibilityInfo(
-          fallibleOriginalExecutions.map(({ val }) => val),
-          fallibleToolExecutions.map(({ val }) => val),
-          toolName,
-          syntacticallyCompatible
+          successOriginalFirstExecution.val,
+          successToolFirstExecution.val,
+          originalResult,
+          toolResult
         )
       : null,
   };
 };
 
 export const getCompatibilityInfo = (
-  originalExecutions: ExecutionDetail[],
-  toolExecutions: ExecutionDetail[],
-  toolName: string,
-  syntacticallyCompatible: boolean
+  originalFirstExecution: ExecutionDetail,
+  toolFirstExecution: ExecutionDetail,
+  originalResult: OriginalAnalysisResult,
+  toolResult: ToolAnalysisResult
 ): CompatibilityInfo => {
+  const { originalExecutions: fallibleOriginalExecutions } = originalResult;
+  const {
+    toolName,
+    compatible: syntacticallyCompatible,
+    toolExecutions: fallibleToolExecutions,
+  } = toolResult;
   const eventuallyCompatible = ((): boolean => {
     switch (toolName) {
       case "ChromiumTaintTracking":
       case "JSFlow":
       case "ProjectFoxhound": {
-        const uncaughtSyntaxErrors = (
-          executions: ExecutionDetail[]
-        ): Set<string> => {
-          return new Set(
-            executions
-              .flatMap((execution) => execution.uncaughtErrors)
-              .filter((error) => error.includes("SyntaxError"))
-          );
-        };
+        const uncaughtSyntaxErrors = ({ uncaughtErrors }: ExecutionDetail) =>
+          new Set(uncaughtErrors.filter((msg) => msg.includes("SyntaxError")));
         return (
           subtractSets(
-            uncaughtSyntaxErrors(toolExecutions),
-            uncaughtSyntaxErrors(originalExecutions)
+            uncaughtSyntaxErrors(toolFirstExecution),
+            uncaughtSyntaxErrors(originalFirstExecution)
           ).size > 0
         );
       }
@@ -125,18 +119,24 @@ export const getCompatibilityInfo = (
       case "GIFC":
       case "Jalangi":
       case "Linvail":
-        return toolExecutions.some(
-          (execution) => execution.transformErrors.length > 0
-        );
+        return toolFirstExecution.transformErrors.length > 0;
       default:
         throw new Error(`Unknown tool: ${toolName}`);
     }
   })();
+  const transparencyAnalyzable =
+    eventuallyCompatible &&
+    fallibleOriginalExecutions.every(isSuccess) &&
+    fallibleToolExecutions.every(isSuccess);
   return {
     syntacticallyCompatible,
     eventuallyCompatible,
-    loadingCompleteness: eventuallyCompatible
-      ? getLoadingCompletenessInfo(originalExecutions, toolExecutions)
+    transparencyAnalyzable,
+    loadingCompleteness: transparencyAnalyzable
+      ? getLoadingCompletenessInfo(
+          fallibleOriginalExecutions.map(({ val }) => val),
+          fallibleToolExecutions.map(({ val }) => val)
+        )
       : null,
   };
 };

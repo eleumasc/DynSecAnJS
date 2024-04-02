@@ -6,20 +6,26 @@ export interface Report {
   all: number;
   accessible: number;
   analyzable: number;
+
   noneCompatible: number;
   syntacticallyCompatible: number;
   eventuallyCompatible: number;
   bothCompatible: number;
+  transparencyAnalyzable: number;
+
   noneLoadingCompleted: number;
   originalLoadingCompleted: number;
   toolLoadingCompleted: number;
   bothLoadingCompleted: number;
+
   noneTraceExists: number;
   originalTraceExists: number;
   toolTraceExists: number;
   bothTraceExists: number;
+
   nonTransparent: number;
   transparent: number;
+
   overheadAvg: number;
   overheadStdev: number;
 }
@@ -49,6 +55,10 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
   const bothCompatible = count(
     compatibilityInfos,
     (info) => info.syntacticallyCompatible && info.eventuallyCompatible
+  );
+  const transparencyAnalyzable = count(
+    compatibilityInfos,
+    (info) => info.transparencyAnalyzable
   );
 
   const loadingCompletenessInfos = takeInfo(
@@ -118,20 +128,26 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
     all,
     accessible,
     analyzable,
+
     noneCompatible,
     syntacticallyCompatible,
     eventuallyCompatible,
     bothCompatible,
+    transparencyAnalyzable,
+
     noneLoadingCompleted,
     originalLoadingCompleted,
     toolLoadingCompleted,
     bothLoadingCompleted,
+
     noneTraceExists,
     originalTraceExists,
     toolTraceExists,
     bothTraceExists,
+
     nonTransparent,
     transparent,
+
     overheadAvg,
     overheadStdev,
   };
