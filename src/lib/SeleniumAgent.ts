@@ -11,7 +11,7 @@ import { AddressInfo } from "net";
 import { Buffer } from "buffer";
 import firefox from "selenium-webdriver/firefox";
 import { useGeckoDriver } from "./GeckoDriver";
-import { useTcpTunnel } from "../core/TcpTunnel";
+// import { useTcpTunnel } from "../core/TcpTunnel";
 import { useWebDriver } from "./WebDriver";
 
 export interface Options {
@@ -34,26 +34,26 @@ export class SeleniumAgent implements Agent {
     options: UsePageOptions,
     cb: (page: PageController) => Promise<T>
   ): Promise<T> {
-    const { webDriverOptions, localHost } = this.options;
+    const { webDriverOptions /* , localHost */ } = this.options;
     const { proxyPort } = options;
 
-    return useTcpTunnel(
-      {
-        targetPort: proxyPort,
-        targetHost: "127.0.0.1",
-        serverHost: localHost,
-      },
-      (tcpTunnelAddress) =>
-        useGeckoDriver((geckoDriver) =>
-          useWebDriver(
-            createWebDriverBuilder(
-              webDriverOptions,
-              tcpTunnelAddress,
-              geckoDriver.getDriverHost()
-            ),
-            (driver) => cb(new SeleniumPageController(driver))
-          )
-        )
+    // return useTcpTunnel(
+    //   {
+    //     targetPort: proxyPort,
+    //     targetHost: "127.0.0.1",
+    //     serverHost: localHost,
+    //   },
+    //   (tcpTunnelAddress) => ...
+    // );
+    return useGeckoDriver((geckoDriver) =>
+      useWebDriver(
+        createWebDriverBuilder(
+          webDriverOptions,
+          { address: "127.0.0.1", port: proxyPort, family: "ipv4" },
+          geckoDriver.getDriverHost()
+        ),
+        (driver) => cb(new SeleniumPageController(driver))
+      )
     );
   }
 
@@ -103,7 +103,7 @@ return [
 
 const createWebDriverBuilder = (
   webDriverOptions: WebDriverOptions,
-  tcpTunnelAddress: AddressInfo,
+  proxyAddress: AddressInfo,
   driverHost: string
 ) => {
   const { browser, binaryPath, args, headless } = webDriverOptions;
@@ -117,7 +117,7 @@ const createWebDriverBuilder = (
     //       .setChromeBinaryPath(binaryPath)
     //       .addArguments(
     //         ...args,
-    //         `--proxy-server=${tcpTunnelAddress.address}:${tcpTunnelAddress.port}`,
+    //         `--proxy-server=${proxyAddress.address}:${proxyAddress.port}`,
     //         `--ignore-certificate-errors-spki-list=${CA.get().getSPKIFingerprint()}`,
     //         ...(headless ?? true ? ["--headless=new"] : [])
     //       )
@@ -126,10 +126,10 @@ const createWebDriverBuilder = (
     case Browser.FIREFOX: {
       const rawPrefs = {
         "network.proxy.type": 1,
-        "network.proxy.http": tcpTunnelAddress.address,
-        "network.proxy.http_port": tcpTunnelAddress.port,
-        "network.proxy.ssl": tcpTunnelAddress.address,
-        "network.proxy.ssl_port": tcpTunnelAddress.port,
+        "network.proxy.http": proxyAddress.address,
+        "network.proxy.http_port": proxyAddress.port,
+        "network.proxy.ssl": proxyAddress.address,
+        "network.proxy.ssl_port": proxyAddress.port,
         "network.captive-portal-service.enabled": false,
       };
       const profile = new firefox.Profile();
