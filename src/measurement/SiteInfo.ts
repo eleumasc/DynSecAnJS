@@ -111,7 +111,7 @@ export const getCompatibilityInfo = (
           subtractSets(
             uncaughtSyntaxErrors(toolFirstExecution),
             uncaughtSyntaxErrors(originalFirstExecution)
-          ).size > 0
+          ).size === 0
         );
       }
       case "JEST":
@@ -119,7 +119,7 @@ export const getCompatibilityInfo = (
       case "GIFC":
       case "Jalangi":
       case "Linvail":
-        return toolFirstExecution.transformErrors.length > 0;
+        return toolFirstExecution.transformErrors.length === 0;
       default:
         throw new Error(`Unknown tool: ${toolName}`);
     }
