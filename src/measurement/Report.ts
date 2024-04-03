@@ -7,10 +7,10 @@ export interface Report {
   accessible: number;
   analyzable: number;
 
-  noneCompatible: number;
-  syntacticallyCompatible: number;
-  eventuallyCompatible: number;
-  bothCompatible: number;
+  pureNonCompatible: number;
+  transpiledNonCompatible: number;
+  pureCompatible: number;
+  transpiledCompatible: number;
   transparencyAnalyzable: number;
 
   noneLoadingCompleted: number;
@@ -40,21 +40,21 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
     (info) => info.analyzable,
     (info) => info.compatibility
   );
-  const noneCompatible = count(
-    compatibilityInfos,
-    (info) => !info.syntacticallyCompatible && !info.eventuallyCompatible
-  );
-  const syntacticallyCompatible = count(
+  const pureNonCompatible = count(
     compatibilityInfos,
     (info) => info.syntacticallyCompatible && !info.eventuallyCompatible
   );
-  const eventuallyCompatible = count(
+  const transpiledNonCompatible = count(
     compatibilityInfos,
-    (info) => !info.syntacticallyCompatible && info.eventuallyCompatible
+    (info) => !info.syntacticallyCompatible && !info.eventuallyCompatible
   );
-  const bothCompatible = count(
+  const pureCompatible = count(
     compatibilityInfos,
     (info) => info.syntacticallyCompatible && info.eventuallyCompatible
+  );
+  const transpiledCompatible = count(
+    compatibilityInfos,
+    (info) => !info.syntacticallyCompatible && info.eventuallyCompatible
   );
   const transparencyAnalyzable = count(
     compatibilityInfos,
@@ -129,10 +129,10 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
     accessible,
     analyzable,
 
-    noneCompatible,
-    syntacticallyCompatible,
-    eventuallyCompatible,
-    bothCompatible,
+    pureNonCompatible,
+    transpiledNonCompatible,
+    pureCompatible,
+    transpiledCompatible,
     transparencyAnalyzable,
 
     noneLoadingCompleted,
