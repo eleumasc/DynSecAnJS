@@ -1,7 +1,7 @@
 import { composeHtmlTransformers, transformHtml } from "../html/transformHtml";
 import { createJavascriptDataUrl, injectScripts } from "../html/injectScripts";
 
-import { BodyTransformer } from "../lib/ExecutionHooks";
+import { BodyTransformer } from "../lib/BodyTransformer";
 import { ifTranspilerPath } from "../core/env";
 import path from "path";
 import { spawnStdio } from "../core/spawnStdio";

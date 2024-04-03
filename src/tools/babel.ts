@@ -1,4 +1,4 @@
-import { BodyTransformer } from "../lib/ExecutionHooks";
+import { BodyTransformer } from "../lib/BodyTransformer";
 import { transformAsync } from "@babel/core";
 import { transformHtml } from "../html/transformHtml";
 import { transformInlineScripts } from "../html/transformInlineScripts";

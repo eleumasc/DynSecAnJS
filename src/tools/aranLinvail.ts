@@ -4,7 +4,7 @@ import {
   injectScripts,
 } from "../html/injectScripts";
 
-import { BodyTransformer } from "../lib/ExecutionHooks";
+import { BodyTransformer } from "../lib/BodyTransformer";
 import { aranLinvailPath } from "../core/env";
 import path from "path";
 import { readFileSync } from "fs";

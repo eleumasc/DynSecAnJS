@@ -1,8 +1,4 @@
 import {
-  BodyTransformer,
-  createExecutionHooksProvider,
-} from "./ExecutionHooks";
-import {
   defaultAnalysisRepeat,
   defaultFaultAwarenessDeltaMs,
   defaultLoadingTimeoutMs,
@@ -11,6 +7,7 @@ import {
 import { headless, projectFoxhoundPath } from "../core/env";
 
 import { AgentFactory } from "./Agent";
+import { BodyTransformer } from "./BodyTransformer";
 import { Browser } from "selenium-webdriver";
 import { DefaultToolAnalysis } from "./DefaultToolAnalysis";
 import { ESVersion } from "../compatibility/ESVersion";
@@ -18,7 +15,7 @@ import FaultAwareAgent from "./FaultAwareAgent";
 import { PuppeteerAgent } from "./PuppeteerAgent";
 import { SeleniumAgent } from "./SeleniumAgent";
 import { ToolAnalysis } from "./ToolAnalysis";
-import { identifyBodyTransformer } from "../tools/util";
+import { createExecutionHooksProvider } from "./ExecutionHooks";
 import path from "path";
 import { transformWithAranLinvail } from "../tools/aranLinvail";
 import { transformWithIFTranspiler } from "../tools/ifTranspiler";
@@ -52,10 +49,7 @@ export const getToolAnalysisFactory = (
         new FaultAwareAgent(faultAwarenessTimeoutMs, agentFactory),
         {
           toolName,
-          executionHooksProvider: createExecutionHooksProvider(
-            bodyTransformer &&
-              identifyBodyTransformer(toolName, bodyTransformer)
-          ),
+          executionHooksProvider: createExecutionHooksProvider(bodyTransformer),
           supportedESVersion,
           analysisRepeat,
           loadingTimeoutMs,

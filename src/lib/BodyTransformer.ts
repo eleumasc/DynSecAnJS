@@ -1,4 +1,16 @@
-import { BodyTransformer } from "../lib/ExecutionHooks";
+import { Response } from "./AnalysisProxy";
+
+export type BodyTransformer = (
+  content: string,
+  res: Response
+) => Promise<string>;
+
+export class BodyTransformerError extends Error {
+  constructor(readonly transformName: string, readonly message: string) {
+    super(message);
+    this.name = `${BodyTransformerError.name}(${transformName})`;
+  }
+}
 
 export const composeBodyTransformers =
   (x: BodyTransformer, y?: BodyTransformer): BodyTransformer =>
@@ -11,7 +23,7 @@ export const composeBodyTransformers =
     }
   };
 
-export const identifyBodyTransformer = (
+export const bodyTransformerWithName = (
   name: string,
   transformer: BodyTransformer
 ): BodyTransformer => {
@@ -19,7 +31,7 @@ export const identifyBodyTransformer = (
     try {
       return await transformer(content, res);
     } catch (e) {
-      throw `${name}: ${e}`;
+      throw new BodyTransformerError(name, String(e));
     }
   };
 };

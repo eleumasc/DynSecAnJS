@@ -1,6 +1,6 @@
 import { mkdtemp, readFile, rm, writeFile } from "fs/promises";
 
-import { BodyTransformer } from "../lib/ExecutionHooks";
+import { BodyTransformer } from "../lib/BodyTransformer";
 import { existsSync } from "fs";
 import { jalangiPath } from "../core/env";
 import path from "path";
@@ -29,41 +29,42 @@ export const jalangi = async (
   try {
     await writeFile(originalPath, code);
 
-    const childProcess = spawn(
-      "node",
-      [
-        path.join(jalangiPath, "src", "js", "commands", "esnstrument_cli.js"),
-        "--inlineIID",
-        "--inlineSource",
-        "--noResultsGUI",
-        "--outDir",
-        tmpDir,
-        "--out",
-        modifiedPath,
-        originalPath,
-      ],
-      {
-        env: {},
-        stdio: "ignore",
-      }
-    );
+    const childProcess = spawn("node", [
+      path.join(jalangiPath, "src", "js", "commands", "esnstrument_cli.js"),
+      "--inlineIID",
+      "--inlineSource",
+      "--noResultsGUI",
+      "--outDir",
+      tmpDir,
+      "--out",
+      modifiedPath,
+      originalPath,
+    ]);
 
-    let logData = "";
-    childProcess.stdout?.on("data", (data) => {
-      logData += data.toString();
+    let stderrData = "";
+    childProcess.stderr?.on("data", (data) => {
+      stderrData += data.toString();
     });
 
-    await new Promise<void>((resolve, reject) => {
-      childProcess.on("exit", () => {
-        resolve();
-      });
-      childProcess.on("error", (err) => {
-        reject(err);
-      });
-    });
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        childProcess.stdout?.on("end", () => resolve());
+      }),
+      new Promise<void>((resolve) => {
+        childProcess.stderr?.on("end", () => resolve());
+      }),
+      new Promise<void>((resolve, reject) => {
+        childProcess.on("exit", () => {
+          resolve();
+        });
+        childProcess.on("error", (err) => {
+          reject(err);
+        });
+      }),
+    ]);
 
     if (!existsSync(modifiedPath)) {
-      throw new Error(logData);
+      throw new Error(stderrData);
     }
 
     return (await readFile(modifiedPath)).toString();

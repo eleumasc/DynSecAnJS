@@ -10,6 +10,12 @@ export interface ExecutionDetail {
   includedScriptUrls: string[];
   loadingCompleted: boolean;
   executionTimeMs: number;
-  transformErrors: string[];
+  transformErrors: TransformErrorDetail[];
   screenshotFile?: string;
+}
+
+export interface TransformErrorDetail {
+  transformName?: string;
+  url: string;
+  message: string;
 }

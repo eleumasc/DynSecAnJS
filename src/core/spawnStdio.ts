@@ -29,6 +29,7 @@ export const spawnStdio = async (
     resolve();
   });
 
+  let errorState = false;
   await Promise.all([
     new Promise<void>((resolve) => {
       childProcess.stdout?.on("end", () => resolve());
@@ -38,17 +39,18 @@ export const spawnStdio = async (
     }),
     new Promise<void>((resolve, reject) => {
       childProcess.on("exit", (code) => {
-        if (code === 0) {
-          resolve();
-        } else {
-          reject(new Error(stderrData));
-        }
+        errorState = code !== 0;
+        resolve();
       });
       childProcess.on("error", (err) => {
         reject(err);
       });
     }),
   ]);
+
+  if (errorState) {
+    throw new Error(stderrData);
+  }
 
   return stdoutData;
 };

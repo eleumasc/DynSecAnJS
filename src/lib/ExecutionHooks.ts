@@ -1,17 +1,13 @@
-import { ExecutionDetail } from "./ExecutionDetail";
+import { ExecutionDetail, TransformErrorDetail } from "./ExecutionDetail";
 import { transpileWithBabel } from "../tools/babel";
 import {
   composeBodyTransformers,
-  identifyBodyTransformer,
-} from "../tools/util";
-import { Response } from "./AnalysisProxy";
+  bodyTransformerWithName,
+} from "./BodyTransformer";
 import Deferred from "../core/Deferred";
 import { ProxiedMonitorHooks } from "./ProxiedMonitorHooks";
-
-export type BodyTransformer = (
-  content: string,
-  res: Response
-) => Promise<string>;
+import { BodyTransformer } from "./BodyTransformer";
+import { BodyTransformerError } from "./BodyTransformer";
 
 export type ExecutionHooksResult = Pick<
   ExecutionDetail,
@@ -47,18 +43,20 @@ export type ExecutionHooksProvider = (compatMode: boolean) => ExecutionHooks;
 export const createExecutionHooksProvider =
   (directTransform?: BodyTransformer): ExecutionHooksProvider =>
   (compatMode) => {
+    const directTransformWithName =
+      directTransform && bodyTransformerWithName("Tool", directTransform);
     const transform = compatMode
       ? composeBodyTransformers(
-          identifyBodyTransformer("Babel", transpileWithBabel()),
-          directTransform
+          bodyTransformerWithName("Babel", transpileWithBabel()),
+          directTransformWithName
         )
-      : directTransform;
+      : directTransformWithName;
 
     const deferredCompleteAnalysis = new Deferred<ExecutionDetailCompleter>();
 
     const targetSites = new Set<string>();
     const includedScriptUrls = new Set<string>();
-    const transformErrors: string[] = [];
+    const transformErrors: TransformErrorDetail[] = [];
 
     const hooks = <ProxiedMonitorHooks>{
       reportCallback: (report) => {
@@ -105,7 +103,12 @@ export const createExecutionHooksProvider =
           try {
             return await transform(body, res);
           } catch (e) {
-            transformErrors.push(`[${req.url}] ${e}`);
+            transformErrors.push({
+              transformName:
+                e instanceof BodyTransformerError ? e.transformName : undefined,
+              url: req.url.href,
+              message: String(e),
+            });
           }
         }
         return body;

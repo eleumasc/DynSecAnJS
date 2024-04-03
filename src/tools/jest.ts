@@ -1,4 +1,4 @@
-import { BodyTransformer } from "../lib/ExecutionHooks";
+import { BodyTransformer } from "../lib/BodyTransformer";
 import { inlineExternalScripts } from "../html/inlineExternalScripts";
 import { jestPath } from "../core/env";
 import path from "path";
