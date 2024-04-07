@@ -25,7 +25,13 @@ export const inlineExternalScripts = (baseUrl: URL): HtmlTransformer =>
               return;
             }
 
-            const response = await fetch(new URL(srcUrl, baseUrl));
+            const url = new URL(srcUrl, baseUrl);
+            const response = await fetch(url);
+            if (!response.ok) {
+              throw new Error(
+                `Failed to inline external script at ${url.href}: ${response.status} ${response.statusText}`
+              );
+            }
             const scriptContent = await response.text();
 
             const inlineScriptNode = parse5.parseFragment(

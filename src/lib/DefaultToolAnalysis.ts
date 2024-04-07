@@ -41,7 +41,7 @@ export class DefaultToolAnalysis implements ToolAnalysis {
     );
     const compatMode = !compatible;
 
-    const url = `http://${site}/`;
+    const url = `http://${site}`;
 
     let executions: Fallible<ExecutionDetail>[] = [];
     for (let i = 0; i < analysisRepeat; i += 1) {

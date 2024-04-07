@@ -33,7 +33,7 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
     } = this.options;
     const { site, attachmentList } = runOptions;
 
-    const url = `http://${site}/`;
+    const url = `http://${site}`;
 
     const wprArchiveAttachment = FileAttachment.create();
     const wprArchiveFile = attachmentList.add(

@@ -23,12 +23,21 @@ const babel = async (
   code: string,
   isInlineEventHandler: boolean = false
 ): Promise<string> => {
-  const result = await transformAsync(code, {
-    presets: [["@babel/preset-env", { modules: false }]],
-    sourceType: "unambiguous",
-    parserOpts: {
-      allowReturnOutsideFunction: isInlineEventHandler,
-    },
-  });
-  return result?.code!;
+  try {
+    const result = await transformAsync(code, {
+      presets: [["@babel/preset-env", { modules: false }]],
+      sourceType: "unambiguous",
+      parserOpts: {
+        allowReturnOutsideFunction: isInlineEventHandler,
+      },
+    });
+    return result?.code!;
+  } catch (e) {
+    try {
+      JSON.parse(code);
+      return code;
+    } catch {
+      throw e;
+    }
+  }
 };
