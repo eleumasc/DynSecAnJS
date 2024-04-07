@@ -14,10 +14,7 @@ import { ProxiedMonitorHooks } from "./ProxiedMonitorHooks";
 
 interface Options {
   hooks: ProxiedMonitorHooks;
-  monitorConfig: Pick<
-    MonitorConfig,
-    "waitUntil" | "loadingTimeoutMs" | "timeSeedMs"
-  >;
+  monitorConfig: Pick<MonitorConfig, "loadingTimeoutMs" | "timeSeedMs">;
   wprOptions: Pick<WebPageReplayOptions, "operation" | "archivePath">;
 }
 

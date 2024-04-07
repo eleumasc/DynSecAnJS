@@ -7,10 +7,17 @@ export interface Report {
   accessible: number;
   analyzable: number;
 
-  pureNonCompatible: number;
-  transpiledNonCompatible: number;
-  pureCompatible: number;
-  transpiledCompatible: number;
+  noneCompatible: number;
+  syntacticallyCompatible: number;
+  eventuallyCompatible: number;
+  bothCompatible: number;
+  _pureNonCompatible: number;
+  _transpiledNonCompatible: number;
+  _pureCompatible: number;
+  _transpiledCompatible: number;
+  unknown: number;
+  originalSomeSuccessSomeFailure: number;
+  toolSomeSuccessSomeFailure: number;
   transparencyAnalyzable: number;
 
   noneLoadingCompleted: number;
@@ -26,8 +33,7 @@ export interface Report {
   nonTransparent: number;
   transparent: number;
 
-  overheadAvg: number;
-  overheadStdev: number;
+  overhead: number;
 }
 
 export const createReport = (siteInfos: SiteInfo[]): Report => {
@@ -40,21 +46,33 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
     (info) => info.analyzable,
     (info) => info.compatibility
   );
-  const pureNonCompatible = count(
-    compatibilityInfos,
-    (info) => info.syntacticallyCompatible && !info.eventuallyCompatible
-  );
-  const transpiledNonCompatible = count(
+  const noneCompatible = count(
     compatibilityInfos,
     (info) => !info.syntacticallyCompatible && !info.eventuallyCompatible
   );
-  const pureCompatible = count(
+  const syntacticallyCompatible = count(
+    compatibilityInfos,
+    (info) => info.syntacticallyCompatible && !info.eventuallyCompatible
+  );
+  const eventuallyCompatible = count(
+    compatibilityInfos,
+    (info) => !info.syntacticallyCompatible && info.eventuallyCompatible
+  );
+  const bothCompatible = count(
     compatibilityInfos,
     (info) => info.syntacticallyCompatible && info.eventuallyCompatible
   );
-  const transpiledCompatible = count(
+  const unknown = count(
     compatibilityInfos,
-    (info) => !info.syntacticallyCompatible && info.eventuallyCompatible
+    (info) => info.eventuallyCompatible && !info.loadingCompleted
+  );
+  const originalSomeSuccessSomeFailure = count(
+    compatibilityInfos,
+    (info) => info.eventuallyCompatible && info.originalSomeSuccessSomeFailure
+  );
+  const toolSomeSuccessSomeFailure = count(
+    compatibilityInfos,
+    (info) => info.eventuallyCompatible && info.toolSomeSuccessSomeFailure
   );
   const transparencyAnalyzable = count(
     compatibilityInfos,
@@ -118,21 +136,28 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
     (info) => info.transparent,
     (info) => info.performance
   );
-  const overheads = performanceInfos.map(
-    (info) => info.toolExecutionTimeMs / info.originalExecutionTimeMs
+  const overhead = avg(
+    performanceInfos.map(
+      (info) => info.toolExecutionTimeMs / info.originalExecutionTimeMs
+    )
   );
-  const overheadAvg = avg(overheads);
-  const overheadStdev = stdev(overheads);
 
   return {
     all,
     accessible,
     analyzable,
 
-    pureNonCompatible,
-    transpiledNonCompatible,
-    pureCompatible,
-    transpiledCompatible,
+    noneCompatible,
+    syntacticallyCompatible,
+    eventuallyCompatible,
+    bothCompatible,
+    _pureNonCompatible: syntacticallyCompatible,
+    _transpiledNonCompatible: noneCompatible,
+    _pureCompatible: bothCompatible,
+    _transpiledCompatible: eventuallyCompatible,
+    unknown,
+    originalSomeSuccessSomeFailure,
+    toolSomeSuccessSomeFailure,
     transparencyAnalyzable,
 
     noneLoadingCompleted,
@@ -148,8 +173,7 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
     nonTransparent,
     transparent,
 
-    overheadAvg,
-    overheadStdev,
+    overhead,
   };
 };
 

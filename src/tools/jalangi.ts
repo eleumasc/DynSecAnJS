@@ -47,14 +47,8 @@ export const jalangi = async (
     });
 
     await Promise.all([
-      new Promise<void>((resolve) => {
-        childProcess.stdout?.on("end", () => resolve());
-      }),
-      new Promise<void>((resolve) => {
-        childProcess.stderr?.on("end", () => resolve());
-      }),
       new Promise<void>((resolve, reject) => {
-        childProcess.on("exit", () => {
+        childProcess.on("close", () => {
           resolve();
         });
         childProcess.on("error", (err) => {

@@ -5,7 +5,7 @@ export interface Options {
 }
 
 export const deployAnalysis = async <T extends Analysis>(
-  analysisFactory: () => T,
+  analysis: T,
   options: Options,
   tasks: Iterable<(analysis: T) => Promise<void>>
 ): Promise<void> => {
@@ -31,9 +31,7 @@ export const deployAnalysis = async <T extends Analysis>(
     Array(concurrencyLevel)
       .fill(undefined)
       .map(async () => {
-        const analysis = analysisFactory();
         while (await processNext(analysis));
-        await analysis.terminate();
       })
   );
 };

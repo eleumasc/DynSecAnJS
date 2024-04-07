@@ -10,7 +10,7 @@ import { CompatibilityHooksProvider } from "./CompatibilityHooks";
 import { ExecutionDetail } from "./ExecutionDetail";
 import { ExecutionHooksProvider } from "./ExecutionHooks";
 import { FileAttachment } from "./ArchiveWriter";
-import { defaultDelayMs } from "../core/defaults";
+import { defaultToleranceMs } from "../core/defaults";
 import { runCompatibilityAnalysis } from "./runCompatibilityAnalysis";
 import { runExecutionAnalysis } from "./runExecutionAnalysis";
 
@@ -48,7 +48,6 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
       agent: this.agent,
       hooksProvider: compatibilityHooksProvider,
       monitorConfig: {
-        waitUntil: "load",
         loadingTimeoutMs,
         timeSeedMs,
       },
@@ -56,7 +55,7 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
         operation: "record",
         archivePath: wprArchivePath,
       },
-      delayMs: defaultDelayMs,
+      toleranceMs: defaultToleranceMs,
     });
     if (isFailure(compatibility)) {
       return compatibility;
@@ -70,7 +69,6 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
         hooksProvider: executionHooksProvider,
         compatMode: false,
         monitorConfig: {
-          waitUntil: "load",
           loadingTimeoutMs,
           timeSeedMs,
         },
@@ -78,7 +76,7 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
           operation: "replay",
           archivePath: wprArchivePath,
         },
-        delayMs: defaultDelayMs,
+        toleranceMs: defaultToleranceMs,
         // attachmentList: new PrefixAttachmentList(attachmentList, `r${i}`),
       });
       executions.push(execution);
@@ -96,9 +94,5 @@ export class DefaultOriginalAnalysis implements OriginalAnalysis {
         originalExecutions: executions,
       },
     };
-  }
-
-  async terminate(): Promise<void> {
-    await this.agent.terminate();
   }
 }

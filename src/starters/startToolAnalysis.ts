@@ -12,7 +12,7 @@ import {
 import ArchiveReader from "../lib/ArchiveReader";
 import { deployAnalysis } from "../lib/deployAnalysis";
 import { deserializeOriginalAnalysisResult } from "../lib/OriginalAnalysis";
-import { getToolAnalysisFactory } from "../lib/ToolAnalysisFactory";
+import { getToolAnalysis } from "../lib/getToolAnalysis";
 import { intersectSitelistsFromFile } from "../core/sitelist";
 import path from "path";
 
@@ -55,9 +55,8 @@ export const startToolAnalysis = async (args: ToolAnalysisArgs) => {
     serializeToolAnalysisResult
   );
 
-  const analysisFactory = getToolAnalysisFactory(toolName, preAnalysis);
   await deployAnalysis(
-    analysisFactory,
+    getToolAnalysis(toolName, preAnalysis),
     { concurrencyLevel },
     sitelist.map((site, i) => async (analysis) => {
       console.log(`begin analysis ${site} [${i} / ${sitelist.length}]`);

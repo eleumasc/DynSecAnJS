@@ -13,18 +13,15 @@ export interface Options {
   url: string;
   agent: Agent;
   hooksProvider: CompatibilityHooksProvider;
-  monitorConfig: Pick<
-    MonitorConfig,
-    "waitUntil" | "loadingTimeoutMs" | "timeSeedMs"
-  >;
+  monitorConfig: Pick<MonitorConfig, "loadingTimeoutMs" | "timeSeedMs">;
   wprOptions: Pick<WebPageReplayOptions, "operation" | "archivePath">;
-  delayMs: number;
+  toleranceMs: number;
 }
 
 export const runCompatibilityAnalysis = (
   options: Options
 ): Promise<Fallible<CompatibilityDetail>> => {
-  const { url, agent, hooksProvider, monitorConfig, wprOptions, delayMs } =
+  const { url, agent, hooksProvider, monitorConfig, wprOptions, toleranceMs } =
     options;
 
   const { hooks, willCompleteAnalysis } = hooksProvider();
@@ -36,19 +33,17 @@ export const runCompatibilityAnalysis = (
         wprOptions,
       },
       (analysisProxy) =>
-        agent.usePage(
+        agent.use(
           {
             proxyPort: analysisProxy.getPort(),
           },
-          async (page) => {
-            await page.setViewport(defaultViewport);
+          async (controller) => {
+            await controller.setViewport(defaultViewport);
 
-            await page.navigate(url, {
-              timeoutMs: monitorConfig.loadingTimeoutMs,
-            });
+            await controller.navigate(url);
             const compatibility = await timeBomb(
               willCompleteAnalysis(),
-              delayMs
+              monitorConfig.loadingTimeoutMs + toleranceMs
             );
 
             return compatibility;

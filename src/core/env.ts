@@ -36,3 +36,5 @@ export const jalangiPath = get("JALANGI_PATH");
 export const aranLinvailPath = get("ARAN_LINVAIL_PATH");
 export const geckoDriverPath = get("GECKODRIVER_PATH");
 export const projectFoxhoundPath = get("PROJECT_FOXHOUND_PATH");
+
+export const localhost = "127.0.0.1";

@@ -1,27 +1,18 @@
-import {
-  Agent,
-  NavigateOptions,
-  PageController,
-  UsePageOptions,
-  Viewport,
-} from "./Agent";
+import { Agent, AgentController, UseOptions, Viewport } from "./Agent";
 import { Browser, Builder, Capabilities, WebDriver } from "selenium-webdriver";
 
-import { AddressInfo } from "net";
 import { Buffer } from "buffer";
 import firefox from "selenium-webdriver/firefox";
+import { localhost } from "../core/env";
 import { useGeckoDriver } from "./GeckoDriver";
-// import { useTcpTunnel } from "../core/TcpTunnel";
 import { useWebDriver } from "./WebDriver";
 
 export interface Options {
   webDriverOptions: WebDriverOptions;
-  localHost: string;
 }
 
 export interface WebDriverOptions {
   browser: string;
-  // server: string;
   binaryPath: string;
   args: string[];
   headless?: boolean;
@@ -30,48 +21,35 @@ export interface WebDriverOptions {
 export class SeleniumAgent implements Agent {
   constructor(readonly options: Options) {}
 
-  usePage<T>(
-    options: UsePageOptions,
-    cb: (page: PageController) => Promise<T>
+  use<T>(
+    useOptions: UseOptions,
+    cb: (controller: AgentController) => Promise<T>
   ): Promise<T> {
-    const { webDriverOptions /* , localHost */ } = this.options;
-    const { proxyPort } = options;
+    const { webDriverOptions } = this.options;
+    const { proxyPort } = useOptions;
 
-    // return useTcpTunnel(
-    //   {
-    //     targetPort: proxyPort,
-    //     targetHost: "127.0.0.1",
-    //     serverHost: localHost,
-    //   },
-    //   (tcpTunnelAddress) => ...
-    // );
     return useGeckoDriver((geckoDriver) =>
       useWebDriver(
         createWebDriverBuilder(
           webDriverOptions,
-          { address: "127.0.0.1", port: proxyPort, family: "ipv4" },
+          { address: localhost, port: proxyPort },
           geckoDriver.getDriverHost()
         ),
-        (driver) => cb(new SeleniumPageController(driver))
+        (driver) => cb(new SeleniumAgentController(driver))
       )
     );
   }
-
-  async terminate(): Promise<void> {}
 
   static async create(options: Options): Promise<SeleniumAgent> {
     return new SeleniumAgent(options);
   }
 }
 
-export class SeleniumPageController implements PageController {
+export class SeleniumAgentController implements AgentController {
   constructor(protected driver: WebDriver) {}
 
-  async navigate(url: string, { timeoutMs }: NavigateOptions): Promise<void> {
-    try {
-      await this.driver.manage().timeouts().pageLoadTimeout(timeoutMs);
-      await this.driver.get(url);
-    } catch {}
+  async navigate(url: string): Promise<void> {
+    await this.driver.executeScript(`location.assign(${JSON.stringify(url)})`);
   }
 
   async screenshot(): Promise<Buffer> {
@@ -103,7 +81,7 @@ return [
 
 const createWebDriverBuilder = (
   webDriverOptions: WebDriverOptions,
-  proxyAddress: AddressInfo,
+  proxyServer: { address: string; port: number },
   driverHost: string
 ) => {
   const { browser, binaryPath, args, headless } = webDriverOptions;
@@ -111,25 +89,13 @@ const createWebDriverBuilder = (
     .forBrowser(browser)
     .usingServer(`http://${driverHost}`);
   switch (browser) {
-    // case Browser.CHROME:
-    //   return builder.setChromeOptions(
-    //     new chrome.Options()
-    //       .setChromeBinaryPath(binaryPath)
-    //       .addArguments(
-    //         ...args,
-    //         `--proxy-server=${proxyAddress.address}:${proxyAddress.port}`,
-    //         `--ignore-certificate-errors-spki-list=${CA.get().getSPKIFingerprint()}`,
-    //         ...(headless ?? true ? ["--headless=new"] : [])
-    //       )
-    //   );
-
     case Browser.FIREFOX: {
       const rawPrefs = {
         "network.proxy.type": 1,
-        "network.proxy.http": proxyAddress.address,
-        "network.proxy.http_port": proxyAddress.port,
-        "network.proxy.ssl": proxyAddress.address,
-        "network.proxy.ssl_port": proxyAddress.port,
+        "network.proxy.http": proxyServer.address,
+        "network.proxy.http_port": proxyServer.port,
+        "network.proxy.ssl": proxyServer.address,
+        "network.proxy.ssl_port": proxyServer.port,
         "network.captive-portal-service.enabled": false,
       };
       const profile = new firefox.Profile();

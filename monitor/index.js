@@ -167,14 +167,6 @@ $.setTimeout(function () {
   reportAnalysis(false);
 }, config.loadingTimeoutMs);
 
-switch (config.waitUntil) {
-  case "domcontentloaded":
-    $.addEventListener($.global.document, "DOMContentLoaded", function () {
-      reportAnalysis(true);
-    });
-    break;
-  default:
-    $.addEventListener($.global, "load", function () {
-      reportAnalysis(true);
-    });
-}
+$.addEventListener($.global, "load", function () {
+  reportAnalysis(true);
+});

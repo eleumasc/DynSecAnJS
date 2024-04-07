@@ -1,5 +1,5 @@
 import { ChildProcess, spawn } from "child_process";
-import { debugMode, geckoDriverPath } from "../core/env";
+import { debugMode, geckoDriverPath, localhost } from "../core/env";
 import { getTcpPort, waitUntilUsed } from "../core/net";
 
 import Deferred from "../core/Deferred";
@@ -8,8 +8,8 @@ import path from "path";
 export default class GeckoDriver {
   constructor(
     readonly driverHost: string,
-    readonly subprocess: ChildProcess,
-    readonly deferredSubprocessExit: Deferred<void>
+    readonly childProcess: ChildProcess,
+    readonly deferredChildProcessClose: Deferred<void>
   ) {}
 
   getDriverHost(): string {
@@ -17,8 +17,8 @@ export default class GeckoDriver {
   }
 
   async stop(): Promise<void> {
-    this.subprocess.kill("SIGINT");
-    await this.deferredSubprocessExit.promise;
+    this.childProcess.kill("SIGINT");
+    await this.deferredChildProcessClose.promise;
   }
 
   static async start(): Promise<GeckoDriver> {
@@ -35,15 +35,15 @@ export default class GeckoDriver {
 
     await waitUntilUsed(driverPort, 500, 30_000);
 
-    const deferredSubprocessExit = new Deferred<void>();
-    child.on("exit", async () => {
-      deferredSubprocessExit.resolve();
+    const deferredChildProcessClose = new Deferred<void>();
+    child.on("close", async () => {
+      deferredChildProcessClose.resolve();
     });
 
     return new GeckoDriver(
-      `127.0.0.1:${driverPort}`,
+      `${localhost}:${driverPort}`,
       child,
-      deferredSubprocessExit
+      deferredChildProcessClose
     );
   }
 }

@@ -4,7 +4,7 @@ import {
   createExecutionTrace,
   findPredominantExecutionTrace,
 } from "./ExecutionTrace";
-import { Fallible, isSuccess } from "../core/Fallible";
+import { Fallible, isFailure, isSuccess } from "../core/Fallible";
 import { avg, stdev } from "../core/math";
 
 import { ExecutionDetail } from "../lib/ExecutionDetail";
@@ -22,6 +22,9 @@ export interface SiteInfo {
 export interface CompatibilityInfo {
   syntacticallyCompatible: boolean;
   eventuallyCompatible: boolean;
+  loadingCompleted: boolean;
+  originalSomeSuccessSomeFailure: boolean;
+  toolSomeSuccessSomeFailure: boolean;
   transparencyAnalyzable: boolean; // no execution failure in both original and tool, for all executions
   loadingCompleteness: LoadingCompletenessInfo | null; // non-null if both eventuallyCompatible and transparencyAnalyzable are true
 }
@@ -41,6 +44,7 @@ export interface PredominantTraceExistanceInfo {
 export interface TransparencyInfo {
   transparent: boolean;
   brokenFeatures: string[];
+  uncaughtErrors: Set<string>;
   performance: PerformanceInfo | null; // non-null if transparent is true
 }
 
@@ -64,35 +68,34 @@ export const getSiteInfo = (
   }
   const { val: originalResult } = fallibleOriginalResult;
   const { val: toolResult } = fallibleToolResult;
-  const { originalExecutions: fallibleOriginalExecutions } = originalResult;
   const { toolExecutions: fallibleToolExecutions } = toolResult;
-  const successOriginalFirstExecution =
-    fallibleOriginalExecutions.find(isSuccess) ?? null;
-  const successToolFirstExecution =
-    fallibleToolExecutions.find(isSuccess) ?? null;
-  const analyzable =
-    successOriginalFirstExecution !== null &&
-    successToolFirstExecution !== null;
+  const findFirstExecution = (
+    fallibleExecutions: Fallible<ExecutionDetail>[]
+  ): ExecutionDetail | null => {
+    const executions = fallibleExecutions
+      .filter(isSuccess)
+      .map(({ val }) => val);
+    return executions.length > 0
+      ? executions.find(({ loadingCompleted }) => loadingCompleted) ??
+          executions[0]
+      : null;
+  };
+  const toolFirstExecution = findFirstExecution(fallibleToolExecutions);
+  const analyzable = toolFirstExecution !== null;
   return {
     site,
     accessible,
     analyzable,
     compatibility: analyzable
-      ? getCompatibilityInfo(
-          successOriginalFirstExecution.val,
-          successToolFirstExecution.val,
-          originalResult,
-          toolResult
-        )
+      ? getCompatibilityInfo(originalResult, toolResult, toolFirstExecution)
       : null,
   };
 };
 
 export const getCompatibilityInfo = (
-  originalFirstExecution: ExecutionDetail,
-  toolFirstExecution: ExecutionDetail,
   originalResult: OriginalAnalysisResult,
-  toolResult: ToolAnalysisResult
+  toolResult: ToolAnalysisResult,
+  toolFirstExecution: ExecutionDetail
 ): CompatibilityInfo => {
   const { originalExecutions: fallibleOriginalExecutions } = originalResult;
   const {
@@ -105,14 +108,7 @@ export const getCompatibilityInfo = (
       case "ChromiumTaintTracking":
       case "JSFlow":
       case "ProjectFoxhound": {
-        const uncaughtSyntaxErrors = ({ uncaughtErrors }: ExecutionDetail) =>
-          new Set(uncaughtErrors.filter((msg) => msg.includes("SyntaxError")));
-        return (
-          subtractSets(
-            uncaughtSyntaxErrors(toolFirstExecution),
-            uncaughtSyntaxErrors(originalFirstExecution)
-          ).size === 0
-        );
+        return true;
       }
       case "JEST":
       case "IFTranspiler":
@@ -124,6 +120,7 @@ export const getCompatibilityInfo = (
         throw new Error(`Unknown tool: ${toolName}`);
     }
   })();
+  const loadingCompleted = toolFirstExecution.loadingCompleted;
   const transparencyAnalyzable =
     eventuallyCompatible &&
     fallibleOriginalExecutions.every(isSuccess) &&
@@ -131,6 +128,13 @@ export const getCompatibilityInfo = (
   return {
     syntacticallyCompatible,
     eventuallyCompatible,
+    loadingCompleted,
+    originalSomeSuccessSomeFailure:
+      fallibleOriginalExecutions.some(isSuccess) &&
+      fallibleOriginalExecutions.some(isFailure),
+    toolSomeSuccessSomeFailure:
+      fallibleToolExecutions.some(isSuccess) &&
+      fallibleToolExecutions.some(isFailure),
     transparencyAnalyzable,
     loadingCompleteness: transparencyAnalyzable
       ? getLoadingCompletenessInfo(
@@ -200,6 +204,10 @@ export const getTransparencyInfo = (
   return {
     transparent,
     brokenFeatures: [...brokenFeatures],
+    uncaughtErrors: subtractSets(
+      toolTrace.uncaughtErrors,
+      originalTrace.uncaughtErrors
+    ),
     performance: getPerformanceInfo(originalExecutions, toolExecutions),
   };
 };

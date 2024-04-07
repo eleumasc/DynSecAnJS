@@ -5,7 +5,7 @@ import { RunOptions, ToolAnalysis, ToolAnalysisResult } from "./ToolAnalysis";
 import { Agent } from "./Agent";
 import { ExecutionDetail } from "./ExecutionDetail";
 import { ExecutionHooksProvider } from "./ExecutionHooks";
-import { defaultDelayMs } from "../core/defaults";
+import { defaultToleranceMs } from "../core/defaults";
 import { runExecutionAnalysis } from "./runExecutionAnalysis";
 
 export interface Options {
@@ -51,7 +51,6 @@ export class DefaultToolAnalysis implements ToolAnalysis {
         hooksProvider: executionHooksProvider,
         compatMode,
         monitorConfig: {
-          waitUntil: "load",
           loadingTimeoutMs,
           timeSeedMs,
         },
@@ -59,7 +58,7 @@ export class DefaultToolAnalysis implements ToolAnalysis {
           operation: "replay",
           archivePath: wprArchivePath,
         },
-        delayMs: defaultDelayMs,
+        toleranceMs: defaultToleranceMs,
         // attachmentList: new PrefixAttachmentList(attachmentList, `t${i}`),
       });
       executions.push(execution);
@@ -72,9 +71,5 @@ export class DefaultToolAnalysis implements ToolAnalysis {
       status: "success",
       val: { toolName, compatible, toolExecutions: executions },
     };
-  }
-
-  async terminate(): Promise<void> {
-    await this.agent.terminate();
   }
 }

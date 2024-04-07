@@ -15,12 +15,9 @@ export interface Options {
   agent: Agent;
   hooksProvider: ExecutionHooksProvider;
   compatMode: boolean;
-  monitorConfig: Pick<
-    MonitorConfig,
-    "waitUntil" | "loadingTimeoutMs" | "timeSeedMs"
-  >;
+  monitorConfig: Pick<MonitorConfig, "loadingTimeoutMs" | "timeSeedMs">;
   wprOptions: Pick<WebPageReplayOptions, "operation" | "archivePath">;
-  delayMs: number;
+  toleranceMs: number;
   attachmentList?: AttachmentList;
 }
 
@@ -34,7 +31,7 @@ export const runExecutionAnalysis = (
     compatMode,
     monitorConfig,
     wprOptions,
-    delayMs,
+    toleranceMs,
     attachmentList,
   } = options;
 
@@ -47,24 +44,25 @@ export const runExecutionAnalysis = (
         wprOptions,
       },
       (analysisProxy) =>
-        agent.usePage(
+        agent.use(
           {
             proxyPort: analysisProxy.getPort(),
           },
-          async (page) => {
-            await page.setViewport(defaultViewport);
+          async (controller) => {
+            await controller.setViewport(defaultViewport);
 
             const startTime = Date.now();
-            await page.navigate(url, {
-              timeoutMs: monitorConfig.loadingTimeoutMs,
-            });
-            const completer = await timeBomb(willCompleteAnalysis(), delayMs);
+            await controller.navigate(url);
+            const completer = await timeBomb(
+              willCompleteAnalysis(),
+              monitorConfig.loadingTimeoutMs + toleranceMs
+            );
             const endTime = Date.now();
             const executionTimeMs = endTime - startTime;
 
             const screenshotFile = attachmentList?.add(
               `screenshot.png`,
-              new DataAttachment(await page.screenshot())
+              new DataAttachment(await controller.screenshot())
             );
 
             return completer({

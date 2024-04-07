@@ -1,5 +1,5 @@
 import { ChildProcess, spawn } from "child_process";
-import { debugMode, wprgoPath } from "../core/env";
+import { debugMode, localhost, wprgoPath } from "../core/env";
 import { getTcpPort, waitUntilUsed } from "../core/net";
 
 import CA from "../core/CA";
@@ -17,8 +17,8 @@ export default class WebPageReplay {
   constructor(
     readonly httpHost: string,
     readonly httpsHost: string,
-    readonly subprocess: ChildProcess,
-    readonly deferredSubprocessExit: Deferred<void>
+    readonly childProcess: ChildProcess,
+    readonly deferredChildProcessClose: Deferred<void>
   ) {}
 
   getHttpHost(): string {
@@ -30,8 +30,8 @@ export default class WebPageReplay {
   }
 
   async stop(): Promise<void> {
-    this.subprocess.kill("SIGINT");
-    await this.deferredSubprocessExit.promise;
+    this.childProcess.kill("SIGINT");
+    await this.deferredChildProcessClose.promise;
   }
 
   static async start(options: Options): Promise<WebPageReplay> {
@@ -62,16 +62,16 @@ export default class WebPageReplay {
 
     await waitUntilUsed(httpPort, 500, 30_000);
 
-    const deferredSubprocessExit = new Deferred<void>();
-    child.on("exit", async () => {
-      deferredSubprocessExit.resolve();
+    const deferredChildProcessClose = new Deferred<void>();
+    child.on("close", async () => {
+      deferredChildProcessClose.resolve();
     });
 
     return new WebPageReplay(
-      `127.0.0.1:${httpPort}`,
-      `127.0.0.1:${httpsPort}`,
+      `${localhost}:${httpPort}`,
+      `${localhost}:${httpsPort}`,
       child,
-      deferredSubprocessExit
+      deferredChildProcessClose
     );
   }
 }

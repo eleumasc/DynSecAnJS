@@ -5,7 +5,7 @@ import ArchiveWriter, {
 } from "../lib/ArchiveWriter";
 
 import { deployAnalysis } from "../lib/deployAnalysis";
-import { getOriginalAnalysisFactory } from "../lib/OriginalAnalysisFactory";
+import { getOriginalAnalysis } from "../lib/getOriginalAnalysis";
 import path from "path";
 import { readSitelistFromFile } from "../core/sitelist";
 import { serializeOriginalAnalysisResult } from "../lib/OriginalAnalysis";
@@ -31,9 +31,8 @@ export const startOriginalAnalysis = async (args: OriginalAnalysisArgs) => {
     serializeOriginalAnalysisResult
   );
 
-  const analysisFactory = getOriginalAnalysisFactory();
   await deployAnalysis(
-    analysisFactory,
+    getOriginalAnalysis(),
     { concurrencyLevel },
     sitelist.map((site, i) => async (analysis) => {
       console.log(`begin analysis ${site} [${i} / ${sitelist.length}]`);

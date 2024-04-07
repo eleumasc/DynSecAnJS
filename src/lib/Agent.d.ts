@@ -1,25 +1,18 @@
 export interface Agent {
-  usePage<T>(
-    options: UsePageOptions,
-    cb: (page: PageController) => Promise<T>
+  use<T>(
+    useOptions: UseOptions,
+    cb: (controller: AgentController) => Promise<T>
   ): Promise<T>;
-  terminate(): Promise<void>;
 }
 
-export interface UsePageOptions {
+export interface UseOptions {
   proxyPort: number;
 }
 
-export type AgentFactory = () => Promise<Agent>;
-
-export interface PageController {
-  navigate(url: string, options: NavigateOptions): Promise<void>;
+export interface AgentController {
+  navigate(url: string): Promise<void>;
   screenshot(): Promise<Buffer>;
   setViewport(viewport: Viewport): Promise<void>;
-}
-
-export interface NavigateOptions {
-  timeoutMs: number;
 }
 
 export interface Viewport {

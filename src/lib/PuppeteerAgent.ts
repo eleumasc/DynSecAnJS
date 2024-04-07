@@ -1,71 +1,42 @@
-import {
-  Agent,
-  NavigateOptions,
-  PageController,
-  UsePageOptions,
-  Viewport,
-} from "./Agent";
-import puppeteer, {
-  Browser,
-  BrowserContext,
-  BrowserContextOptions,
-  Page,
-  PuppeteerLaunchOptions,
-} from "puppeteer";
+import { Agent, AgentController, UseOptions, Viewport } from "./Agent";
+import puppeteer, { Browser, Page, PuppeteerLaunchOptions } from "puppeteer";
 
-import CA from "../core/CA";
-import { timeBomb } from "../core/async";
+import { localhost } from "../core/env";
 
 export interface Options {
   pptrLaunchOptions?: PuppeteerLaunchOptions;
 }
 
 export class PuppeteerAgent implements Agent {
-  constructor(readonly browser: Browser, readonly options: Options) {}
+  constructor(readonly options: Options) {}
 
-  async usePage<T>(
-    options: UsePageOptions,
-    cb: (page: PageController) => Promise<T>
+  async use<T>(
+    useOptions: UseOptions,
+    cb: (controller: AgentController) => Promise<T>
   ): Promise<T> {
-    const { proxyPort } = options;
+    const { pptrLaunchOptions } = this.options;
+    const { proxyPort } = useOptions;
 
-    return useBrowserContext(
-      this.browser,
-      { proxyServer: `127.0.0.1:${proxyPort}` },
-      (browserContext) =>
-        usePage(browserContext, async (page) =>
-          cb(new PuppeteerPageController(page))
-        )
+    return useBrowser(
+      {
+        ...pptrLaunchOptions,
+        args: [
+          ...(pptrLaunchOptions?.args ?? []),
+          `--proxy-server=${localhost}:${proxyPort}`,
+        ],
+        ignoreHTTPSErrors: true,
+      },
+      async (browser) =>
+        await cb(new PuppeteerAgentController(await browser.newPage()))
     );
-  }
-
-  async terminate(): Promise<void> {
-    await this.browser.close();
-  }
-
-  static async create(options: Options): Promise<PuppeteerAgent> {
-    const { pptrLaunchOptions } = options;
-
-    const browser = await puppeteer.launch({
-      ...pptrLaunchOptions,
-      args: [
-        ...(pptrLaunchOptions?.args ?? []),
-        `--proxy-server=per-context`,
-        `--ignore-certificate-errors-spki-list=${CA.get().getSPKIFingerprint()}`,
-      ],
-    });
-
-    return new PuppeteerAgent(browser, options);
   }
 }
 
-export class PuppeteerPageController implements PageController {
+export class PuppeteerAgentController implements AgentController {
   constructor(protected page: Page) {}
 
-  async navigate(url: string, { timeoutMs }: NavigateOptions): Promise<void> {
-    try {
-      await this.page.goto(url, { timeout: timeoutMs });
-    } catch {}
+  async navigate(url: string): Promise<void> {
+    await this.page.evaluate(`location.assign(${JSON.stringify(url)})`);
   }
 
   screenshot(): Promise<Buffer> {
@@ -77,29 +48,14 @@ export class PuppeteerPageController implements PageController {
   }
 }
 
-const useBrowserContext = async <T>(
-  browser: Browser,
-  options: BrowserContextOptions | undefined,
-  cb: (browserContext: BrowserContext) => Promise<T>
+const useBrowser = async <T>(
+  pptrLaunchOptions: PuppeteerLaunchOptions,
+  cb: (browser: Browser) => Promise<T>
 ) => {
-  const browserContext = await browser.createIncognitoBrowserContext(options);
+  const browser = await puppeteer.launch(pptrLaunchOptions);
   try {
-    return await cb(browserContext);
+    return await cb(browser);
   } finally {
-    await browserContext.close();
-  }
-};
-
-const usePage = async <T>(
-  browserContext: BrowserContext,
-  cb: (page: Page) => Promise<T>
-) => {
-  const page = await browserContext.newPage();
-  try {
-    return await cb(page);
-  } finally {
-    try {
-      await timeBomb(page.close(), 3_000);
-    } catch {}
+    await browser.close();
   }
 };
