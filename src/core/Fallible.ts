@@ -71,3 +71,13 @@ export const deserializeFallible = <T>(
     throw new Error(`Unknown status of Fallible: ${status}`);
   }
 };
+
+export const retryIfFailure = async <T>(
+  cb: () => Promise<Fallible<T>>
+): Promise<Fallible<T>> => {
+  const firstTry = await cb();
+  if (isSuccess(firstTry)) {
+    return firstTry;
+  }
+  return await cb();
+};

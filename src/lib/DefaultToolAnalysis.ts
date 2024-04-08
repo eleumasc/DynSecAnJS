@@ -1,5 +1,5 @@
 import { ESVersion, lessOrEqualToESVersion } from "../compatibility/ESVersion";
-import { Fallible, isFailure } from "../core/Fallible";
+import { Fallible, isFailure, retryIfFailure } from "../core/Fallible";
 import { RunOptions, ToolAnalysis, ToolAnalysisResult } from "./ToolAnalysis";
 
 import { Agent } from "./Agent";
@@ -45,22 +45,24 @@ export class DefaultToolAnalysis implements ToolAnalysis {
 
     let executions: Fallible<ExecutionDetail>[] = [];
     for (let i = 0; i < analysisRepeat; i += 1) {
-      const execution = await runExecutionAnalysis({
-        url,
-        agent: this.agent,
-        hooksProvider: executionHooksProvider,
-        compatMode,
-        monitorConfig: {
-          loadingTimeoutMs,
-          timeSeedMs,
-        },
-        wprOptions: {
-          operation: "replay",
-          archivePath: wprArchivePath,
-        },
-        toleranceMs: defaultToleranceMs,
-        // attachmentList: new PrefixAttachmentList(attachmentList, `t${i}`),
-      });
+      const execution = await retryIfFailure(() =>
+        runExecutionAnalysis({
+          url,
+          agent: this.agent,
+          hooksProvider: executionHooksProvider,
+          compatMode,
+          monitorConfig: {
+            loadingTimeoutMs,
+            timeSeedMs,
+          },
+          wprOptions: {
+            operation: "replay",
+            archivePath: wprArchivePath,
+          },
+          toleranceMs: defaultToleranceMs,
+          // attachmentList: new PrefixAttachmentList(attachmentList, `t${i}`),
+        })
+      );
       executions.push(execution);
       if (isFailure(execution)) {
         break;
