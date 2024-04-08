@@ -1,7 +1,7 @@
-import Deferred from "../core/Deferred";
-import { Fallible, isSuccess } from "../core/Fallible";
+import Deferred from "./Deferred";
+import { Fallible, isSuccess } from "./Fallible";
 import { ChildProcess, Serializable } from "child_process";
-import { timeBomb } from "../core/async";
+import { timeBomb } from "./async";
 
 interface IPCMessage {
   requestId: number;

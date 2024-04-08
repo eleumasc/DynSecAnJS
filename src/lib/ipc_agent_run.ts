@@ -1,5 +1,5 @@
 import { Agent, AgentController, UseOptions, Viewport } from "./Agent";
-import { IPCServer, IPCServerHandler } from "./IPC";
+import { IPCServer, IPCServerHandler } from "../core/IPC";
 import {
   StartOptions,
   isPuppeteerStartOptions,

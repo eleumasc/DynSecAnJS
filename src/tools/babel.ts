@@ -1,4 +1,5 @@
 import { BodyTransformer } from "../lib/BodyTransformer";
+import { ignoreJSON } from "./ignoreJSON";
 import { transformAsync } from "@babel/core";
 import { transformHtml } from "../html/transformHtml";
 import { transformInlineScripts } from "../html/transformInlineScripts";
@@ -19,25 +20,17 @@ export const transpileWithBabel =
     }
   };
 
-const babel = async (
+const babel = (
   code: string,
   isInlineEventHandler: boolean = false
-): Promise<string> => {
-  try {
+): Promise<string> =>
+  ignoreJSON(code, async (code) => {
     const result = await transformAsync(code, {
-      presets: [["@babel/preset-env", { modules: false }]],
-      sourceType: "unambiguous",
+      presets: ["@babel/preset-env"],
+      sourceType: "script",
       parserOpts: {
         allowReturnOutsideFunction: isInlineEventHandler,
       },
     });
     return result?.code!;
-  } catch (e) {
-    try {
-      JSON.parse(code);
-      return code;
-    } catch {
-      throw e;
-    }
-  }
-};
+  });

@@ -6,9 +6,10 @@ import {
 
 import { BodyTransformer } from "../lib/BodyTransformer";
 import { aranLinvailPath } from "../core/env";
+import { ignoreJSON } from "./ignoreJSON";
 import path from "path";
 import { readFileSync } from "fs";
-import { spawnStdio } from "../core/spawnStdio";
+import { spawnStdio } from "./spawnStdio";
 import { transformInlineScripts } from "../html/transformInlineScripts";
 
 export const transformWithAranLinvail = (
@@ -39,15 +40,16 @@ export const transformWithAranLinvail = (
   };
 };
 
-export const aranLinvail = async (
+export const aranLinvail = (
   analysisName: string,
   code: string,
   wrap: boolean = false
-): Promise<string> => {
-  const result = await spawnStdio(
-    "node",
-    [path.join(aranLinvailPath, "build", analysisName, "transform.js")],
-    code
-  );
-  return wrap ? `(function () {\n${result}\n})();` : result;
-};
+): Promise<string> =>
+  ignoreJSON(code, async (code) => {
+    const result = await spawnStdio(
+      "node",
+      [path.join(aranLinvailPath, "build", analysisName, "transform.js")],
+      code
+    );
+    return wrap ? `(function () {\n${result}\n})();` : result;
+  });

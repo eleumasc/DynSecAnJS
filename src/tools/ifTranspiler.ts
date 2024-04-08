@@ -3,8 +3,9 @@ import { createJavascriptDataUrl, injectScripts } from "../html/injectScripts";
 
 import { BodyTransformer } from "../lib/BodyTransformer";
 import { ifTranspilerPath } from "../core/env";
+import { ignoreJSON } from "./ignoreJSON";
 import path from "path";
-import { spawnStdio } from "../core/spawnStdio";
+import { spawnStdio } from "./spawnStdio";
 import { transformInlineScripts } from "../html/transformInlineScripts";
 
 export const transformWithIFTranspiler =
@@ -29,19 +30,20 @@ export const transformWithIFTranspiler =
     }
   };
 
-export const ifTranspiler = async (code: string): Promise<string> => {
-  let result = await spawnStdio(
-    "node",
-    [path.join(ifTranspilerPath, "if-transpiler.js"), "--inline"],
-    code
-  );
+export const ifTranspiler = (code: string): Promise<string> =>
+  ignoreJSON(code, async (code) => {
+    let result = await spawnStdio(
+      "node",
+      [path.join(ifTranspilerPath, "if-transpiler.js"), "--inline"],
+      code
+    );
 
-  while (result.startsWith("Warning: ")) {
-    result = result.substring(result.indexOf("\n") + 1);
-  }
+    while (result.startsWith("Warning: ")) {
+      result = result.substring(result.indexOf("\n") + 1);
+    }
 
-  return result;
-};
+    return result;
+  });
 
 const setupCode = `
 var $Γ = { global: { scope: null, Σ: 0 } };

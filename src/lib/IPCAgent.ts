@@ -4,7 +4,7 @@ import {
   Options as PuppeteerAgentOptions,
 } from "./PuppeteerAgent";
 
-import { IPCClient } from "./IPC";
+import { IPCClient } from "../core/IPC";
 import {
   SeleniumAgent,
   Options as SeleniumAgentOptions,
