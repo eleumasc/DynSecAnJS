@@ -6,6 +6,7 @@ import { Agent } from "./Agent";
 import { ExecutionDetail } from "./ExecutionDetail";
 import { ExecutionHooksProvider } from "./ExecutionHooks";
 import { defaultToleranceMs } from "../core/defaults";
+import { isEventuallyCompatible } from "../measurement/isEventuallyCompatible";
 import { runExecutionAnalysis } from "./runExecutionAnalysis";
 
 export interface Options {
@@ -65,6 +66,9 @@ export class DefaultToolAnalysis implements ToolAnalysis {
       );
       executions.push(execution);
       if (isFailure(execution)) {
+        break;
+      }
+      if (i === 0 && !isEventuallyCompatible(toolName, execution.val)) {
         break;
       }
     }

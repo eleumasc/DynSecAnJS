@@ -10,6 +10,7 @@ import { avg, stdev } from "../core/math";
 import { ExecutionDetail } from "../lib/ExecutionDetail";
 import { OriginalAnalysisResult } from "../lib/OriginalAnalysis";
 import { ToolAnalysisResult } from "../lib/ToolAnalysis";
+import { isEventuallyCompatible } from "./isEventuallyCompatible";
 import { subtractSets } from "../core/Set";
 
 export interface SiteInfo {
@@ -103,23 +104,10 @@ export const getCompatibilityInfo = (
     compatible: syntacticallyCompatible,
     toolExecutions: fallibleToolExecutions,
   } = toolResult;
-  const eventuallyCompatible = ((): boolean => {
-    switch (toolName) {
-      case "ChromiumTaintTracking":
-      case "JSFlow":
-      case "ProjectFoxhound": {
-        return true;
-      }
-      case "JEST":
-      case "IFTranspiler":
-      case "GIFC":
-      case "Jalangi":
-      case "Linvail":
-        return toolFirstExecution.transformErrors.length === 0;
-      default:
-        throw new Error(`Unknown tool: ${toolName}`);
-    }
-  })();
+  const eventuallyCompatible = isEventuallyCompatible(
+    toolName,
+    toolFirstExecution
+  );
   const loadingCompleted = toolFirstExecution.loadingCompleted;
   const transparencyAnalyzable =
     eventuallyCompatible &&
