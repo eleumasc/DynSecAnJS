@@ -5,6 +5,10 @@ import {
   isPuppeteerStartOptions,
   isSeleniumStartOptions,
 } from "./IPCAgent";
+import {
+  setupManualTerminationHandling,
+  waitForTerminationSignal,
+} from "../core/process";
 
 import Deferred from "../core/Deferred";
 import { PuppeteerAgent } from "./PuppeteerAgent";
@@ -22,59 +26,54 @@ const createAgent = (startOptions: StartOptions): Agent => {
   }
 };
 
-const boot = async (cb: (controller: AgentController) => Promise<void>) => {
-  const deferredStart = new Deferred<void>();
+const main = async () => {
+  setupManualTerminationHandling();
 
-  const bootHandlers: Record<string, IPCServerHandler> = {
+  let controller: AgentController | null = null;
+  const getController = () => {
+    if (controller) {
+      return controller;
+    } else {
+      throw new Error("Agent has not been created yet");
+    }
+  };
+
+  const handlers: Record<string, IPCServerHandler> = {
     "Agent.start": async (
       startOptions: StartOptions,
       useOptions: UseOptions
     ) => {
-      bootServer.close();
+      const deferredStart = new Deferred<void>();
 
       const agent = createAgent(startOptions);
-      agent.use(useOptions, async (controller) => {
-        deferredStart.resolve();
-        await cb(controller);
-      });
+      agent
+        .use(useOptions, async (ctrl) => {
+          deferredStart.resolve();
+          controller = ctrl;
+          await waitForTerminationSignal();
+          controller = null;
+        })
+        .catch((e) => {
+          deferredStart.reject(e);
+        });
 
       await deferredStart.promise;
     },
-  };
-
-  const bootServer = new IPCServer(bootHandlers);
-  bootServer.start();
-
-  await deferredStart.promise;
-};
-
-const loop = async (controller: AgentController) => {
-  const deferredClose = new Deferred<void>();
-
-  const loopHandlers: Record<string, IPCServerHandler> = {
-    "AgentController.navigate": (url: string) => {
-      return controller.navigate(url);
+    "AgentController.navigate": (url: string, timeoutMs: number) => {
+      return getController().navigate(url, timeoutMs);
     },
     "AgentController.screenshot": async () => {
-      return (await controller.screenshot()).toString();
+      return (await getController().screenshot()).toString();
     },
     "AgentController.setViewport": async (viewport: Viewport) => {
-      return controller.setViewport(viewport);
-    },
-    "Agent.close": async () => {
-      loopServer.close();
-      deferredClose.resolve();
+      return getController().setViewport(viewport);
     },
   };
 
-  const loopServer = new IPCServer(loopHandlers);
-  loopServer.start();
-
-  await deferredClose.promise;
-};
-
-const main = () => {
-  boot(loop);
+  const server = new IPCServer(handlers);
+  server.start();
+  await waitForTerminationSignal();
+  server.close();
 };
 
 main();

@@ -1,7 +1,6 @@
 import Deferred from "./Deferred";
 import { Fallible, isSuccess } from "./Fallible";
 import { ChildProcess, Serializable } from "child_process";
-import { timeBomb } from "./async";
 
 interface IPCMessage {
   requestId: number;
@@ -34,11 +33,14 @@ export type IPCClientOnMessageListener = (response: IPCResponse) => void;
 
 export class IPCClient {
   protected onMessageListener: IPCClientOnMessageListener;
+  protected onExitListener: () => void;
+  protected onErrorListener: (err: Error) => void;
   protected freshId = 1;
   protected deferredResponsesMap = new Map<number, Deferred<IPCResponse>>();
+  protected error: Error | null = null;
 
   constructor(readonly childProcess: ChildProcess) {
-    this.onMessageListener = (response: IPCResponse) => {
+    this.onMessageListener = (response) => {
       const { requestId } = response;
       const deferredResponse = this.deferredResponsesMap.get(requestId);
       if (!deferredResponse) {
@@ -46,17 +48,31 @@ export class IPCClient {
       }
       deferredResponse.resolve(response);
     };
+    this.onExitListener = () => {
+      this.setError(new IPCProtocolError("Process has exited"));
+    };
+    this.onErrorListener = (err) => {
+      this.setError(new IPCProtocolError(`Process error: ${err}`));
+    };
   }
 
   start() {
     this.childProcess.on("message", this.onMessageListener);
+    this.childProcess.on("exit", this.onExitListener);
+    this.childProcess.on("error", this.onErrorListener);
   }
 
   close() {
     this.childProcess.removeListener("message", this.onMessageListener);
+    this.childProcess.removeListener("exit", this.onExitListener);
+    this.childProcess.removeListener("error", this.onErrorListener);
   }
 
   async call(command: string, args: Serializable[]): Promise<any> {
+    if (this.error) {
+      throw this.error;
+    }
+
     const requestId = this.freshId++;
     const deferredResponse = new Deferred<IPCResponse>();
     this.deferredResponsesMap.set(requestId, deferredResponse);
@@ -73,7 +89,7 @@ export class IPCClient {
       }
     );
     try {
-      const { result } = await timeBomb(deferredResponse.promise, 15_000);
+      const { result } = await deferredResponse.promise;
       if (isSuccess(result)) {
         return result.val;
       } else {
@@ -82,6 +98,14 @@ export class IPCClient {
     } finally {
       this.deferredResponsesMap.delete(requestId);
     }
+  }
+
+  protected setError(err: Error) {
+    this.error = err;
+    for (const deferredResponse of this.deferredResponsesMap.values()) {
+      deferredResponse.reject(err);
+    }
+    this.deferredResponsesMap.clear();
   }
 }
 
@@ -93,15 +117,15 @@ export class IPCServer {
   protected onMessageListener: IPCServerOnMessageListener;
 
   constructor(readonly handlers: Record<string, IPCServerHandler>) {
-    this.onMessageListener = async (call: IPCCall) => {
+    this.onMessageListener = async (call) => {
       const { requestId, command, args } = call;
-      const handler = handlers[command];
-      if (!handler) {
-        throw new IPCProtocolError(
-          `Handler for command '${command}' not found`
-        );
-      }
       try {
+        const handler = handlers[command];
+        if (!handler) {
+          throw new IPCProtocolError(
+            `Handler for command '${command}' not found`
+          );
+        }
         const result = await handler(...args);
         process.send!(<IPCResponse>{
           requestId,

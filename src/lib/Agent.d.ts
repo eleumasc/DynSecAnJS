@@ -10,7 +10,7 @@ export interface UseOptions {
 }
 
 export interface AgentController {
-  navigate(url: string): Promise<void>;
+  navigate(url: string, timeoutMs: number): Promise<void>;
   screenshot(): Promise<Buffer>;
   setViewport(viewport: Viewport): Promise<void>;
 }

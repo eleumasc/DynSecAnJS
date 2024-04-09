@@ -9,8 +9,10 @@ import {
   SeleniumAgent,
   Options as SeleniumAgentOptions,
 } from "./SeleniumAgent";
-import { fork } from "child_process";
+import { Serializable, fork } from "child_process";
 import path from "path";
+import { useChildProcess } from "../core/process";
+import { timeBomb } from "../core/async";
 
 export interface StartOptions {
   agentType: string;
@@ -40,24 +42,30 @@ export const isSeleniumStartOptions = (
 export class IPCAgent implements Agent {
   constructor(readonly startOptions: StartOptions) {}
 
-  async use<T>(
+  use<T>(
     useOptions: UseOptions,
     cb: (controller: AgentController) => Promise<T>
   ): Promise<T> {
-    const childProcess = fork(path.join(__dirname, "ipc_agent_run.js"));
-    const client = new IPCClient(childProcess);
-    client.start();
-    try {
-      await client.call("Agent.start", [this.startOptions, useOptions]);
-      try {
-        return await cb(new IPCAgentController(client));
-      } finally {
-        await client.call("Agent.close", []);
+    return useChildProcess(
+      {
+        childProcess: fork(path.join(__dirname, "ipc_agent_run.js")),
+
+        terminate: async (childProcess) => {
+          childProcess.kill("SIGINT");
+        },
+      },
+
+      async (childProcess) => {
+        const client = new IPCClient(childProcess);
+        client.start();
+        try {
+          await call(client, "Agent.start", [this.startOptions, useOptions]);
+          return await cb(new IPCAgentController(client));
+        } finally {
+          client.close();
+        }
       }
-    } finally {
-      client.close();
-      childProcess.kill();
-    }
+    );
   }
 
   static from(agent: Agent): IPCAgent {
@@ -80,17 +88,25 @@ export class IPCAgent implements Agent {
 export class IPCAgentController implements AgentController {
   constructor(readonly client: IPCClient) {}
 
-  navigate(url: string): Promise<void> {
-    return this.client.call("AgentController.navigate", [url]);
+  navigate(url: string, timeoutMs: number): Promise<void> {
+    return call(this.client, "AgentController.navigate", [url, timeoutMs]);
   }
 
   async screenshot(): Promise<Buffer> {
     return Buffer.from(
-      await this.client.call("AgentController.screenshot", [])
+      await call(this.client, "AgentController.screenshot", [])
     );
   }
 
   setViewport(viewport: Viewport): Promise<void> {
-    return this.client.call("AgentController.setViewport", [viewport]);
+    return call(this.client, "AgentController.setViewport", [viewport]);
   }
 }
+
+const call = (
+  client: IPCClient,
+  command: string,
+  args: Serializable[]
+): Promise<any> => {
+  return timeBomb(client.call(command, args), 15_000);
+};

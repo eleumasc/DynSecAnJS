@@ -15,12 +15,15 @@ export const getOriginalAnalysis = (): OriginalAnalysis => {
   const analysisRepeat = defaultAnalysisRepeat;
   const loadingTimeoutMs = defaultLoadingTimeoutMs;
 
+  // IPCAgent.from(
+  //   new PuppeteerAgent({
+  //     pptrLaunchOptions: defaultPptrLaunchOptions,
+  //   })
+  // ),
   return new DefaultOriginalAnalysis(
-    IPCAgent.from(
-      new PuppeteerAgent({
-        pptrLaunchOptions: defaultPptrLaunchOptions,
-      })
-    ),
+    new PuppeteerAgent({
+      pptrLaunchOptions: defaultPptrLaunchOptions,
+    }),
     {
       compatibilityHooksProvider: createCompatibilityHooksProvider(),
       executionHooksProvider: createExecutionHooksProvider(),

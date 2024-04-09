@@ -38,7 +38,8 @@ export const getToolAnalysis = (
     const analysisRepeat = preAnalysis ? 1 : defaultAnalysisRepeat;
     const loadingTimeoutMs = preAnalysis ? 5 * 60_000 : defaultLoadingTimeoutMs;
 
-    return new DefaultToolAnalysis(IPCAgent.from(agent), {
+    // IPCAgent.from(agent)
+    return new DefaultToolAnalysis(agent, {
       toolName,
       executionHooksProvider: createExecutionHooksProvider(bodyTransformer),
       supportedESVersion,

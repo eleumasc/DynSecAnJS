@@ -52,10 +52,10 @@ export const runExecutionAnalysis = (
             await controller.setViewport(defaultViewport);
 
             const startTime = Date.now();
-            await controller.navigate(url);
+            await controller.navigate(url, monitorConfig.loadingTimeoutMs);
             const completer = await timeBomb(
               willCompleteAnalysis(),
-              monitorConfig.loadingTimeoutMs + toleranceMs
+              toleranceMs
             );
             const endTime = Date.now();
             const executionTimeMs = endTime - startTime;

@@ -1,5 +1,10 @@
 import { Agent, AgentController, UseOptions, Viewport } from "./Agent";
-import puppeteer, { Browser, Page, PuppeteerLaunchOptions } from "puppeteer";
+import puppeteer, {
+  Browser,
+  Page,
+  PuppeteerLaunchOptions,
+  TimeoutError,
+} from "puppeteer";
 
 import { localhost } from "../core/env";
 
@@ -35,8 +40,15 @@ export class PuppeteerAgent implements Agent {
 export class PuppeteerAgentController implements AgentController {
   constructor(protected page: Page) {}
 
-  async navigate(url: string): Promise<void> {
-    await this.page.evaluate(`location.assign(${JSON.stringify(url)})`);
+  async navigate(url: string, timeoutMs: number): Promise<void> {
+    try {
+      await this.page.goto(url, { timeout: timeoutMs });
+    } catch (e) {
+      if (e instanceof TimeoutError) {
+        return;
+      }
+      throw e;
+    }
   }
 
   screenshot(): Promise<Buffer> {

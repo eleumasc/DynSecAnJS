@@ -40,10 +40,10 @@ export const runCompatibilityAnalysis = (
           async (controller) => {
             await controller.setViewport(defaultViewport);
 
-            await controller.navigate(url);
+            await controller.navigate(url, monitorConfig.loadingTimeoutMs);
             const compatibility = await timeBomb(
               willCompleteAnalysis(),
-              monitorConfig.loadingTimeoutMs + toleranceMs
+              toleranceMs
             );
 
             return compatibility;

@@ -7,6 +7,7 @@ import { jalangiPath } from "../core/env";
 import path from "path";
 import { spawn } from "child_process";
 import { tmpdir } from "os";
+import { useChildProcess } from "../core/process";
 
 export const transformWithJalangi =
   (): BodyTransformer =>
@@ -31,37 +32,56 @@ export const jalangi = (
     try {
       await writeFile(originalPath, code);
 
-      const childProcess = spawn("node", [
-        path.join(jalangiPath, "src", "js", "commands", "esnstrument_cli.js"),
-        "--inlineIID",
-        "--inlineSource",
-        "--noResultsGUI",
-        "--outDir",
-        tmpDir,
-        "--out",
-        modifiedPath,
-        originalPath,
-      ]);
+      await useChildProcess(
+        {
+          childProcess: spawn("node", [
+            path.join(
+              jalangiPath,
+              "src",
+              "js",
+              "commands",
+              "esnstrument_cli.js"
+            ),
+            "--inlineIID",
+            "--inlineSource",
+            "--noResultsGUI",
+            "--outDir",
+            tmpDir,
+            "--out",
+            modifiedPath,
+            originalPath,
+          ]),
 
-      let stderrData = "";
-      childProcess.stderr?.on("data", (data) => {
-        stderrData += data.toString();
-      });
+          terminate: async (childProcess) => {
+            childProcess.kill("SIGINT");
+          },
+        },
 
-      await Promise.all([
-        new Promise<void>((resolve, reject) => {
-          childProcess.on("close", () => {
-            resolve();
+        async (childProcess) => {
+          let stderrData = "";
+          childProcess.stderr?.on("data", (data) => {
+            stderrData += data.toString();
           });
-          childProcess.on("error", (err) => {
-            reject(err);
-          });
-        }),
-      ]);
 
-      if (!existsSync(modifiedPath)) {
-        throw new Error(stderrData);
-      }
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              childProcess.stderr!.on("close", () => resolve());
+            }),
+            new Promise<void>((resolve, reject) => {
+              childProcess.on("exit", () => {
+                resolve();
+              });
+              childProcess.on("error", (err) => {
+                reject(err);
+              });
+            }),
+          ]);
+
+          if (!existsSync(modifiedPath)) {
+            throw new Error(stderrData);
+          }
+        }
+      );
 
       return (await readFile(modifiedPath)).toString();
     } finally {

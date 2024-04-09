@@ -2,6 +2,7 @@ import { Agent, AgentController, UseOptions, Viewport } from "./Agent";
 import { Browser, Builder, Capabilities, WebDriver } from "selenium-webdriver";
 
 import { Buffer } from "buffer";
+import { error } from "selenium-webdriver";
 import firefox from "selenium-webdriver/firefox";
 import { localhost } from "../core/env";
 import { useGeckoDriver } from "./GeckoDriver";
@@ -48,8 +49,16 @@ export class SeleniumAgent implements Agent {
 export class SeleniumAgentController implements AgentController {
   constructor(protected driver: WebDriver) {}
 
-  async navigate(url: string): Promise<void> {
-    await this.driver.executeScript(`location.assign(${JSON.stringify(url)})`);
+  async navigate(url: string, timeoutMs: number): Promise<void> {
+    await this.driver.manage().setTimeouts({ pageLoad: timeoutMs });
+    try {
+      await this.driver.get(url);
+    } catch (e) {
+      if (e instanceof error.TimeoutError) {
+        return;
+      }
+      throw e;
+    }
   }
 
   async screenshot(): Promise<Buffer> {
@@ -72,10 +81,10 @@ return [
     await this.driver
       .manage()
       .window()
-      .setSize(
-        outerWidth - innerWidth + width,
-        outerHeight - innerHeight + height
-      );
+      .setRect({
+        width: outerWidth - innerWidth + width,
+        height: outerHeight - innerHeight + height,
+      });
   }
 }
 
@@ -98,20 +107,15 @@ const createWebDriverBuilder = (
         "network.proxy.ssl_port": proxyServer.port,
         "network.captive-portal-service.enabled": false,
       };
-      const profile = new firefox.Profile();
+      const options = new firefox.Options()
+        .setBinary(binaryPath)
+        .addArguments(...(headless ?? true ? ["--headless"] : []));
       for (const [key, value] of Object.entries(rawPrefs)) {
-        profile.setPreference(key, value as any);
+        options.setPreference(key, value);
       }
       const capabilities = Capabilities.firefox();
       capabilities.set("acceptInsecureCerts", true);
-      return builder
-        .setFirefoxOptions(
-          new firefox.Options()
-            .setBinary(binaryPath)
-            .addArguments(...(headless ?? true ? ["--headless"] : []))
-            .setProfile(profile)
-        )
-        .withCapabilities(capabilities);
+      return builder.setFirefoxOptions(options).withCapabilities(capabilities);
     }
 
     default:
