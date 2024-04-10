@@ -1,8 +1,8 @@
 import { Agent, AgentController, UseOptions, Viewport } from "./Agent";
 import { Browser, Builder, Capabilities, WebDriver } from "selenium-webdriver";
+import { TimeoutError, timeBomb } from "../core/async";
 
 import { Buffer } from "buffer";
-import { error } from "selenium-webdriver";
 import firefox from "selenium-webdriver/firefox";
 import { localhost } from "../core/env";
 import { useGeckoDriver } from "./GeckoDriver";
@@ -50,11 +50,10 @@ export class SeleniumAgentController implements AgentController {
   constructor(protected driver: WebDriver) {}
 
   async navigate(url: string, timeoutMs: number): Promise<void> {
-    await this.driver.manage().setTimeouts({ pageLoad: timeoutMs });
     try {
-      await this.driver.get(url);
+      await timeBomb(this.driver.get(url), timeoutMs);
     } catch (e) {
-      if (e instanceof error.TimeoutError) {
+      if (e instanceof TimeoutError) {
         return;
       }
       throw e;
