@@ -3,15 +3,16 @@ import {
   brokenExecutionTraces,
   createExecutionTrace,
   findPredominantExecutionTrace,
+  subtractExecutionTraces,
 } from "./ExecutionTrace";
-import { Fallible, isFailure, isSuccess } from "../core/Fallible";
+import { Fallible, Success, isSuccess } from "../core/Fallible";
 import { avg, stdev } from "../core/math";
 
 import { ExecutionDetail } from "../lib/ExecutionDetail";
 import { OriginalAnalysisResult } from "../lib/OriginalAnalysis";
 import { ToolAnalysisResult } from "../lib/ToolAnalysis";
-import { isEventuallyCompatible } from "./isEventuallyCompatible";
-import { subtractSets } from "../core/Set";
+import assert from "assert";
+import { isToolAnalysisOk } from "./isToolAnalysisOk";
 
 export interface SiteInfo {
   site: string;
@@ -22,18 +23,11 @@ export interface SiteInfo {
 
 export interface CompatibilityInfo {
   syntacticallyCompatible: boolean;
-  eventuallyCompatible: boolean;
-  loadingCompleted: boolean;
+  eventuallyCompatible: boolean | null; // null if compatibility is unknown, i.e., toolAnalysisOk but not loadingCompleted
   originalSomeSuccessSomeFailure: boolean;
   toolSomeSuccessSomeFailure: boolean;
   transparencyAnalyzable: boolean; // no execution failure in both original and tool, for all executions
-  loadingCompleteness: LoadingCompletenessInfo | null; // non-null if both eventuallyCompatible and transparencyAnalyzable are true
-}
-
-export interface LoadingCompletenessInfo {
-  originalLoadingCompleted: boolean;
-  toolLoadingCompleted: boolean;
-  predominantTraceExistance: PredominantTraceExistanceInfo | null; // non-null if both origLoadingComplete and toolLoadingComplete are true
+  predominantTraceExistance: PredominantTraceExistanceInfo | null; // non-null if transparencyAnalyzable is true
 }
 
 export interface PredominantTraceExistanceInfo {
@@ -45,7 +39,7 @@ export interface PredominantTraceExistanceInfo {
 export interface TransparencyInfo {
   transparent: boolean;
   brokenFeatures: string[];
-  uncaughtErrors: Set<string>;
+  diffTrace: ExecutionTrace;
   performance: PerformanceInfo | null; // non-null if transparent is true
 }
 
@@ -104,49 +98,39 @@ export const getCompatibilityInfo = (
     compatible: syntacticallyCompatible,
     toolExecutions: fallibleToolExecutions,
   } = toolResult;
-  const eventuallyCompatible = isEventuallyCompatible(
-    toolName,
-    toolFirstExecution
-  );
-  const loadingCompleted = toolFirstExecution.loadingCompleted;
+  const eventuallyCompatible = isToolAnalysisOk(toolName, toolFirstExecution)
+    ? toolFirstExecution.loadingCompleted
+      ? true
+      : null
+    : false;
+  const isCompletelyLoaded = (
+    execution: Fallible<ExecutionDetail>
+  ): execution is Success<ExecutionDetail> =>
+    isSuccess(execution) && execution.val.loadingCompleted;
+  const isNotCompletelyLoaded = (
+    execution: Fallible<ExecutionDetail>
+  ): boolean => !isCompletelyLoaded(execution);
   const transparencyAnalyzable =
-    eventuallyCompatible &&
-    fallibleOriginalExecutions.every(isSuccess) &&
-    fallibleToolExecutions.every(isSuccess);
+    eventuallyCompatible === true &&
+    fallibleOriginalExecutions.every(isCompletelyLoaded) &&
+    fallibleToolExecutions.every(isCompletelyLoaded);
   return {
     syntacticallyCompatible,
     eventuallyCompatible,
-    loadingCompleted,
     originalSomeSuccessSomeFailure:
-      fallibleOriginalExecutions.some(isSuccess) &&
-      fallibleOriginalExecutions.some(isFailure),
+      eventuallyCompatible === true &&
+      fallibleOriginalExecutions.some(isCompletelyLoaded) &&
+      fallibleOriginalExecutions.some(isNotCompletelyLoaded),
     toolSomeSuccessSomeFailure:
-      fallibleToolExecutions.some(isSuccess) &&
-      fallibleToolExecutions.some(isFailure),
+      eventuallyCompatible === true &&
+      fallibleToolExecutions.some(isCompletelyLoaded) &&
+      fallibleToolExecutions.some(isNotCompletelyLoaded),
     transparencyAnalyzable,
-    loadingCompleteness: transparencyAnalyzable
-      ? getLoadingCompletenessInfo(
+    predominantTraceExistance: transparencyAnalyzable
+      ? getPredominantTraceExistanceInfo(
           fallibleOriginalExecutions.map(({ val }) => val),
           fallibleToolExecutions.map(({ val }) => val)
         )
-      : null,
-  };
-};
-
-export const getLoadingCompletenessInfo = (
-  originalExecutions: ExecutionDetail[],
-  toolExecutions: ExecutionDetail[]
-): LoadingCompletenessInfo => {
-  const checkLoadingCompleted = (executions: ExecutionDetail[]): boolean =>
-    executions.every((execution) => execution.loadingCompleted);
-  const originalLoadingCompleted = checkLoadingCompleted(originalExecutions);
-  const toolLoadingCompleted = checkLoadingCompleted(toolExecutions);
-  const loadingCompleted = originalLoadingCompleted && toolLoadingCompleted;
-  return {
-    originalLoadingCompleted,
-    toolLoadingCompleted,
-    predominantTraceExistance: loadingCompleted
-      ? getPredominantTraceExistanceInfo(originalExecutions, toolExecutions)
       : null,
   };
 };
@@ -155,14 +139,19 @@ export const getPredominantTraceExistanceInfo = (
   originalExecutions: ExecutionDetail[],
   toolExecutions: ExecutionDetail[]
 ): PredominantTraceExistanceInfo => {
-  const THRESHOLD = 3;
+  const EXPECTED_EXECUTIONS_COUNT = 5;
+  const MAJORITY_VOTING_THRESHOLD = 3;
+
+  assert(originalExecutions.length === EXPECTED_EXECUTIONS_COUNT);
+  assert(toolExecutions.length === EXPECTED_EXECUTIONS_COUNT);
+
   const originalTrace = findPredominantExecutionTrace(
     originalExecutions.map((execution) => createExecutionTrace(execution)),
-    THRESHOLD
+    MAJORITY_VOTING_THRESHOLD
   );
   const toolTrace = findPredominantExecutionTrace(
     toolExecutions.map((execution) => createExecutionTrace(execution)),
-    THRESHOLD
+    MAJORITY_VOTING_THRESHOLD
   );
   const originalTraceExists = originalTrace !== null;
   const toolTraceExists = toolTrace !== null;
@@ -192,11 +181,10 @@ export const getTransparencyInfo = (
   return {
     transparent,
     brokenFeatures: [...brokenFeatures],
-    uncaughtErrors: subtractSets(
-      toolTrace.uncaughtErrors,
-      originalTrace.uncaughtErrors
-    ),
-    performance: getPerformanceInfo(originalExecutions, toolExecutions),
+    diffTrace: subtractExecutionTraces(toolTrace, originalTrace),
+    performance: transparent
+      ? getPerformanceInfo(originalExecutions, toolExecutions)
+      : null,
   };
 };
 

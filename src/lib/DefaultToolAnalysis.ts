@@ -6,7 +6,7 @@ import { Agent } from "./Agent";
 import { ExecutionDetail } from "./ExecutionDetail";
 import { ExecutionHooksProvider } from "./ExecutionHooks";
 import { defaultToleranceMs } from "../core/defaults";
-import { isEventuallyCompatible } from "../measurement/isEventuallyCompatible";
+import { isToolAnalysisOk } from "../measurement/isToolAnalysisOk";
 import { runExecutionAnalysis } from "./runExecutionAnalysis";
 
 export interface Options {
@@ -68,7 +68,7 @@ export class DefaultToolAnalysis implements ToolAnalysis {
       if (isFailure(execution)) {
         break;
       }
-      if (i === 0 && !isEventuallyCompatible(toolName, execution.val)) {
+      if (i === 0 && !isToolAnalysisOk(toolName, execution.val)) {
         break;
       }
     }

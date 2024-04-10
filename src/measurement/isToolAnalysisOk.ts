@@ -1,6 +1,6 @@
 import { ExecutionDetail } from "../lib/ExecutionDetail";
 
-export const isEventuallyCompatible = (
+export const isToolAnalysisOk = (
   toolName: string,
   execution: ExecutionDetail
 ): boolean => {

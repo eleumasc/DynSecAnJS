@@ -1,6 +1,5 @@
-import { avg, stdev } from "../core/math";
-
 import { SiteInfo } from "./SiteInfo";
+import { avg } from "../core/math";
 
 export interface Report {
   all: number;
@@ -15,15 +14,10 @@ export interface Report {
   _transpiledNonCompatible: number;
   _pureCompatible: number;
   _transpiledCompatible: number;
-  unknown: number;
+  unknownCompatibility: number;
   originalSomeSuccessSomeFailure: number;
   toolSomeSuccessSomeFailure: number;
   transparencyAnalyzable: number;
-
-  noneLoadingCompleted: number;
-  originalLoadingCompleted: number;
-  toolLoadingCompleted: number;
-  bothLoadingCompleted: number;
 
   noneTraceExists: number;
   originalTraceExists: number;
@@ -41,69 +35,45 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
   const accessible = count(siteInfos, (info) => info.accessible);
   const analyzable = count(siteInfos, (info) => info.analyzable);
 
-  const compatibilityInfos = takeInfo(
-    siteInfos,
-    (info) => info.analyzable,
-    (info) => info.compatibility
-  );
+  const compatibilityInfos = takeInfo(siteInfos, (info) => info.compatibility);
   const noneCompatible = count(
     compatibilityInfos,
-    (info) => !info.syntacticallyCompatible && !info.eventuallyCompatible
+    (info) =>
+      !info.syntacticallyCompatible && info.eventuallyCompatible === false
   );
   const syntacticallyCompatible = count(
     compatibilityInfos,
-    (info) => info.syntacticallyCompatible && !info.eventuallyCompatible
+    (info) =>
+      info.syntacticallyCompatible && info.eventuallyCompatible === false
   );
   const eventuallyCompatible = count(
     compatibilityInfos,
-    (info) => !info.syntacticallyCompatible && info.eventuallyCompatible
+    (info) =>
+      !info.syntacticallyCompatible && info.eventuallyCompatible === true
   );
   const bothCompatible = count(
     compatibilityInfos,
-    (info) => info.syntacticallyCompatible && info.eventuallyCompatible
+    (info) => info.syntacticallyCompatible && info.eventuallyCompatible === true
   );
-  const unknown = count(
+  const unknownCompatibility = count(
     compatibilityInfos,
-    (info) => info.eventuallyCompatible && !info.loadingCompleted
+    (info) => info.eventuallyCompatible === null
   );
   const originalSomeSuccessSomeFailure = count(
     compatibilityInfos,
-    (info) => info.eventuallyCompatible && info.originalSomeSuccessSomeFailure
+    (info) => info.originalSomeSuccessSomeFailure
   );
   const toolSomeSuccessSomeFailure = count(
     compatibilityInfos,
-    (info) => info.eventuallyCompatible && info.toolSomeSuccessSomeFailure
+    (info) => info.toolSomeSuccessSomeFailure
   );
   const transparencyAnalyzable = count(
     compatibilityInfos,
     (info) => info.transparencyAnalyzable
   );
 
-  const loadingCompletenessInfos = takeInfo(
-    compatibilityInfos,
-    (info) => info.eventuallyCompatible,
-    (info) => info.loadingCompleteness
-  );
-  const noneLoadingCompleted = count(
-    loadingCompletenessInfos,
-    (info) => !info.originalLoadingCompleted && !info.toolLoadingCompleted
-  );
-  const originalLoadingCompleted = count(
-    loadingCompletenessInfos,
-    (info) => info.originalLoadingCompleted && !info.toolLoadingCompleted
-  );
-  const toolLoadingCompleted = count(
-    loadingCompletenessInfos,
-    (info) => !info.originalLoadingCompleted && info.toolLoadingCompleted
-  );
-  const bothLoadingCompleted = count(
-    loadingCompletenessInfos,
-    (info) => info.originalLoadingCompleted && info.toolLoadingCompleted
-  );
-
   const predominantTraceExistanceInfos = takeInfo(
-    loadingCompletenessInfos,
-    (info) => info.originalLoadingCompleted && info.toolLoadingCompleted,
+    compatibilityInfos,
     (info) => info.predominantTraceExistance
   );
   const noneTraceExists = count(
@@ -125,7 +95,6 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
 
   const transparencyInfos = takeInfo(
     predominantTraceExistanceInfos,
-    (info) => info.originalTraceExists && info.toolTraceExists,
     (info) => info.transparency
   );
   const nonTransparent = count(transparencyInfos, (info) => !info.transparent);
@@ -133,7 +102,6 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
 
   const performanceInfos = takeInfo(
     transparencyInfos,
-    (info) => info.transparent,
     (info) => info.performance
   );
   const overhead = avg(
@@ -155,15 +123,10 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
     _transpiledNonCompatible: noneCompatible,
     _pureCompatible: bothCompatible,
     _transpiledCompatible: eventuallyCompatible,
-    unknown,
+    unknownCompatibility,
     originalSomeSuccessSomeFailure,
     toolSomeSuccessSomeFailure,
     transparencyAnalyzable,
-
-    noneLoadingCompleted,
-    originalLoadingCompleted,
-    toolLoadingCompleted,
-    bothLoadingCompleted,
 
     noneTraceExists,
     originalTraceExists,
@@ -188,11 +151,9 @@ const count = <T>(
 
 const takeInfo = <T, U>(
   population: T[],
-  filterFn: (element: T) => boolean,
   mapFn: (element: T) => U | null
 ): U[] => {
   return population
-    .filter((element) => filterFn(element))
     .map((element) => mapFn(element))
     .filter((element): element is U => element !== null);
 };
