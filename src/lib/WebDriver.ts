@@ -1,5 +1,6 @@
 import { Builder, WebDriver } from "selenium-webdriver";
 
+import { rmSync } from "fs";
 import { timeBomb } from "../core/async";
 
 export const useWebDriver = async <T>(
@@ -7,11 +8,17 @@ export const useWebDriver = async <T>(
   cb: (driver: WebDriver) => Promise<T>
 ): Promise<T> => {
   const driver = await builder.build();
+  const capabilities = (await driver.getSession()).getCapabilities();
+  const pid = capabilities.get("moz:processID");
+  const profilePath = capabilities.get("moz:profile");
   try {
     return await cb(driver);
   } finally {
     try {
       await timeBomb(driver.quit(), 5_000);
-    } catch {}
+    } catch {
+      process.kill(pid, "SIGKILL");
+    }
+    rmSync(profilePath, { force: true, recursive: true });
   }
 };
