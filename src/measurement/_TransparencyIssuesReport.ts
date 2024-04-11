@@ -23,6 +23,8 @@ export const _createTransparencyIssuesReport = (
       ),
     (() => {
       switch (toolName) {
+        case "ProjectFoxhound":
+          return [];
         case "JEST":
           return [
             /Uncaught \[object Object\]/,
@@ -144,7 +146,6 @@ const countSetsAndFilterStrings = (sets: Set<string>[], regexps: RegExp[]) => {
   }
 
   for (const set of sets) {
-    let matched = false;
     const unmatchedSet = new Set<string>();
 
     for (const string of set) {
@@ -156,7 +157,6 @@ const countSetsAndFilterStrings = (sets: Set<string>[], regexps: RegExp[]) => {
             (matchedSetsCount.get(regexp.toString()) ?? 0) + 1
           );
           matchFound = true;
-          matched = true;
         }
       }
       if (!matchFound) {
