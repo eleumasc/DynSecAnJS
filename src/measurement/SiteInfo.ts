@@ -24,6 +24,7 @@ export interface SiteInfo {
 export interface CompatibilityInfo {
   syntacticallyCompatible: boolean;
   eventuallyCompatible: boolean | null; // null if compatibility is unknown, i.e., toolAnalysisOk but not loadingCompleted
+  transpilationOk: boolean; // true if there is no babel error. it holds: if eventuallyCompatible then transpilationOk
   originalSomeSuccessSomeFailure: boolean;
   toolSomeSuccessSomeFailure: boolean;
   transparencyAnalyzable: boolean; // no execution failure in both original and tool, for all executions
@@ -117,6 +118,11 @@ export const getCompatibilityInfo = (
   return {
     syntacticallyCompatible,
     eventuallyCompatible,
+    transpilationOk:
+      !syntacticallyCompatible &&
+      !toolFirstExecution.transformErrors.some(
+        (transformError) => transformError.transformName === "Babel"
+      ),
     originalSomeSuccessSomeFailure:
       eventuallyCompatible === true &&
       fallibleOriginalExecutions.some(isCompletelyLoaded) &&

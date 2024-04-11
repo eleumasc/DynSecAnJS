@@ -14,7 +14,10 @@ export interface Report {
   _transpiledNonCompatible: number;
   _pureCompatible: number;
   _transpiledCompatible: number;
-  unknownCompatibility: number;
+  unknownSyntacticallyCompatible: number;
+  unknownNonSyntacticallyCompatible: number;
+  transpilationOK: number;
+  transpilationKO: number;
   originalSomeSuccessSomeFailure: number;
   toolSomeSuccessSomeFailure: number;
   transparencyAnalyzable: number;
@@ -55,9 +58,22 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
     compatibilityInfos,
     (info) => info.syntacticallyCompatible && info.eventuallyCompatible === true
   );
-  const unknownCompatibility = count(
+  const unknownSyntacticallyCompatible = count(
     compatibilityInfos,
-    (info) => info.eventuallyCompatible === null
+    (info) => info.eventuallyCompatible === null && info.syntacticallyCompatible
+  );
+  const unknownNonSyntacticallyCompatible = count(
+    compatibilityInfos,
+    (info) =>
+      info.eventuallyCompatible === null && !info.syntacticallyCompatible
+  );
+  const transpilationOK = count(
+    compatibilityInfos,
+    (info) => info.transpilationOk
+  );
+  const transpilationKO = count(
+    compatibilityInfos,
+    (info) => !info.syntacticallyCompatible && !info.transpilationOk
   );
   const originalSomeSuccessSomeFailure = count(
     compatibilityInfos,
@@ -123,7 +139,10 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
     _transpiledNonCompatible: noneCompatible,
     _pureCompatible: bothCompatible,
     _transpiledCompatible: eventuallyCompatible,
-    unknownCompatibility,
+    unknownSyntacticallyCompatible,
+    unknownNonSyntacticallyCompatible,
+    transpilationOK,
+    transpilationKO,
     originalSomeSuccessSomeFailure,
     toolSomeSuccessSomeFailure,
     transparencyAnalyzable,
