@@ -11,14 +11,15 @@ import { readSitelistFromFile } from "../core/sitelist";
 import { serializeOriginalAnalysisResult } from "../lib/OriginalAnalysis";
 
 export interface OriginalAnalysisArgs {
+  browserName: string;
   sitelistPath: string;
   concurrencyLevel: number;
 }
 
 export const startOriginalAnalysis = async (args: OriginalAnalysisArgs) => {
-  const { sitelistPath, concurrencyLevel } = args;
+  const { browserName, sitelistPath, concurrencyLevel } = args;
 
-  const analysisId = `${Date.now().toString()}-orig`;
+  const analysisId = `${Date.now().toString()}-orig-${browserName}`;
   console.log(`Analysis ID is ${analysisId}`);
 
   const sitelist = readSitelistFromFile(sitelistPath);
@@ -32,7 +33,7 @@ export const startOriginalAnalysis = async (args: OriginalAnalysisArgs) => {
   );
 
   await deployAnalysis(
-    getOriginalAnalysis(),
+    getOriginalAnalysis(browserName),
     { concurrencyLevel },
     sitelist.map((site, i) => async (analysis) => {
       console.log(`begin analysis ${site} [${i} / ${sitelist.length}]`);

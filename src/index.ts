@@ -7,10 +7,14 @@ import yargs from "yargs/yargs";
 
 yargs(process.argv.slice(2))
   .command(
-    "original-analysis <sitelistPath>",
+    "original-analysis <browserName> <sitelistPath>",
     "Start original analysis",
     (yargs) => {
       return yargs
+        .positional("browserName", {
+          type: "string",
+          demandOption: true,
+        })
         .positional("sitelistPath", {
           type: "string",
           demandOption: true,
