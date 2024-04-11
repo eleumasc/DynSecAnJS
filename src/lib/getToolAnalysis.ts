@@ -10,7 +10,6 @@ import { BodyTransformer } from "./BodyTransformer";
 import { Browser } from "selenium-webdriver";
 import { DefaultToolAnalysis } from "./DefaultToolAnalysis";
 import { ESVersion } from "../compatibility/ESVersion";
-import { IPCAgent } from "./IPCAgent";
 import { PuppeteerAgent } from "./PuppeteerAgent";
 import { SeleniumAgent } from "./SeleniumAgent";
 import { ToolAnalysis } from "./ToolAnalysis";
@@ -38,7 +37,6 @@ export const getToolAnalysis = (
     const analysisRepeat = preAnalysis ? 1 : defaultAnalysisRepeat;
     const loadingTimeoutMs = preAnalysis ? 5 * 60_000 : defaultLoadingTimeoutMs;
 
-    // IPCAgent.from(agent)
     return new DefaultToolAnalysis(agent, {
       toolName,
       executionHooksProvider: createExecutionHooksProvider(bodyTransformer),
