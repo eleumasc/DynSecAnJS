@@ -1,6 +1,7 @@
 import "dotenv/config";
 
 import assert from "assert";
+import path from "path";
 
 const get = (key: string): string => {
   const value = process.env[key] as string | undefined;
@@ -29,12 +30,15 @@ const getFlag = (key: string, defaultValue: boolean): boolean => {
 
 export const debugMode = getFlag("DEBUG_MODE", false);
 export const headless = !getFlag("HEADFUL_MODE", false);
-export const wprgoPath = get("WPRGO_PATH");
-export const jestPath = get("JEST_PATH");
-export const ifTranspilerPath = get("IFTRANSPILER_PATH");
-export const jalangiPath = get("JALANGI_PATH");
-export const aranLinvailPath = get("ARAN_LINVAIL_PATH");
-export const geckoDriverPath = get("GECKODRIVER_PATH");
-export const projectFoxhoundPath = get("PROJECT_FOXHOUND_PATH");
+export const toolsPath = path.resolve(get("TOOLS_PATH"));
+
+export const wprgoPath = path.join(toolsPath, "web_page_replay_go");
+export const jestPath = path.join(toolsPath, "jest");
+export const ifTranspilerPath = path.join(toolsPath, "if-transpiler");
+export const jalangiPath = path.join(toolsPath, "jalangi2");
+export const aranLinvailPath = path.join(toolsPath, "aran-linvail");
+export const geckoDriverPath = toolsPath;
+export const projectFoxhoundPath = path.join(toolsPath, "foxhound");
+export const firefoxPath = path.join(toolsPath, "firefox");
 
 export const localhost = "127.0.0.1";
