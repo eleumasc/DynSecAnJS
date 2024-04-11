@@ -1,13 +1,13 @@
 import matplotlib.pyplot as plt
 
-# Dizionario fornito
-# nota: somma di syntactic + both
+# Dati forniti
+# syntactic + both
 data = {
-    'JEST': 832,
-    'IF-Transpiler': 809,
-    'GIFC': 2179,
-    'Jalangi': 799,
-    'Linvail': 1547
+    "JEST": 832,
+    "IF-Transpiler": 809,
+    "GIFC": 2179,
+    "Jalangi": 799,
+    "Linvail": 1547,
 }
 
 # Calcolo dei rapporti percentuali rispetto al totale dei siti accessibili
@@ -18,14 +18,14 @@ plt.bar(data.keys(), data.values())
 
 # Aggiunta dei rapporti percentuali sopra ciascuna barra
 for key, value in data.items():
-    plt.text(key, value + 10, f'{round(percentages[key])}%', ha='center')
+    plt.text(key, value + 10, f"{round(percentages[key])}%", ha="center")
 
 # Etichette degli assi e titolo
-plt.xlabel('Tool')
-plt.ylabel('Number of websites')
-plt.title('Syntactic compatibility')
+plt.xlabel("Tool")
+plt.ylabel("Number of websites")
+plt.title("Syntactic compatibility")
 
-# Mostraimo il plot
-plt.xticks(rotation=45, ha='right')
+# Mostriamo il plot
+plt.xticks(rotation=45, ha="right")
 plt.tight_layout()
 plt.show()

@@ -2,38 +2,29 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 
-# JSON forniti
-json_data1 = """
-{
-  "ES2015": 1636,
-  "ES2020": 1457,
-  "ES5": 1185,
-  "ES2022": 912,
-  "ES2018": 701,
-  "ES2017": 467,
-  "ES2019": 267,
-  "ES2021": 110,
-  "ES2016": 84
+data1 = {
+    "ES2015": 1636,
+    "ES2020": 1457,
+    "ES5": 1185,
+    "ES2022": 912,
+    "ES2018": 701,
+    "ES2017": 467,
+    "ES2019": 267,
+    "ES2021": 110,
+    "ES2016": 84,
 }
-"""
 
-json_data2 = """
-{
-  "ES5": 3533,
-  "ES2015": 2219,
-  "ES2020": 401,
-  "ES2022": 265,
-  "ES2017": 252,
-  "ES2018": 103,
-  "ES2019": 65,
-  "ES2021": 36,
-  "ES2016": 4
+data2 = {
+    "ES5": 3533,
+    "ES2015": 2219,
+    "ES2020": 401,
+    "ES2022": 265,
+    "ES2017": 252,
+    "ES2018": 103,
+    "ES2019": 65,
+    "ES2021": 36,
+    "ES2016": 4,
 }
-"""
-
-# Caricamento dei dati JSON
-data1 = json.loads(json_data1)
-data2 = json.loads(json_data2)
 
 # Estraiamo le chiavi comuni e le ordiniamo in ordine lessicografico
 common_keys = sorted(set(data1.keys()) | set(data2.keys()))
@@ -61,6 +52,6 @@ ax.set_xticks(ind)
 ax.set_xticklabels(common_keys, rotation=45, ha="right")
 ax.legend()
 
-# Mostraimo il plot
+# Mostriamo il plot
 plt.tight_layout()
 plt.show()
