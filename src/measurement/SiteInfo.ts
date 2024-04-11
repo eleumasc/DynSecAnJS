@@ -12,6 +12,7 @@ import { ExecutionDetail } from "../lib/ExecutionDetail";
 import { OriginalAnalysisResult } from "../lib/OriginalAnalysis";
 import { ToolAnalysisResult } from "../lib/ToolAnalysis";
 import assert from "assert";
+import { findErrorTypes } from "./findErrorTypes";
 import { isToolAnalysisOk } from "./isToolAnalysisOk";
 
 export interface SiteInfo {
@@ -41,6 +42,7 @@ export interface TransparencyInfo {
   transparent: boolean;
   brokenFeatures: string[];
   diffTrace: ExecutionTrace;
+  uncaughtErrorTypes: Set<string>; // for motivating/giving further insights about non-transparency
   performance: PerformanceInfo | null; // non-null if transparent is true
 }
 
@@ -184,10 +186,13 @@ export const getTransparencyInfo = (
 ): TransparencyInfo => {
   const brokenFeatures = brokenExecutionTraces(originalTrace, toolTrace);
   const transparent = brokenFeatures.size === 0;
+  const diffTrace = subtractExecutionTraces(toolTrace, originalTrace);
+  const uncaughtErrorTypes = findErrorTypes([...diffTrace.uncaughtErrors]);
   return {
     transparent,
     brokenFeatures: [...brokenFeatures],
-    diffTrace: subtractExecutionTraces(toolTrace, originalTrace),
+    diffTrace,
+    uncaughtErrorTypes,
     performance: transparent
       ? getPerformanceInfo(originalExecutions, toolExecutions)
       : null,

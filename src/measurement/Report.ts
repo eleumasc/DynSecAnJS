@@ -1,5 +1,7 @@
 import { SiteInfo } from "./SiteInfo";
 import { avg } from "../core/math";
+import { incrementMapEntry } from "../core/Map";
+import { knownErrorTypes } from "./findErrorTypes";
 
 export interface Report {
   all: number;
@@ -29,6 +31,7 @@ export interface Report {
 
   nonTransparent: number;
   transparent: number;
+  uncaughtErrorTypes: Map<string, number>;
 
   overhead: number;
 }
@@ -115,6 +118,12 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
   );
   const nonTransparent = count(transparencyInfos, (info) => !info.transparent);
   const transparent = count(transparencyInfos, (info) => info.transparent);
+  const uncaughtErrorTypes = transparencyInfos.reduce((acc, cur) => {
+    for (const error of cur.uncaughtErrorTypes) {
+      incrementMapEntry(acc, error);
+    }
+    return acc;
+  }, new Map<string, number>(knownErrorTypes.map((error) => [error, 0])));
 
   const performanceInfos = takeInfo(
     transparencyInfos,
@@ -154,6 +163,7 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
 
     nonTransparent,
     transparent,
+    uncaughtErrorTypes,
 
     overhead,
   };
