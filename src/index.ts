@@ -62,10 +62,15 @@ yargs(process.argv.slice(2))
     "compatibility <originalArchivePath>",
     "Start compatibility measurement",
     (yargs) => {
-      return yargs.positional("originalArchivePath", {
-        type: "string",
-        demandOption: true,
-      });
+      return yargs
+        .positional("originalArchivePath", {
+          type: "string",
+          demandOption: true,
+        })
+        .option("intersectSitelistPath", {
+          type: "string",
+          demandOption: false,
+        });
     },
     (argv) => {
       startCompatibility(argv);

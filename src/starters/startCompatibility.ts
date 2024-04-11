@@ -3,22 +3,27 @@ import { incrementMapEntry, sortCountingMap } from "../core/Map";
 import ArchiveReader from "../lib/ArchiveReader";
 import { deserializeOriginalAnalysisResult } from "../lib/OriginalAnalysis";
 import { distinctArray } from "../core/Array";
+import { intersectSitelistsFromFile } from "../core/sitelist";
 import { isSuccess } from "../core/Fallible";
 import { maxESVersion } from "../compatibility/ESVersion";
 
 export interface CompatibilityArgs {
   originalArchivePath: string;
+  intersectSitelistPath?: string;
 }
 
 export const startCompatibility = async (args: CompatibilityArgs) => {
-  const { originalArchivePath } = args;
+  const { originalArchivePath, intersectSitelistPath } = args;
 
   const archive = new ArchiveReader(
     originalArchivePath,
     "original-analysis",
     deserializeOriginalAnalysisResult
   );
-  const sitelist = archive.getSitelist();
+  const sitelist = intersectSitelistsFromFile(
+    archive.getSitelist(),
+    intersectSitelistPath
+  );
 
   let failures = 0;
   const sitesByESVersion = new Map<string, number>();
