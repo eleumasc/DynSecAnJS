@@ -18,14 +18,16 @@ import { isToolAnalysisOk } from "./isToolAnalysisOk";
 export interface SiteInfo {
   site: string;
   accessible: boolean; // no general failure in original
-  analyzable: boolean; // no general failure in both original and tool and no execution failure in both original and tool, for at least one (the first) execution
-  compatibility: CompatibilityInfo | null; // non-null if analyzable is true
+  compatibility: CompatibilityInfo | null; // non-null if accessible is true
 }
 
+// note: at this point, we expect no general failure in tool
 export interface CompatibilityInfo {
   syntacticallyCompatible: boolean;
+  analyzable: boolean; // no execution failure in tool for at least one (the first) execution
   eventuallyCompatible: boolean | null; // null if compatibility is unknown, i.e., toolAnalysisOk but not loadingCompleted
-  transpilationOk: boolean; // true if there is no babel error. it holds: if eventuallyCompatible then transpilationOk
+  transpilationOK: boolean; // true if there is no babel error when transpilation is required
+  transpilationKO: boolean; // true if there is some babel error when transpilation is required
   originalSomeSuccessSomeFailure: boolean;
   toolSomeSuccessSomeFailure: boolean;
   transparencyAnalyzable: boolean; // no execution failure in both original and tool, for all executions
@@ -59,14 +61,28 @@ export const getSiteInfo = (
   fallibleToolResult: Fallible<ToolAnalysisResult>
 ): SiteInfo => {
   const accessible = isSuccess(fallibleOriginalResult);
-  const semiAnalyzable =
-    isSuccess(fallibleOriginalResult) && isSuccess(fallibleToolResult);
-  if (!semiAnalyzable) {
-    return { site, accessible, analyzable: false, compatibility: null };
-  }
-  const { val: originalResult } = fallibleOriginalResult;
+  return {
+    site,
+    accessible,
+    compatibility: accessible
+      ? getCompatibilityInfo(fallibleOriginalResult.val, fallibleToolResult)
+      : null,
+  };
+};
+
+export const getCompatibilityInfo = (
+  originalResult: OriginalAnalysisResult,
+  fallibleToolResult: Fallible<ToolAnalysisResult>
+): CompatibilityInfo => {
+  assert(isSuccess(fallibleToolResult));
+
   const { val: toolResult } = fallibleToolResult;
-  const { toolExecutions: fallibleToolExecutions } = toolResult;
+  const {
+    toolName,
+    compatible: syntacticallyCompatible,
+    toolExecutions: fallibleToolExecutions,
+  } = toolResult;
+
   const findFirstExecution = (
     fallibleExecutions: Fallible<ExecutionDetail>[]
   ): ExecutionDetail | null => {
@@ -79,33 +95,15 @@ export const getSiteInfo = (
       : null;
   };
   const toolFirstExecution = findFirstExecution(fallibleToolExecutions);
-  const analyzable = toolFirstExecution !== null;
-  return {
-    site,
-    accessible,
-    analyzable,
-    compatibility: analyzable
-      ? getCompatibilityInfo(originalResult, toolResult, toolFirstExecution)
-      : null,
-  };
-};
 
-export const getCompatibilityInfo = (
-  originalResult: OriginalAnalysisResult,
-  toolResult: ToolAnalysisResult,
-  toolFirstExecution: ExecutionDetail
-): CompatibilityInfo => {
-  const { originalExecutions: fallibleOriginalExecutions } = originalResult;
-  const {
-    toolName,
-    compatible: syntacticallyCompatible,
-    toolExecutions: fallibleToolExecutions,
-  } = toolResult;
-  const eventuallyCompatible = isToolAnalysisOk(toolName, toolFirstExecution)
-    ? toolFirstExecution.loadingCompleted
-      ? true
-      : null
-    : false;
+  const analyzable = toolFirstExecution !== null;
+  const eventuallyCompatible =
+    analyzable && isToolAnalysisOk(toolName, toolFirstExecution)
+      ? toolFirstExecution.loadingCompleted
+        ? true
+        : null
+      : false;
+
   const isCompletelyLoaded = (
     execution: Fallible<ExecutionDetail>
   ): execution is Success<ExecutionDetail> =>
@@ -113,18 +111,26 @@ export const getCompatibilityInfo = (
   const isNotCompletelyLoaded = (
     execution: Fallible<ExecutionDetail>
   ): boolean => !isCompletelyLoaded(execution);
+  const { originalExecutions: fallibleOriginalExecutions } = originalResult;
   const transparencyAnalyzable =
     eventuallyCompatible === true &&
     fallibleOriginalExecutions.every(isCompletelyLoaded) &&
     fallibleToolExecutions.every(isCompletelyLoaded);
+
+  const transpilationRequired = !syntacticallyCompatible && analyzable;
+  const babelErrorFound = (execution: ExecutionDetail): boolean =>
+    execution.transformErrors.some(
+      (transformError) => transformError.transformName === "Babel"
+    );
+
   return {
     syntacticallyCompatible,
+    analyzable,
     eventuallyCompatible,
-    transpilationOk:
-      !syntacticallyCompatible &&
-      !toolFirstExecution.transformErrors.some(
-        (transformError) => transformError.transformName === "Babel"
-      ),
+    transpilationOK:
+      transpilationRequired && !babelErrorFound(toolFirstExecution),
+    transpilationKO:
+      transpilationRequired && babelErrorFound(toolFirstExecution),
     originalSomeSuccessSomeFailure:
       eventuallyCompatible === true &&
       fallibleOriginalExecutions.some(isCompletelyLoaded) &&

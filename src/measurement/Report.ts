@@ -4,10 +4,11 @@ import { incrementMapEntry } from "../core/Map";
 import { knownErrorTypes } from "./findErrorTypes";
 
 export interface Report {
+  // SiteInfo
   all: number;
   accessible: number;
+  // CompatibilityInfo
   analyzable: number;
-
   noneCompatible: number;
   syntacticallyCompatible: number;
   eventuallyCompatible: number;
@@ -22,25 +23,25 @@ export interface Report {
   originalSomeSuccessSomeFailure: number;
   toolSomeSuccessSomeFailure: number;
   transparencyAnalyzable: number;
-
+  // PredominantTraceExistanceInfo
   noneTraceExists: number;
   originalTraceExists: number;
   toolTraceExists: number;
   bothTraceExists: number;
-
+  // TransparencyInfo
   nonTransparent: number;
   transparent: number;
   uncaughtErrorTypes: Map<string, number>;
-
+  // PerformanceInfo
   overhead: number;
 }
 
 export const createReport = (siteInfos: SiteInfo[]): Report => {
   const all = count(siteInfos);
   const accessible = count(siteInfos, (info) => info.accessible);
-  const analyzable = count(siteInfos, (info) => info.analyzable);
 
   const compatibilityInfos = takeInfo(siteInfos, (info) => info.compatibility);
+  const analyzable = count(compatibilityInfos, (info) => info.analyzable);
   const noneCompatible = count(
     compatibilityInfos,
     (info) =>
@@ -66,11 +67,11 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
   );
   const transpilationOK = count(
     compatibilityInfos,
-    (info) => info.transpilationOk
+    (info) => info.transpilationOK
   );
   const transpilationKO = count(
     compatibilityInfos,
-    (info) => !info.syntacticallyCompatible && !info.transpilationOk
+    (info) => info.transpilationKO
   );
   const originalSomeSuccessSomeFailure = count(
     compatibilityInfos,
@@ -130,10 +131,11 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
   );
 
   return {
+    // SiteInfo
     all,
     accessible,
+    // CompatibilityInfo
     analyzable,
-
     noneCompatible,
     syntacticallyCompatible,
     eventuallyCompatible,
@@ -148,16 +150,16 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
     originalSomeSuccessSomeFailure,
     toolSomeSuccessSomeFailure,
     transparencyAnalyzable,
-
+    // PredominantTraceExistanceInfo
     noneTraceExists,
     originalTraceExists,
     toolTraceExists,
     bothTraceExists,
-
+    // TransparencyInfo
     nonTransparent,
     transparent,
     uncaughtErrorTypes,
-
+    // PerformanceInfo
     overhead,
   };
 };
