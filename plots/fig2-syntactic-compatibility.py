@@ -3,15 +3,16 @@ import matplotlib.pyplot as plt
 # Dati forniti
 # syntactic + both
 data = {
-    "JEST": 832,
-    "IF-Transpiler": 809,
-    "GIFC": 2179,
-    "Jalangi": 799,
-    "Linvail": 1547,
+    "JEST": 429,
+    "IF-Transpiler": 430,
+    "GIFC": 1083,
+    "Jalangi": 419,
+    "Linvail": 753,
 }
+accessible = 1850
 
 # Calcolo dei rapporti percentuali rispetto al totale dei siti accessibili
-percentages = {key: (value / 3721) * 100 for key, value in data.items()}
+percentages = {key: (value / accessible) * 100 for key, value in data.items()}
 
 # Creazione dell'istogramma
 plt.bar(data.keys(), data.values())

@@ -4,16 +4,17 @@ import numpy as np
 # Dati forniti
 # left: syntactic + both, right: eventual + both
 data = {
-    "JEST": (832, 2865),
-    "IF-Transpiler": (809, 2540),
-    "GIFC": (2179, 1882),
-    "Jalangi": (799, 535),
-    "Linvail": (1547, 1192),
+    "JEST": (429, 301),
+    "IF-Transpiler": (430, 253),
+    "GIFC": (1083, 903),
+    "Jalangi": (419, 1317),
+    "Linvail": (753, 440),
 }
+accessible = 1850
 
 # Calcolo dei rapporti percentuali rispetto al totale di accessibili
 percentages = {
-    key: [(value / 3721) * 100 for value in values] for key, values in data.items()
+    key: [(value / accessible) * 100 for value in values] for key, values in data.items()
 }
 
 # Creazione dell'istogramma
@@ -38,7 +39,7 @@ for rects in [rects1, rects2]:
     for rect in rects:
         height = rect.get_height()
         ax.annotate(
-            "{:.0f}%".format(height / 3721 * 100),
+            "{:.0f}%".format(height / accessible * 100),
             xy=(rect.get_x() + rect.get_width() / 2, height),
             xytext=(0, 3),  # Offset verticale
             textcoords="offset points",
