@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 # Dati forniti
 # syntactic + both
 data = {
-    "JEST": 429,
-    "IF-Transpiler": 430,
-    "GIFC": 1083,
-    "Jalangi": 419,
-    "Linvail": 753,
+    "JEST": 432,
+    "IF-Transpiler": 432,
+    "GIFC": 1110,
+    "Jalangi": 432,
+    "Linvail": 1110,
 }
 accessible = 1850
 

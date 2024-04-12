@@ -4,17 +4,18 @@ import numpy as np
 # Dati forniti
 # left: syntactic + both, right: eventual + both
 data = {
-    "JEST": (429, 301),
-    "IF-Transpiler": (430, 253),
-    "GIFC": (1083, 903),
-    "Jalangi": (419, 1317),
-    "Linvail": (753, 440),
+    "JEST": (432, 301),
+    "IF-Transpiler": (432, 253),
+    "GIFC": (1110, 903),
+    "Jalangi": (432, 1317),
+    "Linvail": (1110, 440),
 }
 accessible = 1850
 
 # Calcolo dei rapporti percentuali rispetto al totale di accessibili
 percentages = {
-    key: [(value / accessible) * 100 for value in values] for key, values in data.items()
+    key: [(value / accessible) * 100 for value in values]
+    for key, values in data.items()
 }
 
 # Creazione dell'istogramma
