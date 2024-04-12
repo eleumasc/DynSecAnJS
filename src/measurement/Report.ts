@@ -8,17 +8,9 @@ export interface Report {
   all: number;
   accessible: number;
   // CompatibilityInfo
-  analyzable: number;
-  noneCompatible: number;
+  compatible: number;
   syntacticallyCompatible: number;
   eventuallyCompatible: number;
-  bothCompatible: number;
-  _pureNonCompatible: number;
-  _transpiledNonCompatible: number;
-  _pureCompatible: number;
-  _transpiledCompatible: number;
-  totalSyntacticallyCompatible: number;
-  totalEventuallyCompatible: number;
   unknownCompatibility: number;
   transpilationOK: number;
   transpilationKO: number;
@@ -43,31 +35,15 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
   const accessible = count(siteInfos, (info) => info.accessible);
 
   const compatibilityInfos = takeInfo(siteInfos, (info) => info.compatibility);
-  const analyzable = count(compatibilityInfos, (info) => info.analyzable);
-  const noneCompatible = count(
-    compatibilityInfos,
-    (info) =>
-      !info.syntacticallyCompatible && info.eventuallyCompatible === false
-  );
-  const syntacticallyCompatible = count(
-    compatibilityInfos,
-    (info) =>
-      info.syntacticallyCompatible && info.eventuallyCompatible === false
-  );
-  const eventuallyCompatible = count(
-    compatibilityInfos,
-    (info) =>
-      !info.syntacticallyCompatible && info.eventuallyCompatible === true
-  );
-  const bothCompatible = count(
+  const compatible = count(
     compatibilityInfos,
     (info) => info.syntacticallyCompatible && info.eventuallyCompatible === true
   );
-  const totalSyntacticallyCompatible = count(
+  const syntacticallyCompatible = count(
     compatibilityInfos,
     (info) => info.syntacticallyCompatible
   );
-  const totalEventuallyCompatible = count(
+  const eventuallyCompatible = count(
     compatibilityInfos,
     (info) => info.eventuallyCompatible === true
   );
@@ -145,17 +121,9 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
     all,
     accessible,
     // CompatibilityInfo
-    analyzable,
-    noneCompatible,
+    compatible,
     syntacticallyCompatible,
     eventuallyCompatible,
-    bothCompatible,
-    _pureNonCompatible: syntacticallyCompatible,
-    _transpiledNonCompatible: noneCompatible,
-    _pureCompatible: bothCompatible,
-    _transpiledCompatible: eventuallyCompatible,
-    totalSyntacticallyCompatible,
-    totalEventuallyCompatible,
     unknownCompatibility,
     transpilationOK,
     transpilationKO,
