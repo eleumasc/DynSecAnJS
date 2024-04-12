@@ -16,8 +16,7 @@ export interface Report {
   _transpiledNonCompatible: number;
   _pureCompatible: number;
   _transpiledCompatible: number;
-  unknownSyntacticallyCompatible: number;
-  unknownNonSyntacticallyCompatible: number;
+  unknownCompatibility: number;
   transpilationOK: number;
   transpilationKO: number;
   originalSomeSuccessSomeFailure: number;
@@ -61,14 +60,9 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
     compatibilityInfos,
     (info) => info.syntacticallyCompatible && info.eventuallyCompatible === true
   );
-  const unknownSyntacticallyCompatible = count(
+  const unknownCompatibility = count(
     compatibilityInfos,
-    (info) => info.eventuallyCompatible === null && info.syntacticallyCompatible
-  );
-  const unknownNonSyntacticallyCompatible = count(
-    compatibilityInfos,
-    (info) =>
-      info.eventuallyCompatible === null && !info.syntacticallyCompatible
+    (info) => info.eventuallyCompatible === null
   );
   const transpilationOK = count(
     compatibilityInfos,
@@ -148,8 +142,7 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
     _transpiledNonCompatible: noneCompatible,
     _pureCompatible: bothCompatible,
     _transpiledCompatible: eventuallyCompatible,
-    unknownSyntacticallyCompatible,
-    unknownNonSyntacticallyCompatible,
+    unknownCompatibility,
     transpilationOK,
     transpilationKO,
     originalSomeSuccessSomeFailure,
