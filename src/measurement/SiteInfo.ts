@@ -17,7 +17,7 @@ import { isToolAnalysisOk } from "./isToolAnalysisOk";
 
 export interface SiteInfo {
   site: string;
-  accessible: boolean; // no general failure in original
+  accessible: boolean; // no general failure in original and the site uses JavaScript
   compatibility: CompatibilityInfo | null; // non-null if accessible is true
 }
 
@@ -60,7 +60,9 @@ export const getSiteInfo = (
   fallibleOriginalResult: Fallible<OriginalAnalysisResult>,
   fallibleToolResult: Fallible<ToolAnalysisResult>
 ): SiteInfo => {
-  const accessible = isSuccess(fallibleOriginalResult);
+  const accessible =
+    isSuccess(fallibleOriginalResult) &&
+    fallibleOriginalResult.val.compatibility.scripts.length > 0;
   return {
     site,
     accessible,
