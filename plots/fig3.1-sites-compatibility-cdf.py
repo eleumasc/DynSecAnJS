@@ -36,11 +36,10 @@ for value in sorted_data.values():
     cumulative_sum += value
     cdf_values.append(cumulative_sum)
 
-plt.plot(list(sorted_data.keys()), cdf_values, marker="o", linestyle="-")
+plt.bar(list(sorted_data.keys()), cdf_values)
 plt.xlabel("ECMAScript version")
 plt.ylabel("Number of websites")
 plt.title("Cumulative distribution with respect to ECMAScript versions")
 plt.xticks(rotation=45, ha="right")
 plt.tight_layout()
-plt.grid(True)
 plt.show()
