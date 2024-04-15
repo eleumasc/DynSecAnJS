@@ -1,3 +1,4 @@
+import { ExecutionDetail, TransformErrorDetail } from "../lib/ExecutionDetail";
 import {
   ExecutionTrace,
   brokenExecutionTraces,
@@ -8,10 +9,10 @@ import {
 import { Fallible, Success, isSuccess } from "../core/Fallible";
 import { avg, stdev } from "../core/math";
 
-import { ExecutionDetail } from "../lib/ExecutionDetail";
 import { OriginalAnalysisResult } from "../lib/OriginalAnalysis";
 import { ToolAnalysisResult } from "../lib/ToolAnalysis";
 import assert from "assert";
+import { findCompatibilityIssues } from "./findCompatibilityIssues";
 import { findErrorTypes } from "./findErrorTypes";
 import { isToolAnalysisOk } from "./isToolAnalysisOk";
 
@@ -31,6 +32,7 @@ export interface CompatibilityInfo {
   originalSomeSuccessSomeFailure: boolean;
   toolSomeSuccessSomeFailure: boolean;
   transparencyAnalyzable: boolean; // no execution failure in both original and tool, for all executions
+  issues: Set<string>; // for motivating/giving further insights about non-compatibility
   predominantTraceExistance: PredominantTraceExistanceInfo | null; // non-null if transparencyAnalyzable is true
 }
 
@@ -142,6 +144,10 @@ export const getCompatibilityInfo = (
       fallibleToolExecutions.some(isCompletelyLoaded) &&
       fallibleToolExecutions.some(isNotCompletelyLoaded),
     transparencyAnalyzable,
+    issues: findCompatibilityIssues(
+      toolFirstExecution?.transformErrors ?? null,
+      toolName
+    ),
     predominantTraceExistance: transparencyAnalyzable
       ? getPredominantTraceExistanceInfo(
           fallibleOriginalExecutions.map(({ val }) => val),

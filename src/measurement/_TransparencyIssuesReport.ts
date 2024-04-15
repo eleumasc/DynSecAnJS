@@ -8,19 +8,15 @@ export const _getTransparencyIssuesReport = (
 ) =>
   countSetsAndFilterStrings(
     siteInfoList
-      .filter((info) => {
+      .map((info) => {
         const transparency =
           info.compatibility?.predominantTraceExistance?.transparency;
-        if (!transparency) {
-          return false;
+        if (transparency && !transparency.transparent) {
+          return transparency.diffTrace.uncaughtErrors;
         }
-        return !transparency.transparent;
+        return null;
       })
-      .map(
-        (info) =>
-          info.compatibility!.predominantTraceExistance!.transparency!.diffTrace
-            .uncaughtErrors
-      ),
+      .filter(<T>(x: T | null): x is T => x !== null),
     (() => {
       switch (toolName) {
         case "ProjectFoxhound":

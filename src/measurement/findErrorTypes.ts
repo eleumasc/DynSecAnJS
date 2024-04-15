@@ -1,32 +1,32 @@
-export const knownErrorTypes = [
-  "EvalError",
-  "RangeError",
-  "ReferenceError",
-  "SyntaxError",
-  "TypeError",
-  "URIError",
-  "Script error.",
-];
+export enum StandardErrorType {
+  EvalError = "EvalError",
+  RangeError = "RangeError",
+  ReferenceError = "ReferenceError",
+  SyntaxError = "SyntaxError",
+  TypeError = "TypeError",
+  URIError = "URIError",
+}
 
-export const findErrorTypes = (strings: string[]): Set<string> => {
-  if (strings.length === 0) {
+const StandardErrorType_VALUES = Object.values(StandardErrorType);
+
+export const ErrorType = {
+  ...StandardErrorType,
+  UnknownError: "UnknownError",
+};
+
+export const findErrorTypes = (messages: string[]): Set<string> => {
+  if (messages.length === 0) {
     return new Set();
   }
 
-  const result = new Set<string>();
+  const errorTypes = new Set<string>();
 
-  for (const str of strings) {
-    let errorFound = false;
-    for (const error of knownErrorTypes) {
-      if (str.includes(error)) {
-        result.add(error);
-        errorFound = true;
-      }
-    }
-    if (!errorFound) {
-      result.add("other");
-    }
+  for (const message of messages) {
+    errorTypes.add(
+      StandardErrorType_VALUES.find((error) => message.includes(error)) ??
+        ErrorType.UnknownError
+    );
   }
 
-  return result;
+  return errorTypes;
 };

@@ -61,6 +61,7 @@ export const startTransparency = async (args: TransparencyArgs) => {
     console.log(toolArchivePath, report);
   }
 
+  // TODO: fix, hard-coded for [Jalangi, Linvail, ProjectFoxhound]
   const performanceReport = getPerformanceReport([
     toolSiteInfoLists[3],
     toolSiteInfoLists[4],

@@ -1,6 +1,13 @@
+import {
+  CountMatchedKeysResult,
+  count,
+  countMatchedKeys,
+  takeInfo,
+} from "./util";
+
+import { CompatibilityIssue } from "./findCompatibilityIssues";
+import { ErrorType } from "./findErrorTypes";
 import { SiteInfo } from "./SiteInfo";
-import { incrementMapEntry } from "../core/Map";
-import { knownErrorTypes } from "./findErrorTypes";
 
 export interface Report {
   // SiteInfo
@@ -15,6 +22,7 @@ export interface Report {
   transpilationKO: number;
   originalSomeSuccessSomeFailure: number;
   toolSomeSuccessSomeFailure: number;
+  compatibilityIssues: CountMatchedKeysResult;
   transparencyAnalyzable: number;
   // PredominantTraceExistanceInfo
   noneTraceExists: number;
@@ -24,7 +32,7 @@ export interface Report {
   // TransparencyInfo
   nonTransparent: number;
   transparent: number;
-  uncaughtErrorTypes: Map<string, number>;
+  uncaughtErrorTypes: CountMatchedKeysResult;
 }
 
 export const getReport = (siteInfoList: SiteInfo[]): Report => {
@@ -67,6 +75,10 @@ export const getReport = (siteInfoList: SiteInfo[]): Report => {
     compatibilityInfos,
     (info) => info.toolSomeSuccessSomeFailure
   );
+  const compatibilityIssues = countMatchedKeys(
+    compatibilityInfos.map((info) => info.issues),
+    new Set(Object.values(CompatibilityIssue))
+  );
   const transparencyAnalyzable = count(
     compatibilityInfos,
     (info) => info.transparencyAnalyzable
@@ -99,12 +111,10 @@ export const getReport = (siteInfoList: SiteInfo[]): Report => {
   );
   const nonTransparent = count(transparencyInfos, (info) => !info.transparent);
   const transparent = count(transparencyInfos, (info) => info.transparent);
-  const uncaughtErrorTypes = transparencyInfos.reduce((acc, cur) => {
-    for (const error of cur.uncaughtErrorTypes) {
-      incrementMapEntry(acc, error);
-    }
-    return acc;
-  }, new Map<string, number>(knownErrorTypes.map((error) => [error, 0])));
+  const uncaughtErrorTypes = countMatchedKeys(
+    transparencyInfos.map((info) => info.uncaughtErrorTypes),
+    new Set(Object.values(ErrorType))
+  );
 
   return {
     // SiteInfo
@@ -119,6 +129,7 @@ export const getReport = (siteInfoList: SiteInfo[]): Report => {
     transpilationKO,
     originalSomeSuccessSomeFailure,
     toolSomeSuccessSomeFailure,
+    compatibilityIssues,
     transparencyAnalyzable,
     // PredominantTraceExistanceInfo
     noneTraceExists,
@@ -130,22 +141,4 @@ export const getReport = (siteInfoList: SiteInfo[]): Report => {
     transparent,
     uncaughtErrorTypes,
   };
-};
-
-const count = <T>(
-  population: T[],
-  filterFn?: (element: T) => boolean
-): number => {
-  return filterFn
-    ? population.filter((element) => filterFn(element)).length
-    : population.length;
-};
-
-const takeInfo = <T, U>(
-  population: T[],
-  mapFn: (element: T) => U | null
-): U[] => {
-  return population
-    .map((element) => mapFn(element))
-    .filter((element): element is U => element !== null);
 };
