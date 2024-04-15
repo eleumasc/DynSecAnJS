@@ -1,5 +1,4 @@
 import { SiteInfo } from "./SiteInfo";
-import { avg } from "../core/math";
 import { incrementMapEntry } from "../core/Map";
 import { knownErrorTypes } from "./findErrorTypes";
 
@@ -8,8 +7,8 @@ export interface Report {
   all: number;
   accessible: number;
   // CompatibilityInfo
-  compatible: number;
   syntacticallyCompatible: number;
+  compatible: number;
   eventuallyCompatible: number;
   unknownCompatibility: number;
   transpilationOK: number;
@@ -26,22 +25,23 @@ export interface Report {
   nonTransparent: number;
   transparent: number;
   uncaughtErrorTypes: Map<string, number>;
-  // PerformanceInfo
-  overhead: number;
 }
 
-export const createReport = (siteInfos: SiteInfo[]): Report => {
-  const all = count(siteInfos);
-  const accessible = count(siteInfos, (info) => info.accessible);
+export const getReport = (siteInfoList: SiteInfo[]): Report => {
+  const all = count(siteInfoList);
+  const accessible = count(siteInfoList, (info) => info.accessible);
 
-  const compatibilityInfos = takeInfo(siteInfos, (info) => info.compatibility);
-  const compatible = count(
-    compatibilityInfos,
-    (info) => info.syntacticallyCompatible && info.eventuallyCompatible === true
+  const compatibilityInfos = takeInfo(
+    siteInfoList,
+    (info) => info.compatibility
   );
   const syntacticallyCompatible = count(
     compatibilityInfos,
     (info) => info.syntacticallyCompatible
+  );
+  const compatible = count(
+    compatibilityInfos,
+    (info) => info.syntacticallyCompatible && info.eventuallyCompatible === true
   );
   const eventuallyCompatible = count(
     compatibilityInfos,
@@ -106,23 +106,13 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
     return acc;
   }, new Map<string, number>(knownErrorTypes.map((error) => [error, 0])));
 
-  const performanceInfos = takeInfo(
-    transparencyInfos,
-    (info) => info.performance
-  );
-  const overhead = avg(
-    performanceInfos.map(
-      (info) => info.toolExecutionTimeMs / info.originalExecutionTimeMs
-    )
-  );
-
   return {
     // SiteInfo
     all,
     accessible,
     // CompatibilityInfo
-    compatible,
     syntacticallyCompatible,
+    compatible,
     eventuallyCompatible,
     unknownCompatibility,
     transpilationOK,
@@ -139,8 +129,6 @@ export const createReport = (siteInfos: SiteInfo[]): Report => {
     nonTransparent,
     transparent,
     uncaughtErrorTypes,
-    // PerformanceInfo
-    overhead,
   };
 };
 

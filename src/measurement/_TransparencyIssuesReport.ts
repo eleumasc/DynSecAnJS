@@ -1,13 +1,13 @@
-// usage: console.log(_createTransparencyIssuesReport(siteInfos, toolName));
+// usage: console.log(_getTransparencyIssuesReport(siteInfoList, toolName));
 
 import { SiteInfo } from "./SiteInfo";
 
-export const _createTransparencyIssuesReport = (
-  siteInfos: SiteInfo[],
+export const _getTransparencyIssuesReport = (
+  siteInfoList: SiteInfo[],
   toolName: string
 ) =>
   countSetsAndFilterStrings(
-    siteInfos
+    siteInfoList
       .filter((info) => {
         const transparency =
           info.compatibility?.predominantTraceExistance?.transparency;

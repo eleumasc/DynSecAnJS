@@ -2,7 +2,11 @@ import { startCompatibility } from "./starters/startCompatibility";
 import { startOriginalAnalysis } from "./starters/startOriginalAnalysis";
 import { startSitelistRecovery } from "./starters/startSitelistRecovery";
 import { startToolAnalysis } from "./starters/startToolAnalysis";
-import { startTransparency } from "./starters/startTransparency";
+import {
+  ArchivePathRecord,
+  TransparencyArgs,
+  startTransparency,
+} from "./starters/startTransparency";
 import yargs from "yargs/yargs";
 
 yargs(process.argv.slice(2))
@@ -77,17 +81,15 @@ yargs(process.argv.slice(2))
     }
   )
   .command(
-    "transparency <originalArchivePath> <toolArchivePath>",
+    "transparency",
     "Start transparency measurement",
     (yargs) => {
       return yargs
-        .positional("originalArchivePath", {
+        .option("in", {
           type: "string",
+          array: true,
           demandOption: true,
-        })
-        .positional("toolArchivePath", {
-          type: "string",
-          demandOption: true,
+          nargs: 2,
         })
         .option("intersectSitelistPath", {
           type: "string",
@@ -95,7 +97,19 @@ yargs(process.argv.slice(2))
         });
     },
     (argv) => {
-      startTransparency(argv);
+      const { in: inputArray, intersectSitelistPath } = argv;
+      const archivePathRecords: ArchivePathRecord[] = [];
+      for (let i = 0; i < inputArray.length; i += 2) {
+        archivePathRecords.push({
+          originalArchivePath: inputArray[i],
+          toolArchivePath: inputArray[i + 1],
+        });
+      }
+
+      startTransparency(<TransparencyArgs>{
+        archivePathRecords,
+        intersectSitelistPath,
+      });
     }
   )
   .command(
