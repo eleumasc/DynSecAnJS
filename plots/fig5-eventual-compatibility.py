@@ -2,15 +2,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Dati forniti
-# left: syntactic + both, right: eventual + both
+# left: syntacticallyCompatible, right: eventuallyCompatible
 data = {
-    "JEST": (432, 301),
-    "IF-Transpiler": (432, 253),
-    "GIFC": (1110, 903),
-    "Jalangi": (432, 1317),
-    "Linvail": (1110, 440),
+    "JEST": (538, 274),
+    "IF-Transpiler": (538, 197),
+    "GIFC": (1941, 1385),
+    "Jalangi": (538, 2261),
+    "Linvail": (1941, 560),
+    "Project Foxhound": (3410, 2990),
 }
-accessible = 1850
+accessible = 3410
 
 # Calcolo dei rapporti percentuali rispetto al totale di accessibili
 percentages = {
