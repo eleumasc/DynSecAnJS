@@ -1,5 +1,4 @@
 import { TransformErrorDetail } from "../lib/ExecutionDetail";
-import assert from "assert";
 
 export enum CompatibilityIssue {
   CrashError = "CrashError",
@@ -16,10 +15,8 @@ export const findCompatibilityIssues = (
     return new Set([CompatibilityIssue.CrashError]);
   }
 
-  const issues = new Set<string>();
-
   if (transformErrors.some((detail) => detail.transformName === "Babel")) {
-    issues.add(CompatibilityIssue.BabelError);
+    return new Set([CompatibilityIssue.BabelError]);
   }
 
   const toolErrorMessages = transformErrors
@@ -29,26 +26,23 @@ export const findCompatibilityIssues = (
   const { parseErrorPatterns, analysisErrorPatterns } =
     getCompatibilityIssuePatterns(toolName);
 
-  for (const message of toolErrorMessages) {
-    const parseErrorMessage = parseErrorPatterns.some((pattern) =>
-      pattern.test(message)
-    );
-    const analysisErrorMessage = analysisErrorPatterns.some((pattern) =>
-      pattern.test(message)
-    );
-
-    assert(!parseErrorMessage || !analysisErrorMessage);
-
-    if (parseErrorMessage) {
-      issues.add(CompatibilityIssue.ParseError);
-    } else if (analysisErrorMessage) {
-      issues.add(CompatibilityIssue.AnalysisError);
-    } else {
-      issues.add(message);
-    }
+  if (
+    toolErrorMessages.some((message) =>
+      parseErrorPatterns.some((pattern) => pattern.test(message))
+    )
+  ) {
+    return new Set([CompatibilityIssue.ParseError]);
   }
 
-  return issues;
+  if (
+    toolErrorMessages.some((message) =>
+      analysisErrorPatterns.some((pattern) => pattern.test(message))
+    )
+  ) {
+    return new Set([CompatibilityIssue.AnalysisError]);
+  }
+
+  return new Set(toolErrorMessages);
 };
 
 interface CompatibilityIssuePatterns {
