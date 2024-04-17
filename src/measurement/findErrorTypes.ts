@@ -11,7 +11,7 @@ const StandardErrorType_VALUES = Object.values(StandardErrorType);
 
 export const ErrorType = {
   ...StandardErrorType,
-  UnknownError: "UnknownError",
+  OtherError: "OtherError",
 };
 
 export const findErrorTypes = (messages: string[]): Set<string> => {
@@ -24,7 +24,7 @@ export const findErrorTypes = (messages: string[]): Set<string> => {
   for (const message of messages) {
     errorTypes.add(
       StandardErrorType_VALUES.find((error) => message.includes(error)) ??
-        ErrorType.UnknownError
+        ErrorType.OtherError
     );
   }
 
