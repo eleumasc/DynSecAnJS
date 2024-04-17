@@ -57,6 +57,9 @@ ax.set_xticks(ind)
 ax.set_xticklabels(data.keys(), rotation=45, ha="right")
 ax.legend()
 
+# Set the upper limit of the y-axis to 4000
+ax.set_ylim(0, 4000)
+
 # Mostriamo il plot
 plt.tight_layout()
 plt.show()

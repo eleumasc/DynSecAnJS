@@ -66,12 +66,15 @@ for i, (project, project_data) in enumerate(data.items()):
         error_labels[error] for error, value in project_data.items() if value != 0
     ]
     sizes = [value for value in project_data.values() if value != 0]
-    axs[i].pie(sizes, labels=labels, startangle=140, colors=colors, autopct="%1.1f%%")
+    axs[i].pie(sizes, labels=None, startangle=140, colors=colors, autopct=lambda p: '{:.0f} ({:.0f}%)'.format(p * sum(sizes) / 100, p))
     axs[i].axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle
     axs[i].set_title(project)
 
+# Creating legend
+fig.legend(legend_labels, loc="lower center", ncol=2)
+
 # Adding common title
-fig.suptitle("Eventual Compatibility Issues", fontsize=16)
+fig.suptitle("Eventual compatibility issues")
 
 plt.tight_layout()
 plt.show()
