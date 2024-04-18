@@ -69,6 +69,10 @@ function setupAnalysis() {
           }
           instrumentBuiltinMethods(d.value, prop.props, extendPath(path, k));
         } else if (typeof prop === "string") {
+          if (prop === "eval") {
+            continue;
+          }
+
           var d = GetOwnPropertyDescriptor(object, prop);
           if (!d) {
             continue;
