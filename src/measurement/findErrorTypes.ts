@@ -1,10 +1,7 @@
 export enum StandardErrorType {
-  EvalError = "EvalError",
-  RangeError = "RangeError",
   ReferenceError = "ReferenceError",
   SyntaxError = "SyntaxError",
   TypeError = "TypeError",
-  URIError = "URIError",
 }
 
 const StandardErrorType_VALUES = Object.values(StandardErrorType);
