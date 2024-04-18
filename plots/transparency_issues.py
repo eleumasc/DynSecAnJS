@@ -4,50 +4,50 @@ from misc import custom_colors
 
 data = {
     "JEST": {
-        "CrashError": 159,
-        "BabelError": 195,
-        "ParseError": 2095,
-        "AnalysisError": 687,
+        "ReferenceError": 1,
+        "SyntaxError": 25,
+        "TypeError": 54,
+        "OtherError": 138,
     },
     "IF-Transpiler": {
-        "CrashError": 344,
-        "BabelError": 197,
-        "ParseError": 209,
-        "AnalysisError": 2463,
+        "ReferenceError": 2,
+        "SyntaxError": 33,
+        "TypeError": 99,
+        "OtherError": 35,
     },
     "GIFC": {
-        "CrashError": 152,
-        "BabelError": 191,
-        "ParseError": 53,
-        "AnalysisError": 1604,
+        "ReferenceError": 479,
+        "SyntaxError": 271,
+        "TypeError": 1099,
+        "OtherError": 195,
     },
     "Jalangi": {
-        "CrashError": 370,
-        "BabelError": 243,
-        "ParseError": 141,
-        "AnalysisError": 0,
+        "ReferenceError": 584,
+        "SyntaxError": 72,
+        "TypeError": 221,
+        "OtherError": 63,
     },
     "Linvail": {
-        "CrashError": 1616,
-        "BabelError": 108,
-        "ParseError": 45,
-        "AnalysisError": 1060,
+        "ReferenceError": 66,
+        "SyntaxError": 90,
+        "TypeError": 172,
+        "OtherError": 47,
     },
     "Project Foxhound": {
-        "CrashError": 408,
-        "BabelError": 0,
-        "ParseError": 0,
-        "AnalysisError": 0,
+        "ReferenceError": 5,
+        "SyntaxError": 1,
+        "TypeError": 55,
+        "OtherError": 9,
     },
 }
 issues = [sum(tool_data.values()) for tool_data in data.values()]
 
 # Mapping data keys to labels
 labels = {
-    "CrashError": "Crashes",
-    "BabelError": "Transpilation errors",
-    "ParseError": "Parse errors",
-    "AnalysisError": "Analysis errors",
+    "ReferenceError": "ReferenceError",
+    "SyntaxError": "SyntaxError",
+    "TypeError": "TypeError",
+    "OtherError": "Other",
 }
 
 # Prepare legend
@@ -85,7 +85,7 @@ for i, rect_group in enumerate(rects):
 
 ax.set_xlabel("Tool")
 ax.set_ylabel("Number of websites")
-ax.set_title("Eventual compatibility issues")
+ax.set_title("Transparency issues")
 ax.set_xticks(x + 2 * bar_width)
 ax.set_xticklabels(data.keys(), rotation=45, ha="right")
 

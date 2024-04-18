@@ -50,11 +50,7 @@ labels = {
 }
 
 # Prepare legend
-legend_labels = [
-    labels["syntacticallyCompatible"],
-    labels["eventuallyCompatible"],
-    labels["compatible"],
-]
+legend_labels = list(labels.values())
 colors = custom_colors
 
 # Plotting histogram
@@ -106,7 +102,7 @@ for rect_group, label in zip(main_rects, labels.values()):
         ax.annotate(
             f"{height}\n({height / accessible * 100:.0f}%)",
             xy=(rect.get_x() + rect.get_width() / 2, height),
-            xytext=(0, 3),  # 3 points vertical offset
+            xytext=(0, 3),
             textcoords="offset points",
             ha="center",
         )
