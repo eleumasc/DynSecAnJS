@@ -139,7 +139,7 @@ ax.set_ylim(
 
 ax.set_xlabel("Tool")
 ax.set_ylabel("Number of websites")
-ax.set_title("Syntactic and eventual compatibility")
+ax.set_title("Compatibility analysis")
 ax.set_xticks(x + 2 * bar_width)
 ax.set_xticklabels(data.keys(), rotation=45, ha="right")
 

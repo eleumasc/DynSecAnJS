@@ -68,7 +68,7 @@ for i, (tool, raw_tool_data) in enumerate(data.items()):
 fig.legend(legend_labels, loc="lower center", ncol=2)
 
 # Adding common title
-fig.suptitle("Transparency")
+fig.suptitle("Transparency analysis")
 
 plt.tight_layout()
 plt.show()
