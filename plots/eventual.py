@@ -45,17 +45,16 @@ accessible = 3410
 # Mapping data keys to labels
 labels = {
     "syntacticallyCompatible": "Syntactically compatible",
-    "compatible": "Compatible",
     "eventuallyCompatible": "Eventually compatible",
+    "compatible": "Compatible",
 }
 
 # Prepare legend
 legend_labels = [
     labels["syntacticallyCompatible"],
-    labels["compatible"],
     labels["eventuallyCompatible"],
+    labels["compatible"],
 ]
-
 colors = custom_colors
 
 # Plotting histogram
@@ -110,6 +109,23 @@ for rect_group, label in zip(main_rects, labels.values()):
             xytext=(0, 3),  # 3 points vertical offset
             textcoords="offset points",
             ha="center",
+        )
+
+# Loop through unknown bars to add annotations
+for i, rect_group in enumerate(unknown_rects):
+    for j, rect in enumerate(rect_group):
+        height = rect.get_height()
+        main_height = main_rects[i + 1][j].get_height()
+        text_voffset = 3
+        if abs(main_height - height) < 200:
+            text_voffset += 24
+        ax.annotate(
+            f"{height}\n({height / accessible * 100:.0f}%)",
+            xy=(rect.get_x() + rect.get_width() / 2, height),
+            xytext=(0, text_voffset),
+            textcoords="offset points",
+            ha="center",
+            color="red",
         )
 
 # Adding legend
