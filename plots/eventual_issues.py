@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from misc import custom_colors
 
 data = {
     "JEST": {
@@ -39,42 +40,62 @@ data = {
         "AnalysisError": 0,
     },
 }
+issues = [sum(tool_data.values()) for tool_data in data.values()]
 
-# Mapping error types to labels
-error_labels = {
+# Mapping data keys to labels
+labels = {
     "CrashError": "Crashes",
     "BabelError": "Transpilation errors",
     "ParseError": "Parse errors",
     "AnalysisError": "Analysis errors",
 }
 
-# Extracting unique error types
-error_types = set()
-for project_data in data.values():
-    error_types.update(project_data.keys())
-
-# Plotting pie charts
-fig, axs = plt.subplots(2, 3, figsize=(15, 10))
-axs = axs.flatten()
-
 # Prepare legend
-legend_labels = list(error_labels.values())
-colors = plt.cm.tab20(np.linspace(0, 1, len(legend_labels)))
+legend_labels = list(labels.values())
+colors = custom_colors
 
-for i, (project, project_data) in enumerate(data.items()):
-    labels = [
-        error_labels[error] for error, value in project_data.items() if value != 0
-    ]
-    sizes = [value for value in project_data.values() if value != 0]
-    axs[i].pie(sizes, labels=None, startangle=140, colors=colors, autopct=lambda p: '{:.0f} ({:.0f}%)'.format(p * sum(sizes) / 100, p))
-    axs[i].axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle
-    axs[i].set_title(project)
+# Plotting histogram
+x = np.arange(len(data))
 
-# Creating legend
-fig.legend(legend_labels, loc="lower center", ncol=2)
+fig, ax = plt.subplots(figsize=(12, 8))
 
-# Adding common title
-fig.suptitle("Eventual compatibility issues")
+bar_width = 0.2  # Width of each bar
+bar_positions = np.arange(len(data))  # Positions for each group of bars
+
+rects = []
+
+for i, (error_type, _) in enumerate(labels.items()):
+    heights = [tool_data[error_type] for tool_data in data.values()]
+    rect_group = ax.bar(
+        x + i * bar_width, heights, width=bar_width, label=error_type, color=colors[i]
+    )
+    rects.append(rect_group)
+
+# Loop through rectangles to add annotations
+for i, rect_group in enumerate(rects):
+    for j, rect in enumerate(rect_group):
+        height = rect.get_height()
+        ax.annotate(
+            f"{height}\n({height / issues[j] * 100:.0f}%)",
+            xy=(rect.get_x() + rect.get_width() / 2, height),
+            xytext=(0, 3),  # 3 points vertical offset
+            textcoords="offset points",
+            ha="center",
+        )
+
+ax.set_xlabel("Tools")
+ax.set_ylabel("Number of websites")
+ax.set_title("Eventual compatibility issues")
+ax.set_xticks(x + 2 * bar_width)
+ax.set_xticklabels(data.keys(), rotation=45, ha="right")
+
+# Adding legend
+ax.legend(legend_labels)
+
+# Set y-axis limit with offset from the highest bar
+ax.set_ylim(
+    0, max([rect.get_height() for rect_group in rects for rect in rect_group]) * 1.1
+)
 
 plt.tight_layout()
 plt.show()
