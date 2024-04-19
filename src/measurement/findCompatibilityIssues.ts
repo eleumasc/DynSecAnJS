@@ -61,7 +61,7 @@ const getCompatibilityIssuePatterns = (
       };
     case "JEST":
       return {
-        parseErrorPatterns: [/jest: user error/],
+        parseErrorPatterns: [/jest: user error/, /SyntaxError/],
         analysisErrorPatterns: [
           /TypeError: fetch failed/,
           /Error: Failed to inline external script/,
