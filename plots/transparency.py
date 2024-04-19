@@ -3,6 +3,8 @@ import numpy as np
 from misc import custom_colors
 from global_data import global_data
 
+plt.rcParams.update({"font.size": 11})
+
 data = global_data
 accessible_values = [tool_data["accessible"] for tool_data in global_data.values()]
 
@@ -19,7 +21,7 @@ axs = axs.flatten()
 
 # Prepare legend
 legend_labels = list(labels.values())
-colors = custom_colors
+colors = [custom_colors[0], custom_colors[3], "lightgray"]
 
 for i, (tool, raw_tool_data) in enumerate(data.items()):
     tool_data = {
@@ -33,12 +35,12 @@ for i, (tool, raw_tool_data) in enumerate(data.items()):
     axs[i].pie(
         sizes,
         labels=None,
-        startangle=140,
+        startangle=150,
         colors=colors,
         autopct=lambda p: "{:.0f} ({:.0f}%)".format(p * sum(sizes) / 100, p),
     )
     axs[i].axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle
-    axs[i].set_title(tool)
+    axs[i].set_title(tool, pad=-50)
 
 # Adding legend
 fig.legend(legend_labels, loc="lower center", ncol=2)

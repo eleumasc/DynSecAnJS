@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 from global_data import global_data
 
+plt.rcParams.update({"font.size": 10})
+
 data = {
     tool: tool_data["syntacticallyCompatible"]
     for tool, tool_data in global_data.items()

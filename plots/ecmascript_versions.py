@@ -1,6 +1,8 @@
 import json
 import matplotlib.pyplot as plt
 
+plt.rcParams.update({"font.size": 10})
+
 data = {
     "ES2015": 745,
     "ES2020": 740,
