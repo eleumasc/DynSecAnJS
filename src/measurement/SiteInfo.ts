@@ -51,10 +51,8 @@ export interface TransparencyInfo {
 }
 
 export interface PerformanceInfo {
-  originalExecutionTimeMs: number;
-  originalExecutionTimeErrorMs: number;
-  toolExecutionTimeMs: number;
-  toolExecutionTimeErrorMs: number;
+  originalExecutionTimes: number[];
+  toolExecutionTimes: number[];
 }
 
 export const getSiteInfo = (
@@ -216,28 +214,11 @@ export const getTransparencyInfo = (
 export const getPerformanceInfo = (
   originalExecutions: ExecutionDetail[],
   toolExecutions: ExecutionDetail[]
-): PerformanceInfo => {
-  const computeStats = (executions: ExecutionDetail[]) => {
-    const executionTimes = executions.map(
-      (execution) => execution.executionTimeMs
-    );
-    return {
-      executionTimeMs: avg(executionTimes),
-      executionTimeErrorMs: stdev(executionTimes),
-    };
-  };
-  const {
-    executionTimeMs: originalExecutionTimeMs,
-    executionTimeErrorMs: originalExecutionTimeErrorMs,
-  } = computeStats(originalExecutions);
-  const {
-    executionTimeMs: toolExecutionTimeMs,
-    executionTimeErrorMs: toolExecutionTimeErrorMs,
-  } = computeStats(toolExecutions);
+) => {
+  const getExecutionTimes = (executions: ExecutionDetail[]): number[] =>
+    executions.map((execution) => execution.executionTimeMs);
   return {
-    originalExecutionTimeMs,
-    originalExecutionTimeErrorMs,
-    toolExecutionTimeMs,
-    toolExecutionTimeErrorMs,
+    originalExecutionTimes: getExecutionTimes(originalExecutions),
+    toolExecutionTimes: getExecutionTimes(toolExecutions),
   };
 };

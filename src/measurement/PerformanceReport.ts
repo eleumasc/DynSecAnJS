@@ -1,10 +1,20 @@
+import { avg, stdev } from "../core/math";
+
 import { SiteInfo } from "./SiteInfo";
-import { avg } from "../core/math";
+import assert from "assert";
 import { intersectSets } from "../core/Set";
 
 export interface PerformanceReport {
   benchmarkSites: string[];
-  avgOverheads: number[];
+  details: PerformanceDetail[];
+}
+
+export interface PerformanceDetail {
+  originalAvg: number;
+  originalStdev: number;
+  toolAvg: number;
+  toolStdev: number;
+  overhead: number;
 }
 
 export const getPerformanceReport = (
@@ -41,20 +51,42 @@ export const getPerformanceReport = (
     ),
   ];
 
-  const avgOverheads = performanceInfoEntryLists.map((entryList) =>
-    avg(
-      entryList
+  const details = performanceInfoEntryLists.map(
+    (entryList): PerformanceDetail => {
+      const performanceInfoList = entryList
         .filter(({ site }) => benchmarkSites.includes(site))
-        .map(
-          ({ performance }) =>
-            performance.toolExecutionTimeMs /
-            performance.originalExecutionTimeMs
-        )
-    )
+        .map(({ performance }) => performance);
+
+      const getRunExecutionTimes = (executionTimesList: number[][]): number[] =>
+        executionTimesList.reduce((acc, cur) => {
+          assert(cur.length === acc.length);
+          return cur.map((value, index) => acc[index] + value);
+        }, Array(5).fill(0));
+      const originalRunExecutionTimes = getRunExecutionTimes(
+        performanceInfoList.map((info) => info.originalExecutionTimes)
+      );
+      const toolRunExecutionTimes = getRunExecutionTimes(
+        performanceInfoList.map((info) => info.toolExecutionTimes)
+      );
+
+      const originalAvg = avg(originalRunExecutionTimes);
+      const originalStdev = stdev(originalRunExecutionTimes);
+      const toolAvg = avg(toolRunExecutionTimes);
+      const toolStdev = stdev(toolRunExecutionTimes);
+      const overhead = toolAvg / originalAvg;
+
+      return {
+        originalAvg,
+        originalStdev,
+        toolAvg,
+        toolStdev,
+        overhead,
+      };
+    }
   );
 
   return {
     benchmarkSites,
-    avgOverheads,
+    details,
   };
 };
