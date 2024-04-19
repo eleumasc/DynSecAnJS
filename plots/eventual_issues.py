@@ -1,44 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from misc import custom_colors
+from global_data import global_data
 
 data = {
-    "JEST": {
-        "CrashError": 159,
-        "BabelError": 195,
-        "ParseError": 2095,
-        "AnalysisError": 687,
-    },
-    "IF-Transpiler": {
-        "CrashError": 344,
-        "BabelError": 197,
-        "ParseError": 209,
-        "AnalysisError": 2463,
-    },
-    "GIFC": {
-        "CrashError": 152,
-        "BabelError": 191,
-        "ParseError": 53,
-        "AnalysisError": 1604,
-    },
-    "Jalangi": {
-        "CrashError": 370,
-        "BabelError": 243,
-        "ParseError": 141,
-        "AnalysisError": 0,
-    },
-    "Linvail": {
-        "CrashError": 1616,
-        "BabelError": 108,
-        "ParseError": 45,
-        "AnalysisError": 1060,
-    },
-    "Project Foxhound": {
-        "CrashError": 408,
-        "BabelError": 0,
-        "ParseError": 0,
-        "AnalysisError": 0,
-    },
+    tool: tool_data.get("compatibilityIssues", {})
+    for tool, tool_data in global_data.items()
 }
 issues = [sum(tool_data.values()) for tool_data in data.values()]
 

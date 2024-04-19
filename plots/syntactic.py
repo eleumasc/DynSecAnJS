@@ -1,19 +1,17 @@
 import matplotlib.pyplot as plt
+from global_data import global_data
 
-# Dati forniti
-# syntacticallyCompatible
 data = {
-    "JEST": 538,
-    "IF-Transpiler": 538,
-    "GIFC": 1941,
-    "Jalangi": 538,
-    "Linvail": 1941,
-    "Project Foxhound": 3410,
+    tool: tool_data["syntacticallyCompatible"]
+    for tool, tool_data in global_data.items()
 }
-accessible = 3410
+accessible_values = [tool_data["accessible"] for tool_data in global_data.values()]
 
 # Calcolo dei rapporti percentuali rispetto al totale dei siti accessibili
-percentages = {key: (value / accessible) * 100 for key, value in data.items()}
+percentages = {
+    key: (value / accessible_values[i]) * 100
+    for i, (key, value) in enumerate(data.items())
+}
 
 # Creazione dell'istogramma
 plt.bar(data.keys(), data.values())

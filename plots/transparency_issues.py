@@ -1,45 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from misc import custom_colors
+from global_data import global_data
 
-data = {
-    "JEST": {
-        "ReferenceError": 1,
-        "SyntaxError": 25,
-        "TypeError": 54,
-        "OtherError": 138,
-    },
-    "IF-Transpiler": {
-        "ReferenceError": 2,
-        "SyntaxError": 33,
-        "TypeError": 99,
-        "OtherError": 35,
-    },
-    "GIFC": {
-        "ReferenceError": 479,
-        "SyntaxError": 271,
-        "TypeError": 1099,
-        "OtherError": 195,
-    },
-    "Jalangi": {
-        "ReferenceError": 584,
-        "SyntaxError": 72,
-        "TypeError": 221,
-        "OtherError": 63,
-    },
-    "Linvail": {
-        "ReferenceError": 66,
-        "SyntaxError": 90,
-        "TypeError": 172,
-        "OtherError": 47,
-    },
-    "Project Foxhound": {
-        "ReferenceError": 5,
-        "SyntaxError": 1,
-        "TypeError": 55,
-        "OtherError": 9,
-    },
-}
+data = {key: value.get("uncaughtErrorTypes", {}) for key, value in global_data.items()}
 issues = [sum(tool_data.values()) for tool_data in data.values()]
 
 # Mapping data keys to labels

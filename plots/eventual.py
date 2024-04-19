@@ -1,46 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from misc import custom_colors
+from global_data import global_data
 
-data = {
-    "JEST": {
-        "syntacticallyCompatible": 538,
-        "compatible": 140,
-        "eventuallyCompatible": 274,
-        "unknownCompatibility": 0,
-    },
-    "IF-Transpiler": {
-        "syntacticallyCompatible": 538,
-        "compatible": 81,
-        "eventuallyCompatible": 197,
-        "unknownCompatibility": 0,
-    },
-    "GIFC": {
-        "syntacticallyCompatible": 1941,
-        "compatible": 880,
-        "eventuallyCompatible": 1385,
-        "unknownCompatibility": 25,
-    },
-    "Jalangi": {
-        "syntacticallyCompatible": 538,
-        "compatible": 503,
-        "eventuallyCompatible": 2261,
-        "unknownCompatibility": 395,
-    },
-    "Linvail": {
-        "syntacticallyCompatible": 1941,
-        "compatible": 430,
-        "eventuallyCompatible": 560,
-        "unknownCompatibility": 21,
-    },
-    "Project Foxhound": {
-        "syntacticallyCompatible": 3410,
-        "compatible": 2990,
-        "eventuallyCompatible": 2990,
-        "unknownCompatibility": 12,
-    },
-}
-accessible = 3410
+data = global_data
+accessible_values = [tool_data["accessible"] for tool_data in global_data.values()]
 
 # Mapping data keys to labels
 labels = {
@@ -97,10 +61,10 @@ for i, (error_type, label) in enumerate(labels.items()):
 
 # Loop through original main bars to add annotations
 for rect_group, label in zip(main_rects, labels.values()):
-    for rect in rect_group:
+    for j, rect in enumerate(rect_group):
         height = rect.get_height()
         ax.annotate(
-            f"{height}\n({height / accessible * 100:.0f}%)",
+            f"{height}\n({height / accessible_values[j] * 100:.0f}%)",
             xy=(rect.get_x() + rect.get_width() / 2, height),
             xytext=(0, 3),
             textcoords="offset points",
@@ -116,7 +80,7 @@ for i, rect_group in enumerate(unknown_rects):
         if abs(main_height - height) < 200:
             text_voffset += 24
         ax.annotate(
-            f"{height}\n({height / accessible * 100:.0f}%)",
+            f"{height}\n({height / accessible_values[j] * 100:.0f}%)",
             xy=(rect.get_x() + rect.get_width() / 2, height),
             xytext=(0, text_voffset),
             textcoords="offset points",

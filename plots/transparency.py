@@ -1,34 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from misc import custom_colors
+from global_data import global_data
 
-data = {
-    "JEST": {
-        "nonTransparent": 218,
-        "transparent": 45,
-    },
-    "IF-Transpiler": {
-        "nonTransparent": 165,
-        "transparent": 22,
-    },
-    "GIFC": {
-        "nonTransparent": 1113,
-        "transparent": 52,
-    },
-    "Jalangi": {
-        "nonTransparent": 762,
-        "transparent": 808,
-    },
-    "Linvail": {
-        "nonTransparent": 221,
-        "transparent": 215,
-    },
-    "Project Foxhound": {
-        "nonTransparent": 65,
-        "transparent": 2807,
-    },
-}
-accessible = 3410
+data = global_data
+accessible_values = [tool_data["accessible"] for tool_data in global_data.values()]
 
 # Mapping data keys to labels
 labels = {
@@ -49,7 +25,7 @@ for i, (tool, raw_tool_data) in enumerate(data.items()):
     tool_data = {
         "transparent": raw_tool_data["transparent"],
         "nonTransparent": raw_tool_data["nonTransparent"],
-        "notApplicable": accessible
+        "notApplicable": accessible_values[i]
         - raw_tool_data["transparent"]
         - raw_tool_data["nonTransparent"],
     }
