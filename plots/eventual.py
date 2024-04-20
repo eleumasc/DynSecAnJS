@@ -46,7 +46,12 @@ for i, (error_type, label) in enumerate(labels.items()):
 for i, (error_type, label) in enumerate(labels.items()):
     if error_type != "syntacticallyCompatible":
         heights = [
-            tool_data[error_type] + tool_data["unknownCompatibility"]
+            tool_data[error_type]
+            + (
+                tool_data["unknownEventuallyCompatible"]
+                if i == 1
+                else tool_data["unknownCompatible"]
+            )
             for tool_data in data.values()
         ]
         unknown_rect_group = ax.bar(
