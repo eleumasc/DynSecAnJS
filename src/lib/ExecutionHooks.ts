@@ -8,7 +8,7 @@ import Deferred from "../core/Deferred";
 import { ProxiedMonitorHooks } from "./ProxiedMonitorHooks";
 import { BodyTransformer } from "./BodyTransformer";
 import { BodyTransformerError } from "./BodyTransformer";
-import { consolidate } from "../tools/consolidate";
+import { scriptInlining } from "../tools/scriptInlining";
 
 export type ExecutionHooksResult = Pick<
   ExecutionDetail,
@@ -140,22 +140,22 @@ export const defaultTransformProvider =
       : directTransformWithName;
   };
 
-export const consolidationTransformProvider =
+export const scriptInliningTransformProvider =
   (directTransform?: BodyTransformer): TransformProvider =>
   (compatMode) => {
-    const consolidation = bodyTransformerWithName(
-      "Consolidation",
-      consolidate()
+    const scriptInliningStage = bodyTransformerWithName(
+      "ScriptInlining",
+      scriptInlining()
     );
     const directTransformWithName =
       directTransform && bodyTransformerWithName("Tool", directTransform);
     return compatMode
       ? composeBodyTransformers(
-          consolidation,
+          scriptInliningStage,
           composeBodyTransformers(
             bodyTransformerWithName("Babel", transpileWithBabel()),
             directTransformWithName
           )
         )
-      : composeBodyTransformers(consolidation, directTransformWithName);
+      : composeBodyTransformers(scriptInliningStage, directTransformWithName);
   };

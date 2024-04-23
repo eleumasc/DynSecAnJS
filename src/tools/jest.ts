@@ -6,12 +6,12 @@ import { spawnStdio } from "./spawnStdio";
 
 export const transformWithJEST =
   (): BodyTransformer =>
-  (content, { contentType }) => {
+  async (content, { contentType }) => {
     switch (contentType) {
       case "html":
-        return jest(content, "html");
+        return await jest(content, "html");
       case "javascript":
-        return jest(content, "js");
+        return content;
     }
   };
 

@@ -5,6 +5,7 @@ import { getChildNodes, isElement } from "./util";
 import { HtmlTransformer } from "./HtmlTransformer";
 import { Node } from "parse5/dist/tree-adapters/default";
 import assert from "assert";
+import fetch from "node-fetch";
 
 export const inlineExternalScripts = (baseUrl: URL): HtmlTransformer =>
   async function visitNode(node: Node): Promise<void> {

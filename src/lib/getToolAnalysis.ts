@@ -1,9 +1,9 @@
 import {
   TransformProvider,
-  consolidationTransformProvider,
   createExecutionHooksProvider,
   defaultTransformProvider,
   identityTransformProvider,
+  scriptInliningTransformProvider,
 } from "./ExecutionHooks";
 import {
   defaultAnalysisRepeat,
@@ -71,7 +71,7 @@ export const getToolAnalysis = (
         agent: new PuppeteerAgent({
           pptrLaunchOptions: defaultPptrLaunchOptions,
         }),
-        transformProvider: consolidationTransformProvider(transformWithJEST()),
+        transformProvider: scriptInliningTransformProvider(transformWithJEST()),
         supportedESVersion: ESVersion.ES5,
       });
 

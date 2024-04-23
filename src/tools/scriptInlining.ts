@@ -2,7 +2,7 @@ import { BodyTransformer } from "../lib/BodyTransformer";
 import { inlineExternalScripts } from "../html/inlineExternalScripts";
 import { transformHtml } from "../html/transformHtml";
 
-export const consolidate =
+export const scriptInlining =
   (): BodyTransformer =>
   async (content, { contentType, req }) => {
     switch (contentType) {
