@@ -1,22 +1,17 @@
 import { BodyTransformer } from "../lib/BodyTransformer";
 import { ignoreJSON } from "./ignoreJSON";
-import { inlineExternalScripts } from "../html/inlineExternalScripts";
 import { jestPath } from "../core/env";
 import path from "path";
 import { spawnStdio } from "./spawnStdio";
-import { transformHtml } from "../html/transformHtml";
 
 export const transformWithJEST =
   (): BodyTransformer =>
-  async (content, { contentType, req }) => {
+  (content, { contentType }) => {
     switch (contentType) {
       case "html":
-        return await jest(
-          await transformHtml(content, inlineExternalScripts(req.url)),
-          "html"
-        );
+        return jest(content, "html");
       case "javascript":
-        return content;
+        return jest(content, "js");
     }
   };
 

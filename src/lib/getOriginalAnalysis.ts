@@ -1,4 +1,8 @@
 import {
+  createExecutionHooksProvider,
+  identityTransformProvider,
+} from "./ExecutionHooks";
+import {
   defaultAnalysisRepeat,
   defaultLoadingTimeoutMs,
   defaultPptrLaunchOptions,
@@ -12,7 +16,6 @@ import { OriginalAnalysis } from "./OriginalAnalysis";
 import { PuppeteerAgent } from "./PuppeteerAgent";
 import { SeleniumAgent } from "./SeleniumAgent";
 import { createCompatibilityHooksProvider } from "./CompatibilityHooks";
-import { createExecutionHooksProvider } from "./ExecutionHooks";
 import path from "path";
 
 export const getOriginalAnalysis = (browserName: string): OriginalAnalysis => {
@@ -29,7 +32,9 @@ export const getOriginalAnalysis = (browserName: string): OriginalAnalysis => {
 
     return new DefaultOriginalAnalysis(agent, {
       compatibilityHooksProvider: createCompatibilityHooksProvider(),
-      executionHooksProvider: createExecutionHooksProvider(),
+      executionHooksProvider: createExecutionHooksProvider(
+        identityTransformProvider()
+      ),
       analysisRepeat,
       loadingTimeoutMs,
     });

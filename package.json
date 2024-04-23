@@ -4,7 +4,7 @@
   "scripts": {
     "build": "rimraf build && tsc",
     "start": "export NODE_EXTRA_CA_CERTS=ca/cert.pem && node build/index.js",
-    "dev": "npm run build && npm run start"
+    "dev": "export NODE_EXTRA_CA_CERTS=ca/cert.pem && npm run build && node build/index.js"
   },
   "keywords": [],
   "author": "",

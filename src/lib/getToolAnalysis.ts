@@ -1,4 +1,11 @@
 import {
+  TransformProvider,
+  consolidationTransformProvider,
+  createExecutionHooksProvider,
+  defaultTransformProvider,
+  identityTransformProvider,
+} from "./ExecutionHooks";
+import {
   defaultAnalysisRepeat,
   defaultLoadingTimeoutMs,
   defaultPptrLaunchOptions,
@@ -6,14 +13,12 @@ import {
 import { headless, projectFoxhoundPath } from "../core/env";
 
 import { Agent } from "./Agent";
-import { BodyTransformer } from "./BodyTransformer";
 import { Browser } from "selenium-webdriver";
 import { DefaultToolAnalysis } from "./DefaultToolAnalysis";
 import { ESVersion } from "../compatibility/ESVersion";
 import { PuppeteerAgent } from "./PuppeteerAgent";
 import { SeleniumAgent } from "./SeleniumAgent";
 import { ToolAnalysis } from "./ToolAnalysis";
-import { createExecutionHooksProvider } from "./ExecutionHooks";
 import path from "path";
 import { transformWithAranLinvail } from "../tools/aranLinvail";
 import { transformWithIFTranspiler } from "../tools/ifTranspiler";
@@ -26,20 +31,20 @@ export const getToolAnalysis = (
 ): ToolAnalysis => {
   interface DefaultAnalysisOptions {
     agent: Agent;
-    bodyTransformer?: BodyTransformer;
+    transformProvider: TransformProvider;
     supportedESVersion: ESVersion;
   }
 
   const getDefaultAnalysis = (
     options: DefaultAnalysisOptions
   ): ToolAnalysis => {
-    const { agent, bodyTransformer, supportedESVersion } = options;
+    const { agent, transformProvider, supportedESVersion } = options;
     const analysisRepeat = preAnalysis ? 1 : defaultAnalysisRepeat;
     const loadingTimeoutMs = preAnalysis ? 5 * 60_000 : defaultLoadingTimeoutMs;
 
     return new DefaultToolAnalysis(agent, {
       toolName,
-      executionHooksProvider: createExecutionHooksProvider(bodyTransformer),
+      executionHooksProvider: createExecutionHooksProvider(transformProvider),
       supportedESVersion,
       analysisRepeat,
       loadingTimeoutMs,
@@ -57,6 +62,7 @@ export const getToolAnalysis = (
             headless,
           },
         }),
+        transformProvider: identityTransformProvider(),
         supportedESVersion: ESVersion.ES2022,
       });
 
@@ -65,7 +71,7 @@ export const getToolAnalysis = (
         agent: new PuppeteerAgent({
           pptrLaunchOptions: defaultPptrLaunchOptions,
         }),
-        bodyTransformer: transformWithJEST(),
+        transformProvider: consolidationTransformProvider(transformWithJEST()),
         supportedESVersion: ESVersion.ES5,
       });
 
@@ -74,7 +80,9 @@ export const getToolAnalysis = (
         agent: new PuppeteerAgent({
           pptrLaunchOptions: defaultPptrLaunchOptions,
         }),
-        bodyTransformer: transformWithIFTranspiler(),
+        transformProvider: defaultTransformProvider(
+          transformWithIFTranspiler()
+        ),
         supportedESVersion: ESVersion.ES5,
       });
 
@@ -83,7 +91,9 @@ export const getToolAnalysis = (
         agent: new PuppeteerAgent({
           pptrLaunchOptions: defaultPptrLaunchOptions,
         }),
-        bodyTransformer: transformWithAranLinvail("gifc"),
+        transformProvider: defaultTransformProvider(
+          transformWithAranLinvail("gifc")
+        ),
         supportedESVersion: ESVersion.ES2018,
       });
 
@@ -92,7 +102,7 @@ export const getToolAnalysis = (
         agent: new PuppeteerAgent({
           pptrLaunchOptions: defaultPptrLaunchOptions,
         }),
-        bodyTransformer: transformWithJalangi(),
+        transformProvider: defaultTransformProvider(transformWithJalangi()),
         supportedESVersion: ESVersion.ES5,
       });
 
@@ -101,7 +111,9 @@ export const getToolAnalysis = (
         agent: new PuppeteerAgent({
           pptrLaunchOptions: defaultPptrLaunchOptions,
         }),
-        bodyTransformer: transformWithAranLinvail("identity"),
+        transformProvider: defaultTransformProvider(
+          transformWithAranLinvail("identity")
+        ),
         supportedESVersion: ESVersion.ES2018,
       });
 

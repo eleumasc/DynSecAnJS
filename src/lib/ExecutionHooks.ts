@@ -8,6 +8,7 @@ import Deferred from "../core/Deferred";
 import { ProxiedMonitorHooks } from "./ProxiedMonitorHooks";
 import { BodyTransformer } from "./BodyTransformer";
 import { BodyTransformerError } from "./BodyTransformer";
+import { consolidate } from "../tools/consolidate";
 
 export type ExecutionHooksResult = Pick<
   ExecutionDetail,
@@ -41,16 +42,9 @@ export interface ExecutionHooks {
 export type ExecutionHooksProvider = (compatMode: boolean) => ExecutionHooks;
 
 export const createExecutionHooksProvider =
-  (directTransform?: BodyTransformer): ExecutionHooksProvider =>
+  (transformProvider: TransformProvider): ExecutionHooksProvider =>
   (compatMode) => {
-    const directTransformWithName =
-      directTransform && bodyTransformerWithName("Tool", directTransform);
-    const transform = compatMode
-      ? composeBodyTransformers(
-          bodyTransformerWithName("Babel", transpileWithBabel()),
-          directTransformWithName
-        )
-      : directTransformWithName;
+    const transform = transformProvider(compatMode);
 
     const deferredCompleteAnalysis = new Deferred<ExecutionDetailCompleter>();
 
@@ -123,4 +117,45 @@ export const createExecutionHooksProvider =
       hooks,
       willCompleteAnalysis: () => deferredCompleteAnalysis.promise,
     };
+  };
+
+export type TransformProvider = (
+  compatMode: boolean
+) => BodyTransformer | undefined;
+
+export const identityTransformProvider = (): TransformProvider => {
+  return () => undefined;
+};
+
+export const defaultTransformProvider =
+  (directTransform?: BodyTransformer): TransformProvider =>
+  (compatMode) => {
+    const directTransformWithName =
+      directTransform && bodyTransformerWithName("Tool", directTransform);
+    return compatMode
+      ? composeBodyTransformers(
+          bodyTransformerWithName("Babel", transpileWithBabel()),
+          directTransformWithName
+        )
+      : directTransformWithName;
+  };
+
+export const consolidationTransformProvider =
+  (directTransform?: BodyTransformer): TransformProvider =>
+  (compatMode) => {
+    const consolidation = bodyTransformerWithName(
+      "Consolidation",
+      consolidate()
+    );
+    const directTransformWithName =
+      directTransform && bodyTransformerWithName("Tool", directTransform);
+    return compatMode
+      ? composeBodyTransformers(
+          consolidation,
+          composeBodyTransformers(
+            bodyTransformerWithName("Babel", transpileWithBabel()),
+            directTransformWithName
+          )
+        )
+      : composeBodyTransformers(consolidation, directTransformWithName);
   };
