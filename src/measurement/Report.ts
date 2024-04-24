@@ -25,11 +25,6 @@ export interface Report {
   toolSomeSuccessSomeFailure: number;
   compatibilityIssues: CountMatchedKeysResult;
   transparencyAnalyzable: number;
-  // PredominantTraceExistanceInfo
-  noneTraceExists: number;
-  originalTraceExists: number;
-  toolTraceExists: number;
-  bothTraceExists: number;
   // TransparencyInfo
   nonTransparent: number;
   transparent: number;
@@ -89,29 +84,8 @@ export const getReport = (siteInfoList: SiteInfo[]): Report => {
     (info) => info.transparencyAnalyzable
   );
 
-  const predominantTraceExistanceInfos = takeInfo(
-    compatibilityInfos,
-    (info) => info.predominantTraceExistance
-  );
-  const noneTraceExists = count(
-    predominantTraceExistanceInfos,
-    (info) => !info.originalTraceExists && !info.toolTraceExists
-  );
-  const originalTraceExists = count(
-    predominantTraceExistanceInfos,
-    (info) => info.originalTraceExists && !info.toolTraceExists
-  );
-  const toolTraceExists = count(
-    predominantTraceExistanceInfos,
-    (info) => !info.originalTraceExists && info.toolTraceExists
-  );
-  const bothTraceExists = count(
-    predominantTraceExistanceInfos,
-    (info) => info.originalTraceExists && info.toolTraceExists
-  );
-
   const transparencyInfos = takeInfo(
-    predominantTraceExistanceInfos,
+    compatibilityInfos,
     (info) => info.transparency
   );
   const nonTransparent = count(transparencyInfos, (info) => !info.transparent);
@@ -137,11 +111,6 @@ export const getReport = (siteInfoList: SiteInfo[]): Report => {
     toolSomeSuccessSomeFailure,
     compatibilityIssues,
     transparencyAnalyzable,
-    // PredominantTraceExistanceInfo
-    noneTraceExists,
-    originalTraceExists,
-    toolTraceExists,
-    bothTraceExists,
     // TransparencyInfo
     nonTransparent,
     transparent,

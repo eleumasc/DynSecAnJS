@@ -30,8 +30,7 @@ export const getPerformanceReport = (
         if (!compatibility.syntacticallyCompatible) {
           return null;
         }
-        const performance =
-          compatibility?.predominantTraceExistance?.transparency?.performance;
+        const performance = compatibility?.transparency?.performance;
         if (!performance) {
           return null;
         }

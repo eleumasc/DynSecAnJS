@@ -31,15 +31,9 @@ export interface CompatibilityInfo {
   transpilationKO: boolean; // true if there is some babel error when transpilation is required
   originalSomeSuccessSomeFailure: boolean;
   toolSomeSuccessSomeFailure: boolean;
-  transparencyAnalyzable: boolean; // no execution failure in both original and tool, for all executions
+  transparencyAnalyzable: boolean;
   issues: Set<string>; // for motivating/giving further insights about non-compatibility
-  predominantTraceExistance: PredominantTraceExistanceInfo | null; // non-null if transparencyAnalyzable is true
-}
-
-export interface PredominantTraceExistanceInfo {
-  originalTraceExists: boolean;
-  toolTraceExists: boolean;
-  transparency: TransparencyInfo | null; // non-null if both originalPredominantTraceExists and toolPredominantTraceExists are true
+  transparency: TransparencyInfo | null; // non-null if transparencyAnalyzable is true
 }
 
 export interface TransparencyInfo {
@@ -114,10 +108,6 @@ export const getCompatibilityInfo = (
     execution: Fallible<ExecutionDetail>
   ): boolean => !isCompletelyLoaded(execution);
   const { originalExecutions: fallibleOriginalExecutions } = originalResult;
-  const transparencyAnalyzable =
-    eventuallyCompatible === true &&
-    fallibleOriginalExecutions.every(isCompletelyLoaded) &&
-    fallibleToolExecutions.every(isCompletelyLoaded);
 
   const transpilationRequired = !syntacticallyCompatible && analyzable;
   const babelErrorFound = (execution: ExecutionDetail): boolean =>
@@ -125,7 +115,7 @@ export const getCompatibilityInfo = (
       (transformError) => transformError.transformName === "Babel"
     );
 
-  return {
+  const baseResult = {
     syntacticallyCompatible,
     analyzable,
     eventuallyCompatible,
@@ -141,52 +131,56 @@ export const getCompatibilityInfo = (
       eventuallyCompatible === true &&
       fallibleToolExecutions.some(isCompletelyLoaded) &&
       fallibleToolExecutions.some(isNotCompletelyLoaded),
-    transparencyAnalyzable,
     issues: findCompatibilityIssues(
       toolFirstExecution?.transformErrors ?? null,
       toolName
     ),
-    predominantTraceExistance: transparencyAnalyzable
-      ? getPredominantTraceExistanceInfo(
-          fallibleOriginalExecutions.map(({ val }) => val),
-          fallibleToolExecutions.map(({ val }) => val)
-        )
-      : null,
   };
-};
 
-export const getPredominantTraceExistanceInfo = (
-  originalExecutions: ExecutionDetail[],
-  toolExecutions: ExecutionDetail[]
-): PredominantTraceExistanceInfo => {
-  const EXPECTED_EXECUTIONS_COUNT = 5;
-  const MAJORITY_VOTING_THRESHOLD = 3;
+  if (
+    eventuallyCompatible === true &&
+    fallibleOriginalExecutions.every(isCompletelyLoaded) &&
+    fallibleToolExecutions.every(isCompletelyLoaded)
+  ) {
+    const originalExecutions = fallibleOriginalExecutions.map(({ val }) => val);
+    const toolExecutions = fallibleToolExecutions.map(({ val }) => val);
 
-  assert(originalExecutions.length === EXPECTED_EXECUTIONS_COUNT);
-  assert(toolExecutions.length === EXPECTED_EXECUTIONS_COUNT);
+    const EXPECTED_EXECUTIONS_COUNT = 5;
+    const MAJORITY_VOTING_THRESHOLD = 3;
 
-  const originalTrace = findPredominantExecutionTrace(
-    originalExecutions.map((execution) => createExecutionTrace(execution)),
-    MAJORITY_VOTING_THRESHOLD
-  );
-  const toolTrace = findPredominantExecutionTrace(
-    toolExecutions.map((execution) => createExecutionTrace(execution)),
-    MAJORITY_VOTING_THRESHOLD
-  );
-  const originalTraceExists = originalTrace !== null;
-  const toolTraceExists = toolTrace !== null;
-  const bothTracesExist = originalTraceExists && toolTraceExists;
-  return {
-    originalTraceExists,
-    toolTraceExists,
-    transparency: bothTracesExist
-      ? getTransparencyInfo(
+    assert(originalExecutions.length === EXPECTED_EXECUTIONS_COUNT);
+    assert(toolExecutions.length === EXPECTED_EXECUTIONS_COUNT);
+
+    const originalTrace = findPredominantExecutionTrace(
+      originalExecutions.map((execution) => createExecutionTrace(execution)),
+      MAJORITY_VOTING_THRESHOLD
+    );
+    const toolTrace = findPredominantExecutionTrace(
+      toolExecutions.map((execution) => createExecutionTrace(execution)),
+      MAJORITY_VOTING_THRESHOLD
+    );
+    const originalTraceExists = originalTrace !== null;
+    const toolTraceExists = toolTrace !== null;
+    const bothTracesExist = originalTraceExists && toolTraceExists;
+
+    if (bothTracesExist) {
+      return {
+        ...baseResult,
+        transparencyAnalyzable: true,
+        transparency: getTransparencyInfo(
           originalTrace,
           toolTrace,
           originalExecutions,
           toolExecutions
-        )
-      : null,
+        ),
+      };
+    }
+  }
+
+  return {
+    ...baseResult,
+    transparencyAnalyzable: false,
+    transparency: null,
   };
 };
 
