@@ -1,3 +1,6 @@
+import pidusage, { Status } from "pidusage";
+
+import { promisify } from "util";
 import { spawn } from "child_process";
 import { useChildProcess } from "../core/process";
 
@@ -39,6 +42,7 @@ export const spawnStdio = (
       });
 
       let errorState = false;
+      let intervalId: NodeJS.Timeout | null = null;
       await Promise.all([
         new Promise<void>((resolve) => {
           childProcess.stdout!.on("close", () => resolve());
@@ -46,14 +50,30 @@ export const spawnStdio = (
         new Promise<void>((resolve) => {
           childProcess.stderr!.on("close", () => resolve());
         }),
-        new Promise<void>((resolve, reject) => {
-          childProcess.on("exit", (code) => {
-            errorState = code !== 0;
-            resolve();
-          });
-          childProcess.on("error", (err) => {
-            reject(err);
-          });
+        Promise.race([
+          new Promise<void>((resolve, reject) => {
+            childProcess.on("exit", (code) => {
+              errorState = code !== 0;
+              resolve();
+            });
+            childProcess.on("error", (err) => {
+              reject(err);
+            });
+          }),
+          new Promise((_, reject) => {
+            intervalId = setInterval(async () => {
+              const { memory } = await promisify<Status>((callback) =>
+                pidusage(childProcess.pid!, callback)
+              )();
+              if (memory > 4 * 1024 * 1024 * 1024) {
+                reject(new Error("Memory exceeded"));
+              }
+            }, 500);
+          }),
+        ]).finally(() => {
+          if (intervalId !== null) {
+            clearInterval(intervalId);
+          }
         }),
       ]);
 

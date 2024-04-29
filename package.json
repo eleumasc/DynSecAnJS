@@ -14,6 +14,7 @@
     "@types/babel__core": "^7.20.5",
     "@types/browserify": "^12.0.40",
     "@types/node": "^20.10.8",
+    "@types/pidusage": "^2.0.5",
     "@types/selenium-webdriver": "^4.1.22",
     "@types/yargs": "^17.0.32",
     "rimraf": "^5.0.5",
@@ -30,6 +31,7 @@
     "mockttp": "^3.10.1",
     "node-fetch": "npm:@esm2cjs/node-fetch@^3.3.1",
     "parse5": "^7.1.2",
+    "pidusage": "^3.0.2",
     "puppeteer": "^21.7.0",
     "selenium-webdriver": "^4.19.0",
     "yargs": "^17.7.2"
