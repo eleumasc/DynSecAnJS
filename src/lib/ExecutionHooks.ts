@@ -48,8 +48,6 @@ export const createExecutionHooksProvider =
 
     const deferredCompleteAnalysis = new Deferred<ExecutionDetailCompleter>();
 
-    const targetSites = new Set<string>();
-    const includedScriptUrls = new Set<string>();
     const transformErrors: TransformErrorDetail[] = [];
 
     const hooks = <ProxiedMonitorHooks>{
@@ -72,8 +70,8 @@ export const createExecutionHooksProvider =
           cookieKeys,
           localStorageKeys,
           sessionStorageKeys,
-          targetSites: [...targetSites],
-          includedScriptUrls: [...includedScriptUrls],
+          targetSites: [],
+          includedScriptUrls: [],
           loadingCompleted,
           transformErrors: [...transformErrors],
           ...delta,
@@ -85,14 +83,10 @@ export const createExecutionHooksProvider =
         if (hostname.endsWith(".services.mozilla.com")) {
           return;
         }
-        targetSites.add(hostname);
       },
 
       responseTransformer: async (res) => {
-        const { contentType, body, req } = res;
-        if (contentType === "javascript") {
-          includedScriptUrls.add(req.url.href);
-        }
+        const { body, req } = res;
         if (transform) {
           try {
             return await transform(body, res);
