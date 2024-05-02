@@ -37,7 +37,7 @@ export const useChildProcess = async <T>(
       await terminate(childProcess);
     }
     try {
-      await timeBomb(deferredTerminate.promise, 15_000);
+      await timeBomb(deferredTerminate.promise, 5_000);
     } catch {
       childProcess.kill("SIGKILL");
     }

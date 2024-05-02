@@ -4,6 +4,8 @@ import { promisify } from "util";
 import { spawn } from "child_process";
 import { useChildProcess } from "../core/process";
 
+const MEM_LIMIT = 1024 * 1024 * 1024; // 1GB
+
 export const spawnStdio = (
   command: string,
   args: readonly string[] | undefined,
@@ -62,11 +64,15 @@ export const spawnStdio = (
           }),
           new Promise((_, reject) => {
             intervalId = setInterval(async () => {
-              const { memory } = await promisify<Status>((callback) =>
-                pidusage(childProcess.pid!, callback)
-              )();
-              if (memory > 4 * 1024 * 1024 * 1024) {
-                reject(new Error("Memory exceeded"));
+              try {
+                const { memory } = await promisify<Status>((callback) =>
+                  pidusage(childProcess.pid!, callback)
+                )();
+                if (memory > MEM_LIMIT) {
+                  reject(new Error("Memory exceeded"));
+                }
+              } catch (e) {
+                reject(e);
               }
             }, 500);
           }),
