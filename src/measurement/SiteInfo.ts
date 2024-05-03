@@ -7,7 +7,6 @@ import {
   subtractExecutionTraces,
 } from "./ExecutionTrace";
 import { Fallible, Success, isSuccess } from "../core/Fallible";
-import { avg, stdev } from "../core/math";
 
 import { OriginalAnalysisResult } from "../lib/OriginalAnalysis";
 import { ToolAnalysisResult } from "../lib/ToolAnalysis";

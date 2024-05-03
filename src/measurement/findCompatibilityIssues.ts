@@ -11,7 +11,10 @@ export const findCompatibilityIssues = (
   transformErrors: TransformErrorDetail[] | null,
   toolName: string
 ): Set<string> => {
-  if (transformErrors === null) {
+  if (
+    transformErrors === null ||
+    transformErrors.some((detail) => detail.message.includes("Memory exceeded"))
+  ) {
     return new Set([CompatibilityIssue.CrashError]);
   }
 
