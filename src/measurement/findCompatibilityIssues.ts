@@ -88,7 +88,7 @@ const getCompatibilityIssuePatterns = (
     case "Jalangi":
       return {
         parseErrorPatterns: [/SyntaxError/],
-        analysisErrorPatterns: [],
+        analysisErrorPatterns: [/TypeError/],
       };
     default:
       throw new Error(`Unknown tool: ${toolName}`);

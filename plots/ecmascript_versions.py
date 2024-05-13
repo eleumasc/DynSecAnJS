@@ -1,19 +1,10 @@
 import json
 import matplotlib.pyplot as plt
+from data import compatibility_data
 
 plt.rcParams.update({"font.size": 10})
 
-data = {
-    "ES2015": 745,
-    "ES2020": 740,
-    "ES2022": 550,
-    "ES5": 538,
-    "ES2017": 344,
-    "ES2018": 286,
-    "ES2019": 123,
-    "ES2021": 56,
-    "ES2016": 28,
-}
+data = compatibility_data
 
 keys = list(data.keys())
 values = list(data.values())

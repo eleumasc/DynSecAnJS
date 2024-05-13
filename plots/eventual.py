@@ -1,12 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from misc import custom_colors
-from global_data import global_data
+from data import transparency_data
 
 plt.rcParams.update({"font.size": 11})
 
-data = global_data
-accessible_values = [tool_data["accessible"] for tool_data in global_data.values()]
+data = transparency_data
+accessible_values = [
+    tool_data["accessible"] for tool_data in transparency_data.values()
+]
 
 # Mapping data keys to labels
 labels = {

@@ -1,13 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from misc import custom_colors
-from global_data import global_data
+from data import transparency_data
 
 plt.rcParams.update({"font.size": 11})
 
 data = {
     tool: tool_data.get("compatibilityIssues", {})
-    for tool, tool_data in global_data.items()
+    for tool, tool_data in transparency_data.items()
 }
 issues = [sum(tool_data.values()) for tool_data in data.values()]
 
