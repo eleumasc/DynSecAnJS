@@ -24,6 +24,7 @@
     "@babel/core": "^7.24.0",
     "@babel/preset-env": "^7.24.0",
     "@browserify/envify": "^6.0.0",
+    "@playwright/test": "^1.44.1",
     "acorn": "^8.11.3",
     "acorn-walk": "^8.3.2",
     "browserify": "^17.0.0",
@@ -32,6 +33,7 @@
     "node-fetch": "npm:@esm2cjs/node-fetch@^3.3.1",
     "parse5": "^7.1.2",
     "pidusage": "^3.0.2",
+    "playwright": "^1.44.1",
     "puppeteer": "^21.7.0",
     "selenium-webdriver": "^4.19.0",
     "yargs": "^17.7.2"
