@@ -11,6 +11,7 @@ import { Fallible, Success, isSuccess } from "../core/Fallible";
 import { OriginalAnalysisResult } from "../lib/OriginalAnalysis";
 import { ToolAnalysisResult } from "../lib/ToolAnalysis";
 import assert from "assert";
+import { distinctArray } from "../core/Array";
 import { findCompatibilityIssues } from "./findCompatibilityIssues";
 import { findErrorTypes } from "./findErrorTypes";
 import { isToolAnalysisOk } from "./isToolAnalysisOk";
@@ -24,6 +25,7 @@ export interface SiteInfo {
 // note: at this point, we expect no general failure in tool
 export interface CompatibilityInfo {
   syntacticallyCompatible: boolean;
+  features: string[];
   analyzable: boolean; // no execution failure in tool for at least one (the first) execution
   eventuallyCompatible: boolean | null; // null if compatibility is unknown, i.e., toolAnalysisOk but not loadingCompleted
   transpilationOK: boolean; // true if there is no babel error when transpilation is required
@@ -114,8 +116,17 @@ export const getCompatibilityInfo = (
       (transformError) => transformError.transformName === "Babel"
     );
 
+  const features = originalResult.compatibility.scripts.flatMap((script) =>
+    distinctArray(
+      script.categories.map(
+        (category) => `${category.esVersion}:${category.name}`
+      )
+    )
+  );
+
   const baseResult = {
     syntacticallyCompatible,
+    features,
     analyzable,
     eventuallyCompatible,
     transpilationOK:

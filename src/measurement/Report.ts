@@ -4,6 +4,10 @@ import {
   countMatchedKeys,
   takeInfo,
 } from "./util";
+import {
+  IncompatibilityAnalysisResult,
+  executeIncompatibilityAnalysis,
+} from "./executeIncompatibilityAnalysis";
 
 import { CompatibilityIssue } from "./findCompatibilityIssues";
 import { ErrorType } from "./findErrorTypes";
@@ -24,6 +28,7 @@ export interface Report {
   originalSomeSuccessSomeFailure: number;
   toolSomeSuccessSomeFailure: number;
   compatibilityIssues: CountMatchedKeysResult;
+  incompatibilityAnalysisResult: IncompatibilityAnalysisResult;
   transparencyAnalyzable: number;
   // TransparencyInfo
   nonTransparent: number;
@@ -35,63 +40,69 @@ export const getReport = (siteInfoList: SiteInfo[]): Report => {
   const all = count(siteInfoList);
   const accessible = count(siteInfoList, (info) => info.accessible);
 
-  const compatibilityInfos = takeInfo(
+  const compatibilityInfoArray = takeInfo(
     siteInfoList,
     (info) => info.compatibility
   );
   const syntacticallyCompatible = count(
-    compatibilityInfos,
+    compatibilityInfoArray,
     (info) => info.syntacticallyCompatible
   );
   const compatible = count(
-    compatibilityInfos,
+    compatibilityInfoArray,
     (info) => info.syntacticallyCompatible && info.eventuallyCompatible === true
   );
   const eventuallyCompatible = count(
-    compatibilityInfos,
+    compatibilityInfoArray,
     (info) => info.eventuallyCompatible === true
   );
   const unknownCompatible = count(
-    compatibilityInfos,
+    compatibilityInfoArray,
     (info) => info.syntacticallyCompatible && info.eventuallyCompatible === null
   );
   const unknownEventuallyCompatible = count(
-    compatibilityInfos,
+    compatibilityInfoArray,
     (info) => info.eventuallyCompatible === null
   );
   const transpilationOK = count(
-    compatibilityInfos,
+    compatibilityInfoArray,
     (info) => info.transpilationOK
   );
   const transpilationKO = count(
-    compatibilityInfos,
+    compatibilityInfoArray,
     (info) => info.transpilationKO
   );
   const originalSomeSuccessSomeFailure = count(
-    compatibilityInfos,
+    compatibilityInfoArray,
     (info) => info.originalSomeSuccessSomeFailure
   );
   const toolSomeSuccessSomeFailure = count(
-    compatibilityInfos,
+    compatibilityInfoArray,
     (info) => info.toolSomeSuccessSomeFailure
   );
   const compatibilityIssues = countMatchedKeys(
-    compatibilityInfos.map((info) => info.issues),
+    compatibilityInfoArray.map((info) => info.issues),
     new Set(Object.values(CompatibilityIssue))
   );
+  const incompatibilityAnalysisResult = executeIncompatibilityAnalysis(
+    compatibilityInfoArray
+  );
   const transparencyAnalyzable = count(
-    compatibilityInfos,
+    compatibilityInfoArray,
     (info) => info.transparencyAnalyzable
   );
 
-  const transparencyInfos = takeInfo(
-    compatibilityInfos,
+  const transparencyInfoArray = takeInfo(
+    compatibilityInfoArray,
     (info) => info.transparency
   );
-  const nonTransparent = count(transparencyInfos, (info) => !info.transparent);
-  const transparent = count(transparencyInfos, (info) => info.transparent);
+  const nonTransparent = count(
+    transparencyInfoArray,
+    (info) => !info.transparent
+  );
+  const transparent = count(transparencyInfoArray, (info) => info.transparent);
   const uncaughtErrorTypes = countMatchedKeys(
-    transparencyInfos.map((info) => info.uncaughtErrorTypes),
+    transparencyInfoArray.map((info) => info.uncaughtErrorTypes),
     new Set(Object.values(ErrorType))
   );
 
@@ -110,6 +121,7 @@ export const getReport = (siteInfoList: SiteInfo[]): Report => {
     originalSomeSuccessSomeFailure,
     toolSomeSuccessSomeFailure,
     compatibilityIssues,
+    incompatibilityAnalysisResult,
     transparencyAnalyzable,
     // TransparencyInfo
     nonTransparent,

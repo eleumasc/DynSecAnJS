@@ -10,6 +10,7 @@ import { deserializeOriginalAnalysisResult } from "../lib/OriginalAnalysis";
 import { deserializeToolAnalysisResult } from "../lib/ToolAnalysis";
 import { getPerformanceReport } from "../measurement/PerformanceReport";
 import { getReport } from "../measurement/Report";
+import { inspect } from "util";
 
 export interface TransparencyArgs {
   archivePathRecords: [];
@@ -58,7 +59,10 @@ export const startTransparency = async (args: TransparencyArgs) => {
     toolSiteInfoLists.push(siteInfoList);
 
     const report = getReport(siteInfoList);
-    console.log(toolArchivePath, report);
+    console.log(
+      toolArchivePath,
+      inspect(report, { showHidden: false, depth: null, colors: true })
+    );
   }
 
   // TODO: fix, hard-coded for [Jalangi, Linvail, ProjectFoxhound]
