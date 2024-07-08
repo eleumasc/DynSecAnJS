@@ -5,18 +5,16 @@ import {
 } from "../html/injectScripts";
 
 import { BodyTransformer } from "../lib/BodyTransformer";
-import { aranLinvailPath } from "../core/env";
+import { gifcPath } from "../core/env";
 import { ignoreJSON } from "./ignoreJSON";
 import path from "path";
 import { readFileSync } from "fs";
 import { spawnStdio } from "./spawnStdio";
 import { transformInlineScripts } from "../html/transformInlineScripts";
 
-export const transformWithAranLinvail = (
-  analysisName: string
-): BodyTransformer => {
+export const transformWithGIFC = (): BodyTransformer => {
   const setupCode = readFileSync(
-    path.join(aranLinvailPath, "build", analysisName, "bundle.js")
+    path.join(gifcPath, "build", "setup.js")
   ).toString();
 
   return async (content, { contentType }) => {
@@ -29,27 +27,23 @@ export const transformWithAranLinvail = (
               if (isEventHandler) {
                 return code;
               }
-              return await aranLinvail(analysisName, code, true);
+              return await gifc(code);
             }),
             injectScripts([createJavaScriptDataUrl(setupCode)]),
           ])
         );
       case "javascript":
-        return await aranLinvail(analysisName, content, true);
+        return await gifc(content);
     }
   };
 };
 
-export const aranLinvail = (
-  analysisName: string,
-  code: string,
-  wrap: boolean = false
-): Promise<string> =>
+export const gifc = (code: string): Promise<string> =>
   ignoreJSON(code, async (code) => {
     const result = await spawnStdio(
       "node",
-      [path.join(aranLinvailPath, "build", analysisName, "transform.js")],
+      [path.join(gifcPath, "transform.js")],
       code
     );
-    return wrap ? `(function () {\n${result}\n})();` : result;
+    return `{\n${result}\n}`;
   });

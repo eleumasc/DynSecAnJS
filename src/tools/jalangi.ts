@@ -10,17 +10,18 @@ import { tmpdir } from "os";
 import { useChildProcess } from "../core/process";
 
 export const transformWithJalangi =
-  (): BodyTransformer =>
+  (analysisPath: string): BodyTransformer =>
   async (content, { contentType }) => {
     switch (contentType) {
       case "html":
-        return await jalangi(content, "html");
+        return await jalangi(analysisPath, content, "html");
       case "javascript":
-        return await jalangi(content, "js");
+        return await jalangi(analysisPath, content, "js");
     }
   };
 
 export const jalangi = (
+  analysisPath: string,
   code: string,
   extension: "html" | "js"
 ): Promise<string> =>
@@ -42,6 +43,8 @@ export const jalangi = (
               "commands",
               "esnstrument_cli.js"
             ),
+            "--analysis",
+            path.resolve(analysisPath),
             "--inlineIID",
             "--inlineSource",
             "--noResultsGUI",

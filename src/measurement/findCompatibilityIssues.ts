@@ -80,12 +80,7 @@ const getCompatibilityIssuePatterns = (
         analysisErrorPatterns: [/at Visitor.visit/, /at Controller.enter/],
       };
     case "GIFC":
-    case "Linvail":
-      return {
-        parseErrorPatterns: [/SyntaxError/],
-        analysisErrorPatterns: [/TypeError/],
-      };
-    case "Jalangi":
+    case "JalangiTT":
       return {
         parseErrorPatterns: [/SyntaxError/],
         analysisErrorPatterns: [/TypeError/],

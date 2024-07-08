@@ -10,7 +10,7 @@ import {
   defaultLoadingTimeoutMs,
   defaultPptrLaunchOptions,
 } from "../core/defaults";
-import { headless, projectFoxhoundPath } from "../core/env";
+import { headless, jalangiPath, projectFoxhoundPath } from "../core/env";
 
 import { Agent } from "./Agent";
 import { Browser } from "selenium-webdriver";
@@ -20,7 +20,7 @@ import { PuppeteerAgent } from "./PuppeteerAgent";
 import { SeleniumAgent } from "./SeleniumAgent";
 import { ToolAnalysis } from "./ToolAnalysis";
 import path from "path";
-import { transformWithAranLinvail } from "../tools/aranLinvail";
+import { transformWithGIFC } from "../tools/gifc";
 import { transformWithIFTranspiler } from "../tools/ifTranspiler";
 import { transformWithJEST } from "../tools/jest";
 import { transformWithJalangi } from "../tools/jalangi";
@@ -91,30 +91,21 @@ export const getToolAnalysis = (
         agent: new PuppeteerAgent({
           pptrLaunchOptions: defaultPptrLaunchOptions,
         }),
-        transformProvider: defaultTransformProvider(
-          transformWithAranLinvail("gifc")
-        ),
+        transformProvider: defaultTransformProvider(transformWithGIFC()),
         supportedESVersion: ESVersion.ES2018,
       });
 
-    case "Jalangi":
+    case "JalangiTT":
       return getDefaultAnalysis({
         agent: new PuppeteerAgent({
           pptrLaunchOptions: defaultPptrLaunchOptions,
         }),
-        transformProvider: defaultTransformProvider(transformWithJalangi()),
+        transformProvider: defaultTransformProvider(
+          transformWithJalangi(
+            path.join(jalangiPath, "src", "js", "runtime", "JalangiTT.js")
+          )
+        ),
         supportedESVersion: ESVersion.ES5,
-      });
-
-    case "Linvail":
-      return getDefaultAnalysis({
-        agent: new PuppeteerAgent({
-          pptrLaunchOptions: defaultPptrLaunchOptions,
-        }),
-        transformProvider: defaultTransformProvider(
-          transformWithAranLinvail("identity")
-        ),
-        supportedESVersion: ESVersion.ES2018,
       });
 
     default:

@@ -13,8 +13,7 @@ export const isToolAnalysisOk = (
     case "JEST":
     case "IFTranspiler":
     case "GIFC":
-    case "Jalangi":
-    case "Linvail":
+    case "JalangiTT":
       return execution.transformErrors.length === 0;
     default:
       throw new Error(`Unknown tool: ${toolName}`);
