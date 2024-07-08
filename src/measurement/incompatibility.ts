@@ -71,3 +71,23 @@ export const executeIncompatibilityAnalysis = (
     features,
   };
 };
+
+export const createIncompatibilityCSV = (
+  compatibilityInfoArray: CompatibilityInfo[]
+): string => {
+  const features = distinctArray(
+    compatibilityInfoArray.flatMap((info) => info.features)
+  );
+  const rows = [
+    ["INCOMPATIBLE", ...features],
+    ...compatibilityInfoArray.map((compatibilityInfo) => {
+      return [
+        Number(isIncompatible(compatibilityInfo)),
+        ...features.map((feature) =>
+          Number(isUsingFeature(feature)(compatibilityInfo))
+        ),
+      ];
+    }),
+  ];
+  return rows.map((row) => row.join(",")).join("\n");
+};

@@ -7,7 +7,7 @@ import {
 import {
   IncompatibilityAnalysisResult,
   executeIncompatibilityAnalysis,
-} from "./executeIncompatibilityAnalysis";
+} from "./incompatibility";
 
 import { CompatibilityIssue } from "./findCompatibilityIssues";
 import { ErrorType } from "./findErrorTypes";
@@ -87,6 +87,10 @@ export const getReport = (siteInfoList: SiteInfo[]): Report => {
   const incompatibilityAnalysisResult = executeIncompatibilityAnalysis(
     compatibilityInfoArray
   );
+  // appendFileSync(
+  //   "incompatibility.txt",
+  //   createIncompatibilityCSV(compatibilityInfoArray) + "\n\n"
+  // );
   const transparencyAnalyzable = count(
     compatibilityInfoArray,
     (info) => info.transparencyAnalyzable
