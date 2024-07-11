@@ -4,6 +4,7 @@ export interface MonitorConfig {
   reporter: Reporter;
   loadingTimeoutMs: number;
   timeSeedMs: number;
+  ifaToolName?: string;
 }
 
 export interface MonitorReport {
@@ -15,6 +16,7 @@ export interface MonitorReport {
   localStorageKeys: string[];
   sessionStorageKeys: string[];
   loadingCompleted: boolean;
+  flows: any;
 }
 
 export interface Reporter {

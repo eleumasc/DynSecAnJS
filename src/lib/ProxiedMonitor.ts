@@ -14,7 +14,10 @@ import { ProxiedMonitorHooks } from "./ProxiedMonitorHooks";
 
 interface Options {
   hooks: ProxiedMonitorHooks;
-  monitorConfig: Pick<MonitorConfig, "loadingTimeoutMs" | "timeSeedMs">;
+  monitorConfig: Pick<
+    MonitorConfig,
+    "loadingTimeoutMs" | "timeSeedMs" | "ifaToolName"
+  >;
   wprOptions: Pick<WebPageReplayOptions, "operation" | "archivePath">;
 }
 

@@ -2,6 +2,7 @@ var $ = require("./lib/builtin");
 var ArraySet = require("./lib/ArraySet");
 var report = require("./lib/report");
 var config = require("./lib/config");
+var collectFlows = require("./lib/collectFlows");
 
 function setupAnalysis() {
   var Apply = $.Apply;
@@ -22,6 +23,7 @@ function setupAnalysis() {
       localStorageKeys: [],
       sessionStorageKeys: [],
       loadingCompleted: loadingCompleted,
+      flows: collectFlows(),
     };
   };
 }

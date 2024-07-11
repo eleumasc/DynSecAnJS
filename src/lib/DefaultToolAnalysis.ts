@@ -55,6 +55,7 @@ export class DefaultToolAnalysis implements ToolAnalysis {
           monitorConfig: {
             loadingTimeoutMs,
             timeSeedMs,
+            ifaToolName: toolName,
           },
           wprOptions: {
             operation: "replay",

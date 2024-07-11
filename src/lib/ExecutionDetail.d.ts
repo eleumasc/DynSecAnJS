@@ -9,6 +9,7 @@ export interface ExecutionDetail {
   targetSites: string[];
   includedScriptUrls: string[];
   loadingCompleted: boolean;
+  flows: any;
   executionTimeMs: number;
   transformErrors: TransformErrorDetail[];
   screenshotFile?: string;

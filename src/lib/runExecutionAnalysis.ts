@@ -15,7 +15,10 @@ export interface Options {
   agent: Agent;
   hooksProvider: ExecutionHooksProvider;
   compatMode: boolean;
-  monitorConfig: Pick<MonitorConfig, "loadingTimeoutMs" | "timeSeedMs">;
+  monitorConfig: Pick<
+    MonitorConfig,
+    "loadingTimeoutMs" | "timeSeedMs" | "ifaToolName"
+  >;
   wprOptions: Pick<WebPageReplayOptions, "operation" | "archivePath">;
   toleranceMs: number;
   attachmentList?: AttachmentList;

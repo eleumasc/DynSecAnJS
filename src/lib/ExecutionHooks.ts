@@ -23,6 +23,7 @@ export type ExecutionHooksResult = Pick<
   | "sessionStorageKeys"
   | "targetSites"
   | "includedScriptUrls"
+  | "flows"
 >;
 
 export type ExecutionHooksResultDelta = Omit<
@@ -61,6 +62,7 @@ export const createExecutionHooksProvider =
           localStorageKeys,
           sessionStorageKeys,
           loadingCompleted,
+          flows,
         } = report;
         deferredCompleteAnalysis.resolve((delta) => ({
           pageUrl,
@@ -73,6 +75,7 @@ export const createExecutionHooksProvider =
           targetSites: [],
           includedScriptUrls: [],
           loadingCompleted,
+          flows,
           transformErrors: [...transformErrors],
           ...delta,
         }));
