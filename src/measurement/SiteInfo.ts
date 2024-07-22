@@ -123,19 +123,13 @@ export const getCompatibilityInfo = (
     );
 
   const scriptCompatibilityDetails = analyzable
-    ? originalResult.compatibility.scripts.map(
-        (script): ScriptCompatibilityDetail => {
+    ? originalResult.compatibility.scripts
+        .filter(
+          (script): script is ExternalScriptDetail => script.kind === "external"
+        )
+        .map((script): ScriptCompatibilityDetail => {
           const compatible = !toolFirstExecution.transformErrors.some(
-            (transformError) => {
-              if (script.kind === "external") {
-                return (
-                  transformError.url === (script as ExternalScriptDetail).url
-                );
-              } else if (script.kind === "inline") {
-                return transformError.url === toolFirstExecution.pageUrl;
-              }
-              return false;
-            }
+            (transformError) => transformError.url === script.url
           );
           const features = distinctArray(
             script.categories.map(
@@ -143,8 +137,10 @@ export const getCompatibilityInfo = (
             )
           );
           return { compatible, features };
-        }
-      )
+        })
+        .filter(
+          (scriptCompatibility) => scriptCompatibility.features.length > 0
+        )
     : [];
 
   const baseResult = {
