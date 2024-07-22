@@ -13,6 +13,8 @@ export const isToolAnalysisOk = (
     case "JEST":
     case "IFTranspiler":
     case "GIFC":
+    case "Linvail":
+    case "Jalangi":
     case "JalangiTT":
       return execution.transformErrors.length === 0;
     default:

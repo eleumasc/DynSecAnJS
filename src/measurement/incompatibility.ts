@@ -1,4 +1,5 @@
-import { CompatibilityInfo } from "./SiteInfo";
+import { CompatibilityInfo, ScriptCompatibilityDetail } from "./SiteInfo";
+
 import { distinctArray } from "../core/Array";
 
 export interface IncompatibilityAnalysisResult {
@@ -12,37 +13,43 @@ export interface IncompatibilityAnalysisResult {
   }[];
 }
 
-const isIncompatible = (compatibilityInfo: CompatibilityInfo): boolean =>
-  compatibilityInfo.eventuallyCompatible === false;
+const isIncompatible = (
+  scriptCompatibility: ScriptCompatibilityDetail
+): boolean => !scriptCompatibility.compatible;
 
 const isUsingFeature =
   (feature: string) =>
-  (compatibilityInfo: CompatibilityInfo): boolean =>
-    compatibilityInfo.features.includes(feature);
+  (scriptCompatibility: ScriptCompatibilityDetail): boolean =>
+    scriptCompatibility.features.includes(feature);
 
 export const executeIncompatibilityAnalysis = (
   compatibilityInfoArray: CompatibilityInfo[]
 ): IncompatibilityAnalysisResult => {
+  const scriptCompatibilityDetails = compatibilityInfoArray.flatMap(
+    (compatibility) => compatibility.scriptCompatibilityDetails
+  );
+
   const probIncompatible =
-    compatibilityInfoArray.filter(isIncompatible).length /
-    compatibilityInfoArray.length;
+    scriptCompatibilityDetails.filter(isIncompatible).length /
+    scriptCompatibilityDetails.length;
 
   const analyze = (
     feature: string,
-    usingFeatureFn: (compatibilityInfo: CompatibilityInfo) => boolean
+    usingFeatureFn: (scriptCompatibility: ScriptCompatibilityDetail) => boolean
   ) => {
-    const featureInfoArray = compatibilityInfoArray.filter(
-      (compatibilityInfo) => usingFeatureFn(compatibilityInfo)
+    const featureInfoArray = scriptCompatibilityDetails.filter(
+      (scriptCompatibility) => usingFeatureFn(scriptCompatibility)
     );
-    const probFeature = featureInfoArray.length / compatibilityInfoArray.length;
+    const probFeature =
+      featureInfoArray.length / scriptCompatibilityDetails.length;
     const probGivenFeature =
       featureInfoArray.filter(isIncompatible).length / featureInfoArray.length;
 
-    const notFeatureInfoArray = compatibilityInfoArray.filter(
-      (compatibilityInfo) => !usingFeatureFn(compatibilityInfo)
+    const notFeatureInfoArray = scriptCompatibilityDetails.filter(
+      (scriptCompatibility) => !usingFeatureFn(scriptCompatibility)
     );
     const probNotFeature =
-      notFeatureInfoArray.length / compatibilityInfoArray.length;
+      notFeatureInfoArray.length / scriptCompatibilityDetails.length;
     const probGivenNotFeature =
       notFeatureInfoArray.filter(isIncompatible).length /
       notFeatureInfoArray.length;
@@ -58,11 +65,11 @@ export const executeIncompatibilityAnalysis = (
 
   const features = [
     ...distinctArray(
-      compatibilityInfoArray.flatMap((info) => info.features)
+      scriptCompatibilityDetails.flatMap((info) => info.features)
     ).map((feature) => analyze(feature, isUsingFeature(feature))),
     analyze(
       "ES5",
-      (compatibilityInfo) => compatibilityInfo.features.length === 0
+      (scriptCompatibility) => scriptCompatibility.features.length === 0
     ),
   ];
 
@@ -75,16 +82,20 @@ export const executeIncompatibilityAnalysis = (
 export const createIncompatibilityCSV = (
   compatibilityInfoArray: CompatibilityInfo[]
 ): string => {
+  const scriptCompatibilityDetails = compatibilityInfoArray.flatMap(
+    (compatibility) => compatibility.scriptCompatibilityDetails
+  );
+
   const features = distinctArray(
-    compatibilityInfoArray.flatMap((info) => info.features)
+    scriptCompatibilityDetails.flatMap((info) => info.features)
   );
   const rows = [
     ["INCOMPATIBLE", ...features],
-    ...compatibilityInfoArray.map((compatibilityInfo) => {
+    ...scriptCompatibilityDetails.map((scriptCompatibility) => {
       return [
-        Number(isIncompatible(compatibilityInfo)),
+        Number(isIncompatible(scriptCompatibility)),
         ...features.map((feature) =>
-          Number(isUsingFeature(feature)(compatibilityInfo))
+          Number(isUsingFeature(feature)(scriptCompatibility))
         ),
       ];
     }),

@@ -1,4 +1,3 @@
-import { ExecutionDetail, TransformErrorDetail } from "../lib/ExecutionDetail";
 import {
   ExecutionTrace,
   brokenExecutionTraces,
@@ -8,6 +7,8 @@ import {
 } from "./ExecutionTrace";
 import { Fallible, Success, isSuccess } from "../core/Fallible";
 
+import { ExecutionDetail } from "../lib/ExecutionDetail";
+import { ExternalScriptDetail } from "../compatibility/CompatibilityDetail";
 import { OriginalAnalysisResult } from "../lib/OriginalAnalysis";
 import { ToolAnalysisResult } from "../lib/ToolAnalysis";
 import assert from "assert";
@@ -25,7 +26,7 @@ export interface SiteInfo {
 // note: at this point, we expect no general failure in tool
 export interface CompatibilityInfo {
   syntacticallyCompatible: boolean;
-  features: string[];
+  scriptCompatibilityDetails: ScriptCompatibilityDetail[];
   analyzable: boolean; // no execution failure in tool for at least one (the first) execution
   eventuallyCompatible: boolean | null; // null if compatibility is unknown, i.e., toolAnalysisOk but not loadingCompleted
   transpilationOK: boolean; // true if there is no babel error when transpilation is required
@@ -35,6 +36,11 @@ export interface CompatibilityInfo {
   transparencyAnalyzable: boolean;
   issues: Set<string>; // for motivating/giving further insights about non-compatibility
   transparency: TransparencyInfo | null; // non-null if transparencyAnalyzable is true
+}
+
+export interface ScriptCompatibilityDetail {
+  compatible: boolean;
+  features: string[];
 }
 
 export interface TransparencyInfo {
@@ -116,17 +122,34 @@ export const getCompatibilityInfo = (
       (transformError) => transformError.transformName === "Babel"
     );
 
-  const features = originalResult.compatibility.scripts.flatMap((script) =>
-    distinctArray(
-      script.categories.map(
-        (category) => `${category.esVersion}:${category.name}`
+  const scriptCompatibilityDetails = analyzable
+    ? originalResult.compatibility.scripts.map(
+        (script): ScriptCompatibilityDetail => {
+          const compatible = !toolFirstExecution.transformErrors.some(
+            (transformError) => {
+              if (script.kind === "external") {
+                return (
+                  transformError.url === (script as ExternalScriptDetail).url
+                );
+              } else if (script.kind === "inline") {
+                return transformError.url === toolFirstExecution.pageUrl;
+              }
+              return false;
+            }
+          );
+          const features = distinctArray(
+            script.categories.map(
+              (category) => `${category.esVersion}:${category.name}`
+            )
+          );
+          return { compatible, features };
+        }
       )
-    )
-  );
+    : [];
 
   const baseResult = {
     syntacticallyCompatible,
-    features,
+    scriptCompatibilityDetails,
     analyzable,
     eventuallyCompatible,
     transpilationOK:
