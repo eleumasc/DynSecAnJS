@@ -2,17 +2,23 @@ import WPRArchive from "./wpr/WPRArchive";
 import fs from "fs";
 import path from "path";
 
+let counter = 0;
+
 const checkArchive = (file: string): void => {
   const archive = WPRArchive.fromFile(file);
 
-  for (const request of archive.requests) {
+  const requests = archive.requests.filter((request) => {
     const contentType = request.headers.get("content-type");
-    if (
+    return (
       contentType &&
       (contentType.includes("html") || contentType.includes("javascript"))
-    ) {
-      request.response.body;
-    }
+    );
+  });
+
+  console.log((counter += requests.length));
+
+  for (const request of requests) {
+    request.response.body;
   }
 };
 
