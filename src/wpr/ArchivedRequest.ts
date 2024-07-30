@@ -1,7 +1,6 @@
 import { HeaderMap, HttpRequestModel } from "../httpparser/HttpMessageModel";
 
 import ArchivedResponse from "./ArchivedResponse";
-import assert from "assert";
 import { parseHttpRequest } from "../httpparser/parseHttp";
 
 export default interface ArchivedRequest {

@@ -1,10 +1,9 @@
 import { HeaderMap, HttpResponseModel } from "../httpparser/HttpMessageModel";
 
-import _ from "lodash";
-import assert from "assert";
 import { buildHttpResponse } from "../httpparser/buildHttp";
 import { decodeResponseBody } from "../httpparser/decodeResponseBody";
 import { encodeResponseBody } from "../httpparser/encodeResponseBody";
+import { getSingleHeader } from "../httpparser/getSingleHeader";
 import { parseHttpResponse } from "../httpparser/parseHttp";
 
 export default interface ArchivedResponse {
@@ -49,12 +48,7 @@ export class OriginalArchivedResponse implements ArchivedResponse {
       return (this._body = Buffer.alloc(0));
     }
 
-    // TODO: manage Content-Encoding and Transfer-Encoding
-    const body = decodeResponseBody(
-      this.m.body,
-      getHeader(this.m.headers, "content-encoding"),
-      getHeader(this.m.headers, "transfer-encoding")
-    );
+    const body = decodeResponseBody(this.m);
 
     return (this._body = body);
   }
@@ -115,11 +109,10 @@ export class ModifiedArchivedResponse implements ArchivedResponse {
   serialize(): string {
     const { protocolVersion, statusCode, statusMessage } = this.m;
 
-    // TODO: manage Content-Encoding and Transfer-Encoding
     const body = encodeResponseBody(
       this._body,
-      getHeader(this.m.headers, "content-encoding"),
-      getHeader(this.m.headers, "transfer-encoding")
+      getSingleHeader(this.m.headers, "content-encoding"),
+      getSingleHeader(this.m.headers, "transfer-encoding")
     );
 
     const model: HttpResponseModel = {
@@ -135,12 +128,3 @@ export class ModifiedArchivedResponse implements ArchivedResponse {
     return buildHttpResponse(model).toString("base64");
   }
 }
-
-const getHeader = (headers: HeaderMap, key: string): string | undefined => {
-  const values = headers.get(key);
-  if (!values) {
-    return undefined;
-  }
-  assert(values.length === 1);
-  return values[0];
-};
