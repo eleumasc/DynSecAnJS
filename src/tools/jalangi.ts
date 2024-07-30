@@ -54,10 +54,6 @@ export const jalangi = (
             modifiedPath,
             originalPath,
           ]),
-
-          terminate: async (childProcess) => {
-            childProcess.kill("SIGINT");
-          },
         },
 
         async (childProcess) => {

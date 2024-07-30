@@ -14,10 +14,6 @@ export const spawnStdio = (
   useChildProcess(
     {
       childProcess: spawn(command, args),
-
-      terminate: async (childProcess) => {
-        childProcess.kill("SIGINT");
-      },
     },
 
     async (childProcess) => {

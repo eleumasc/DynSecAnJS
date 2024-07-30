@@ -51,17 +51,12 @@ export const useWebPageReplay = async <T>(
           cwd: wprgoPath,
         }
       ),
-
-      terminate: async (childProcess) => {
-        childProcess.kill("SIGINT");
-      },
     },
 
     async (childProcess) => {
       await waitUntilUsed(httpPort, 500, 30_000);
-
       if (debugMode) {
-        childProcess.stderr?.pipe(process.stdout);
+        childProcess.stderr!.pipe(process.stdout);
       }
 
       return await cb(

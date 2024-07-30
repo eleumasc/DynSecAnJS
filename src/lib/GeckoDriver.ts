@@ -24,10 +24,6 @@ export const useGeckoDriver = async <T>(
         "--port",
         driverPort.toString(),
       ]),
-
-      terminate: async (childProcess) => {
-        childProcess.kill("SIGINT");
-      },
     },
 
     async (childProcess) => {

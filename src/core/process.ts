@@ -14,14 +14,13 @@ export const waitForTerminationSignal = () => deferredTerminate.promise;
 
 export interface UseChildProcessOptions {
   childProcess: ChildProcess;
-  terminate: (childProcess: ChildProcess) => Promise<void>;
 }
 
 export const useChildProcess = async <T>(
   options: UseChildProcessOptions,
   cb: (childProcess: ChildProcess) => Promise<T>
 ): Promise<T> => {
-  const { childProcess, terminate } = options;
+  const { childProcess } = options;
 
   let exited = false;
   const deferredTerminate = new Deferred<void>();
@@ -34,7 +33,7 @@ export const useChildProcess = async <T>(
     return await cb(childProcess);
   } finally {
     if (!exited) {
-      await terminate(childProcess);
+      childProcess.kill("SIGINT");
     }
     try {
       await timeBomb(deferredTerminate.promise, 5_000);
