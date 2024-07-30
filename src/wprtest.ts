@@ -16,6 +16,14 @@ const checkArchive = (file: string): void => {
   }
 };
 
+const triage = (e: unknown, filePath: string) => {
+  const stats = fs.statSync(filePath);
+  if (stats.size === 0) {
+    return new Error("File is empty");
+  }
+  return e;
+};
+
 async function main() {
   const directoryPath = path.resolve(process.argv[2]);
 
@@ -26,7 +34,12 @@ async function main() {
     .filter((file) => path.extname(file).toLowerCase() === targetExtension)) {
     console.log(file);
     const filePath = path.join(directoryPath, file);
-    checkArchive(filePath);
+
+    try {
+      checkArchive(filePath);
+    } catch (e) {
+      console.log(triage(e, filePath));
+    }
   }
 }
 
