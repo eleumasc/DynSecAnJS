@@ -97,7 +97,6 @@ const getHeaderParts = (s: string): [string, string] => {
 
   const key = s.substring(0, e0).trim();
   const value = s.substring(e0 + 1).trim();
-  assert(value.length > 0);
 
   return [key, value];
 };
