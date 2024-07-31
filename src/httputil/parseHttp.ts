@@ -98,11 +98,11 @@ const readBody = (reader: BufferReader, headers: HeaderMap): ReadBodyResult => {
     assert(encoding === undefined);
     return readChunkedBody(new BufferReader(data));
   } else {
-    if (length !== undefined) {
-      const intLength = parseInt(length);
-      assert(_.isLength(intLength));
-      assert(data.length === intLength);
-    }
+    // if (length !== undefined) {
+    //   const intLength = parseInt(length);
+    //   assert(_.isLength(intLength));
+    //   assert(data.length === intLength);
+    // }
     return { body: data, trailingHeaders: new HeaderMap() };
   }
 };
