@@ -9,6 +9,8 @@ export const parseHttpRequest = (input: Buffer): HttpRequest => {
   const { headLine0, headLine1, headLine2, headers, body, trailingHeaders } =
     parseHttpMessage(input);
 
+  assert(headLine2.length > 0);
+
   return {
     method: headLine0.toUpperCase(),
     target: headLine1,
@@ -58,9 +60,9 @@ const parseHttpMessage = (input: Buffer): HttpMessage => {
 const readHeadLine = (reader: BufferReader): [string, string, string] => {
   const line = reader.readLine();
 
-  const matches = line.trim().match(/^([^\s]+)\s+([^\s]+)\s+(.*)$/);
+  const matches = line.trim().match(/^([^\s]+)\s+([^\s]+)\s*(.*)?$/);
   assert(matches !== null);
-  return [matches[1], matches[2], matches[3]];
+  return [matches[1], matches[2], matches[3] ?? ""];
 };
 
 const readHeaders = (reader: BufferReader): HeaderMap => {
@@ -89,7 +91,6 @@ const readBody = (reader: BufferReader, headers: HeaderMap): ReadBodyResult => {
   const data = reader.readUntilEnd();
 
   const length = headers.get("content-length");
-  const encoding = headers.get("content-encoding");
   const transferEncoding = headers.get("transfer-encoding");
 
   if (transferEncoding !== undefined) {
