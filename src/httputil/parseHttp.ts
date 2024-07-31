@@ -95,7 +95,6 @@ const readBody = (reader: BufferReader, headers: HeaderMap): ReadBodyResult => {
   if (transferEncoding !== undefined) {
     assert(transferEncoding === "chunked");
     assert(length === undefined);
-    assert(encoding === undefined);
     return readChunkedBody(new BufferReader(data));
   } else {
     // if (length !== undefined) {
