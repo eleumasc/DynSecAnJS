@@ -20,21 +20,21 @@ export default class BufferReader {
 
     const end = offset + n;
     assert(end < buffer.length);
-    const res = buffer.subarray(offset, end);
+    const result = buffer.subarray(offset, end);
 
     this.offset = end;
 
-    return res;
+    return result;
   }
 
   readUntilEnd = (): Buffer => {
     const { buffer, offset } = this;
 
-    const res = buffer.subarray(offset);
+    const result = buffer.subarray(offset);
 
     this.offset = buffer.length;
 
-    return res;
+    return result;
   };
 
   readLine = (): string => {
@@ -42,10 +42,10 @@ export default class BufferReader {
 
     const end = buffer.indexOf(CRLF, offset);
     assert(end !== -1);
-    const res = buffer.subarray(offset, end).toString();
+    const result = buffer.subarray(offset, end).toString();
 
     this.offset = end + 2;
 
-    return res;
+    return result;
   };
 }
