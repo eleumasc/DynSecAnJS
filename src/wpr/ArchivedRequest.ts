@@ -1,6 +1,6 @@
-import { HeaderMap, HttpRequestModel } from "../httpparser/HttpMessageModel";
-
 import ArchivedResponse from "./ArchivedResponse";
+import HeaderMap from "../httpparser/HeaderMap";
+import { HttpRequest } from "../httpparser/HttpMessage";
 import { parseHttpRequest } from "../httpparser/parseHttp";
 
 export default interface ArchivedRequest {
@@ -18,7 +18,7 @@ export default interface ArchivedRequest {
 }
 
 export class BasicArchivedRequest implements ArchivedRequest {
-  protected _m: HttpRequestModel | null = null;
+  protected _m: HttpRequest | null = null;
 
   constructor(
     protected readonly _serialized: string,
@@ -56,7 +56,7 @@ export class BasicArchivedRequest implements ArchivedRequest {
     return this._serialized;
   }
 
-  protected get m(): HttpRequestModel {
+  protected get m(): HttpRequest {
     if (this._m) {
       return this._m;
     }

@@ -1,120 +1,134 @@
-import { CHR_COLON, CHR_SPACE, CRLF, DBLCRLF } from "./consts";
-import {
-  HeaderMap,
-  HttpMessageModel,
-  HttpRequestModel,
-  HttpResponseModel,
-} from "./HttpMessageModel";
+import { HttpMessage, HttpRequest, HttpResponse } from "./HttpMessage";
 
+import BufferReader from "./BufferReader";
+import HeaderMap from "./HeaderMap";
 import _ from "lodash";
 import assert from "assert";
 
-export const parseHttpRequest = (input: Buffer): HttpRequestModel => {
-  const { headLinePart0, headLinePart1, headLinePart2, headers, body } =
+export const parseHttpRequest = (input: Buffer): HttpRequest => {
+  const { headLine0, headLine1, headLine2, headers, body, trailingHeaders } =
     parseHttpMessage(input);
 
   return {
-    method: headLinePart0.toUpperCase(),
-    target: headLinePart1,
-    protocolVersion: headLinePart2.toUpperCase(),
+    method: headLine0.toUpperCase(),
+    target: headLine1,
+    protocolVersion: headLine2.toUpperCase(),
     headers,
     body,
+    trailingHeaders,
   };
 };
 
-export const parseHttpResponse = (input: Buffer): HttpResponseModel => {
-  const { headLinePart0, headLinePart1, headLinePart2, headers, body } =
+export const parseHttpResponse = (input: Buffer): HttpResponse => {
+  const { headLine0, headLine1, headLine2, headers, body, trailingHeaders } =
     parseHttpMessage(input);
 
-  const statusCode = _.toInteger(headLinePart1);
+  const statusCode = _.toInteger(headLine1);
   assert(!_.isNaN(statusCode) && statusCode >= 100 && statusCode <= 599);
 
   return {
-    protocolVersion: headLinePart0.toUpperCase(),
+    protocolVersion: headLine0.toUpperCase(),
     statusCode,
-    statusMessage: headLinePart2,
+    statusMessage: headLine2,
     headers,
     body,
+    trailingHeaders,
   };
 };
 
-const parseHttpMessage = (input: Buffer): HttpMessageModel => {
-  const [head, body] = bufSplit(input, DBLCRLF, 2);
-  assert(head && body);
+const parseHttpMessage = (input: Buffer): HttpMessage => {
+  const reader = new BufferReader(input);
 
-  const [headLine, ...tailLines] = bufSplit(head, CRLF);
-  assert(headLine);
+  const [headLine0, headLine1, headLine2] = readHeadLine(reader);
 
-  const [headLinePart0, headLinePart1, headLinePart2] = getHeadLineParts(
-    headLine.toString("ascii")
-  );
+  const headers = readHeaders(reader);
 
-  const headers: HeaderMap = tailLines
-    .map((headerLine): [string, string] =>
-      getHeaderParts(headerLine.toString("ascii"))
-    )
-    .reduce((headers, [key, value]) => {
-      const k = key.toLowerCase();
-      const values = headers.get(k) || [];
-      if (values.length === 0) {
-        headers.set(k, values);
-      }
-      values.push(value);
-      return headers;
-    }, new Map());
+  const { body, trailingHeaders } = readBody(reader, headers);
 
   return {
-    headLinePart0,
-    headLinePart1,
-    headLinePart2,
+    headLine0,
+    headLine1,
+    headLine2,
     headers,
     body,
+    trailingHeaders,
   };
 };
 
-const getHeadLineParts = (s: string): [string, string, string] => {
-  const s0 = s.trimStart();
+const readHeadLine = (reader: BufferReader): [string, string, string] => {
+  const line = reader.readLine();
 
-  const e0 = s0.indexOf(CHR_SPACE);
-  assert(e0 !== -1);
-  const part0 = s0.substring(0, e0);
-
-  const s1 = s0.substring(e0).trimStart();
-
-  const e1 = s1.indexOf(CHR_SPACE);
-  assert(e1 !== -1);
-  const part1 = s1.substring(0, e1);
-
-  const part2 = s1.substring(e1).trim();
-  assert(part2.length > 0);
-
-  return [part0, part1, part2];
+  const matches = line.trim().match(/^([^\s]+)\s+([^\s]+)\s+(.*)$/);
+  assert(matches !== null);
+  return [matches[1], matches[2], matches[3]];
 };
 
-const getHeaderParts = (s: string): [string, string] => {
-  const e0 = s.indexOf(CHR_COLON);
-  assert(e0 !== -1);
+const readHeaders = (reader: BufferReader): HeaderMap => {
+  let headerEntries: [string, string][] = [];
 
-  const key = s.substring(0, e0).trim();
-  const value = s.substring(e0 + 1).trim();
+  for (let line; (line = reader.readLine()).length !== 0; ) {
+    const sep = line.indexOf(":");
+    assert(sep !== -1);
 
-  return [key, value];
-};
+    const name = line.substring(0, sep).trim();
+    assert(name.length > 0);
+    const value = line.substring(sep + 1).trim();
 
-const bufSplit = (input: Buffer, separator: Buffer, limit?: number) => {
-  limit = _.defaultTo(limit, Infinity);
-  assert(limit > 0);
-  limit -= 1;
-
-  const result: Buffer[] = [];
-  let i = 0;
-  for (
-    let j;
-    result.length < limit && (j = input.indexOf(separator, i)) !== -1;
-    i = j + separator.length
-  ) {
-    result.push(input.subarray(i, j));
+    headerEntries = [...headerEntries, [name, value]];
   }
-  result.push(input.subarray(i));
-  return result;
+
+  return new HeaderMap(headerEntries);
+};
+
+interface ReadBodyResult {
+  body: Buffer;
+  trailingHeaders: HeaderMap;
+}
+
+const readBody = (reader: BufferReader, headers: HeaderMap): ReadBodyResult => {
+  const data = reader.readUntilEnd();
+
+  const length = headers.get("content-length");
+  const encoding = headers.get("content-encoding");
+  const transferEncoding = headers.get("transfer-encoding");
+
+  if (transferEncoding !== undefined) {
+    assert(transferEncoding === "chunked");
+    assert(length === undefined);
+    assert(encoding === undefined);
+    return readChunkedBody(new BufferReader(data));
+  } else {
+    if (length !== undefined) {
+      const intLength = parseInt(length);
+      assert(_.isLength(intLength));
+      assert(data.length === intLength);
+    }
+    return { body: data, trailingHeaders: new HeaderMap() };
+  }
+};
+
+const readChunkedBody = (reader: BufferReader): ReadBodyResult => {
+  const chunks: Buffer[] = [];
+
+  for (;;) {
+    const line = reader.readLine();
+    const lineComment = line.indexOf(";");
+    const size = parseInt(
+      lineComment !== -1 ? line.substring(0, lineComment) : line,
+      16
+    );
+    assert(_.isLength(size));
+
+    if (size === 0) {
+      const trailingHeaders = readHeaders(reader);
+
+      assert(!reader.available());
+
+      return { body: Buffer.concat(chunks), trailingHeaders };
+    }
+
+    chunks.push(reader.read(size));
+
+    assert(reader.readLine().length === 0);
+  }
 };

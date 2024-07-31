@@ -7,8 +7,8 @@ let counter = 0;
 const checkArchive = (file: string): void => {
   const archive = WPRArchive.fromFile(file);
 
-  const requests = archive.requests.filter((request) => {
-    const contentType = request.headers.get("content-type");
+  const requests = archive.requests.filter((req) => {
+    const contentType = req.response.headers.get("content-type");
     return (
       contentType &&
       (contentType.includes("html") || contentType.includes("javascript"))

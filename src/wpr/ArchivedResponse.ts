@@ -1,9 +1,8 @@
-import { HeaderMap, HttpResponseModel } from "../httpparser/HttpMessageModel";
+import { compress, decompress } from "../core/compression";
 
+import HeaderMap from "../httpparser/HeaderMap";
+import { HttpResponse } from "../httpparser/HttpMessage";
 import { buildHttpResponse } from "../httpparser/buildHttp";
-import { decodeResponseBody } from "../httpparser/decodeResponseBody";
-import { encodeResponseBody } from "../httpparser/encodeResponseBody";
-import { getSingleHeader } from "../httpparser/getSingleHeader";
 import { parseHttpResponse } from "../httpparser/parseHttp";
 
 export default interface ArchivedResponse {
@@ -18,7 +17,7 @@ export default interface ArchivedResponse {
 }
 
 export class OriginalArchivedResponse implements ArchivedResponse {
-  protected _m: HttpResponseModel | null = null;
+  protected _m: HttpResponse | null = null;
   protected _body: Buffer | null = null;
 
   constructor(protected readonly _serialized: string) {}
@@ -44,13 +43,12 @@ export class OriginalArchivedResponse implements ArchivedResponse {
       return this._body;
     }
 
-    if (this.m.body.length === 0) {
-      return (this._body = Buffer.alloc(0));
-    }
+    const { headers, body } = this.m;
 
-    const body = decodeResponseBody(this.m);
+    const encoding = headers.get("content-encoding");
+    const decodedBody = encoding ? decompress(body, encoding) : body;
 
-    return (this._body = body);
+    return (this._body = decodedBody);
   }
 
   withBody(body: Buffer): ArchivedResponse {
@@ -63,7 +61,7 @@ export class OriginalArchivedResponse implements ArchivedResponse {
     return this._serialized;
   }
 
-  protected get m(): HttpResponseModel {
+  protected get m(): HttpResponse {
     if (this._m) {
       return this._m;
     }
@@ -76,7 +74,7 @@ export class OriginalArchivedResponse implements ArchivedResponse {
 
 export class ModifiedArchivedResponse implements ArchivedResponse {
   constructor(
-    protected readonly m: HttpResponseModel,
+    protected readonly m: HttpResponse,
     protected readonly _body: Buffer
   ) {}
 
@@ -107,24 +105,36 @@ export class ModifiedArchivedResponse implements ArchivedResponse {
   }
 
   serialize(): string {
-    const { protocolVersion, statusCode, statusMessage } = this.m;
-
-    const body = encodeResponseBody(
-      this._body,
-      getSingleHeader(this.m.headers, "content-encoding"),
-      getSingleHeader(this.m.headers, "transfer-encoding")
-    );
-
-    const model: HttpResponseModel = {
+    const {
       protocolVersion,
       statusCode,
       statusMessage,
-      headers: new Map(this.m.headers).set("content-length", [
-        body.length.toString(),
-      ]),
-      body,
+      headers,
+      trailingHeaders,
+    } = this.m;
+
+    const encoding = headers.get("content-encoding");
+    const encodedBody = encoding ? compress(this._body, encoding) : this._body;
+
+    const model: HttpResponse = {
+      protocolVersion,
+      statusCode,
+      statusMessage,
+      headers: fixContentLength(headers, encodedBody),
+      body: encodedBody,
+      trailingHeaders,
     };
 
     return buildHttpResponse(model).toString("base64");
   }
 }
+
+const fixContentLength = (headers: HeaderMap, body: Buffer): HeaderMap => {
+  if (headers.has("content-length")) {
+    const fixedHeaders = headers.copy();
+    fixedHeaders.set("content-length", body.length.toString());
+    return fixedHeaders;
+  } else {
+    return headers;
+  }
+};
