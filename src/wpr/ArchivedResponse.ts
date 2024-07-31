@@ -1,9 +1,9 @@
 import { compress, decompress } from "../core/compression";
 
-import HeaderMap from "../httpparser/HeaderMap";
-import { HttpResponse } from "../httpparser/HttpMessage";
-import { buildHttpResponse } from "../httpparser/buildHttp";
-import { parseHttpResponse } from "../httpparser/parseHttp";
+import HeaderMap from "../httputil/HeaderMap";
+import { HttpResponse } from "../httputil/HttpMessage";
+import { buildHttpResponse } from "../httputil/buildHttp";
+import { parseHttpResponse } from "../httputil/parseHttp";
 
 export default interface ArchivedResponse {
   readonly protocolVersion: string;

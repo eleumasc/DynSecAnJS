@@ -1,7 +1,7 @@
 import ArchivedResponse from "./ArchivedResponse";
-import HeaderMap from "../httpparser/HeaderMap";
-import { HttpRequest } from "../httpparser/HttpMessage";
-import { parseHttpRequest } from "../httpparser/parseHttp";
+import HeaderMap from "../httputil/HeaderMap";
+import { HttpRequest } from "../httputil/HttpMessage";
+import { parseHttpRequest } from "../httputil/parseHttp";
 
 export default interface ArchivedRequest {
   readonly _host: string;
