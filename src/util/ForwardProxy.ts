@@ -31,17 +31,18 @@ export const useForwardProxy = async <T>(
       /* suppress */
     });
 
-    const readClientSocket = async (): Promise<Buffer> => {
-      let chunk = clientSocket.read();
+    const readClientSocket = (): Promise<Buffer> => {
+      const chunk = clientSocket.read();
       if (chunk) {
-        return chunk;
+        return Promise.resolve(chunk);
       }
-      await promisify<void>((callback) => {
-        clientSocket.once("readable", callback);
-      })();
-      chunk = clientSocket.read();
-      assert(chunk);
-      return chunk;
+      return new Promise<Buffer>((resolve) => {
+        clientSocket.once("readable", () => {
+          const chunk = clientSocket.read();
+          assert(chunk);
+          resolve(chunk);
+        });
+      });
     };
 
     let headerBuffer = Buffer.from([]);

@@ -16,34 +16,57 @@ import { headless } from "../env";
 import path from "path";
 import { processEachSiteInArchive } from "../util/processEachSiteInArchive";
 import { readSitelistFromFile } from "../util/Sitelist";
+import { typenameRecordLogfile } from "../archive/typenameLogfile";
 import { unixTime } from "../util/time";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
 import { usePlaywrightPage } from "../util/PlaywrightPage";
 import { useTempDirectory } from "../util/TempDirectory";
 
-export interface RecordArgs {
-  sitelistPath: string;
+export interface BaseRecordArgs {
   concurrencyLimit: number;
+}
+
+export interface DefaultRecordArgs extends BaseRecordArgs {
+  sitelistPath: string;
   workingDirectory: string;
 }
 
+export interface ResumeRecordArgs extends BaseRecordArgs {
+  archivePath: string;
+}
+
+export type RecordArgs = DefaultRecordArgs | ResumeRecordArgs;
+
 export const cmdRecord = async (args: RecordArgs) => {
-  const { sitelistPath, concurrencyLimit, workingDirectory } = args;
+  const { concurrencyLimit } = args;
 
-  const creationTime = unixTime();
-  const archivePath = path.join(workingDirectory, `${creationTime}-Record`);
-  console.log(`Archive path: ${archivePath}`);
+  const archive = (() => {
+    if ("sitelistPath" in args) {
+      const { sitelistPath, workingDirectory } = args;
 
-  const archive = Archive.init(
-    archivePath,
-    "RecordLogfile",
-    creationTime,
-    readSitelistFromFile(sitelistPath)
-  );
+      const creationTime = unixTime();
+      const archivePath = path.join(workingDirectory, `${creationTime}-Record`);
+
+      return Archive.init(
+        archivePath,
+        typenameRecordLogfile,
+        creationTime,
+        readSitelistFromFile(sitelistPath)
+      );
+    } else {
+      const { archivePath } = args;
+
+      const archive = Archive.open(path.resolve(archivePath), true);
+      assert(archive.logfile.type === typenameRecordLogfile);
+      return archive;
+    }
+  })();
+
+  console.log(`Archive path: ${archive.archivePath}`);
   console.log(`${archive.logfile.todoSites.length} sites`);
 
   await processEachSiteInArchive(archive, concurrencyLimit, async (site) => {
-    const args: RecordSiteArgs = { site, archivePath };
+    const args: RecordSiteArgs = { site, archivePath: archive.archivePath };
     await callAgent(__filename, recordSite.name, args);
   });
 };

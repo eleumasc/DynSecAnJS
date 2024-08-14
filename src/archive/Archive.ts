@@ -94,7 +94,7 @@ export default class Archive {
     return archive;
   }
 
-  static open(archivePath: string, canWrite: boolean): Archive {
+  static open(archivePath: string, canWrite: boolean = false): Archive {
     archivePath = path.resolve(archivePath);
 
     assert(existsSync(Archive.getLogfilePath(archivePath)));

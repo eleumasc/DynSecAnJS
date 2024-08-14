@@ -14,7 +14,7 @@ import path from "path";
 yargs(process.argv.slice(2))
   .command(
     "record <sitelistPath>",
-    "Collect original",
+    "Record",
     (yargs) => {
       return yargs
         .positional("sitelistPath", {
@@ -28,6 +28,24 @@ yargs(process.argv.slice(2))
         .option("workingDirectory", {
           type: "string",
           default: path.resolve("results"),
+        });
+    },
+    (argv) => {
+      cmdRecord(argv);
+    }
+  )
+  .command(
+    "record:resume <archivePath>",
+    "Resume Record",
+    (yargs) => {
+      return yargs
+        .positional("archivePath", {
+          type: "string",
+          demandOption: true,
+        })
+        .option("concurrencyLimit", {
+          type: "number",
+          default: 1,
         });
     },
     (argv) => {
