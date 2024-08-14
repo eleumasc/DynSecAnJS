@@ -4,7 +4,7 @@ import { TimeoutError, timeBomb } from "../core/async";
 
 import { Buffer } from "buffer";
 import firefox from "selenium-webdriver/firefox";
-import { localhost } from "../core/env";
+import { localhost } from "../env";
 import { useGeckoDriver } from "./GeckoDriver";
 import { useWebDriver } from "./WebDriver";
 

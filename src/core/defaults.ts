@@ -1,6 +1,6 @@
 import { PuppeteerLaunchOptions } from "puppeteer";
 import { Viewport } from "../lib/Agent";
-import { headless } from "./env";
+import { headless } from "../env";
 
 export const defaultPptrLaunchOptions: PuppeteerLaunchOptions = {
   headless: headless ? "new" : false,

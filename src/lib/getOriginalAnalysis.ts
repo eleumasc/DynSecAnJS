@@ -7,7 +7,7 @@ import {
   defaultLoadingTimeoutMs,
   defaultPptrLaunchOptions,
 } from "../core/defaults";
-import { firefoxPath, headless } from "../core/env";
+import { firefoxPath, headless } from "../env";
 
 import { Agent } from "./Agent";
 import { Browser } from "selenium-webdriver";

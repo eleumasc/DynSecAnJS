@@ -6,7 +6,7 @@ import puppeteer, {
   TimeoutError,
 } from "puppeteer";
 
-import { localhost } from "../core/env";
+import { localhost } from "../env";
 
 export interface Options {
   pptrLaunchOptions?: PuppeteerLaunchOptions;

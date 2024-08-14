@@ -5,7 +5,7 @@ import {
 } from "../html/injectScripts";
 
 import { BodyTransformer } from "../lib/BodyTransformer";
-import { gifcPath } from "../core/env";
+import { gifcPath } from "../env";
 import { ignoreJSON } from "./ignoreJSON";
 import path from "path";
 import { readFileSync } from "fs";

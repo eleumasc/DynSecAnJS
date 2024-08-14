@@ -9,7 +9,10 @@ import { isSuccess, toCompletion } from "../util/Completion";
 import Archive from "../archive/Archive";
 import Deferred from "../core/Deferred";
 import { ForwardProxy } from "../util/ForwardProxy";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import { addExtra } from "playwright-extra";
 import assert from "assert";
+import { headless } from "../env";
 import path from "path";
 import { processEachSiteInArchive } from "../util/processEachSiteInArchive";
 import { readSitelistFromFile } from "../util/Sitelist";
@@ -54,12 +57,14 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
   const archive = Archive.open(outputPath, true);
 
   const browserFactory = (forwardProxy: ForwardProxy) => (): Promise<Browser> =>
-    chromium.launch({
-      headless: false,
-      proxy: {
-        server: `${forwardProxy.hostname}:${forwardProxy.port}`,
-      },
-    });
+    addExtra(chromium)
+      .use(StealthPlugin())
+      .launch({
+        headless,
+        proxy: {
+          server: `${forwardProxy.hostname}:${forwardProxy.port}`,
+        },
+      });
 
   const navigate = async (page: Page): Promise<RecordedSiteInfo> => {
     interface ScriptRequestLoadingQueueEntry {

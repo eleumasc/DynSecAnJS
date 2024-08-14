@@ -1,6 +1,6 @@
 import { BodyTransformer } from "../lib/BodyTransformer";
 import { ignoreJSON } from "./ignoreJSON";
-import { jestPath } from "../core/env";
+import { jestPath } from "../env";
 import path from "path";
 import { spawnStdio } from "./spawnStdio";
 

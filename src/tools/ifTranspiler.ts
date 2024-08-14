@@ -2,7 +2,7 @@ import { composeHtmlTransformers, transformHtml } from "../html/transformHtml";
 import { createJavascriptDataUrl, injectScripts } from "../html/injectScripts";
 
 import { BodyTransformer } from "../lib/BodyTransformer";
-import { ifTranspilerPath } from "../core/env";
+import { ifTranspilerPath } from "../env";
 import { ignoreJSON } from "./ignoreJSON";
 import path from "path";
 import { spawnStdio } from "./spawnStdio";

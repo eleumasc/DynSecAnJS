@@ -1,6 +1,6 @@
 import { Socket } from "net";
 import { delay } from "./async";
-import { localhost } from "./env";
+import { localhost } from "../env";
 
 const MIN_PORT = 8000;
 const MAX_PORT = 19999;

@@ -1,5 +1,5 @@
 import { ForwardProxy, useForwardProxy } from "../util/ForwardProxy";
-import { debugMode, localhost, wprgoPath } from "../core/env";
+import { debugMode, localhost, wprgoPath } from "../env";
 import { getTcpPort, waitUntilUsed } from "../core/net";
 
 import Deferred from "../core/Deferred";

@@ -38,8 +38,10 @@
     "parse5": "^7.1.2",
     "pidusage": "^3.0.2",
     "playwright": "^1.44.1",
+    "playwright-extra": "^4.3.6",
     "port_agent": "^1.4.0",
     "puppeteer": "^21.7.0",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "selenium-webdriver": "^4.19.0",
     "yargs": "^17.7.2"
   }

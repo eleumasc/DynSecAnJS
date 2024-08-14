@@ -10,7 +10,7 @@ import {
   defaultLoadingTimeoutMs,
   defaultPptrLaunchOptions,
 } from "../core/defaults";
-import { headless, jalangiPath, projectFoxhoundPath } from "../core/env";
+import { headless, jalangiPath, projectFoxhoundPath } from "../env";
 
 import { Agent } from "./Agent";
 import { Browser } from "selenium-webdriver";

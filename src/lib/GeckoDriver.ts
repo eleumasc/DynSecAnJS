@@ -1,4 +1,4 @@
-import { debugMode, geckoDriverPath, localhost } from "../core/env";
+import { debugMode, geckoDriverPath, localhost } from "../env";
 import { getTcpPort, waitUntilUsed } from "../core/net";
 
 import path from "path";

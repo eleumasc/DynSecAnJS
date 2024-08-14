@@ -2,7 +2,7 @@ import { createServer as createHttpServer, request } from "http";
 
 import { connect } from "net";
 import { getTcpPort } from "../core/net";
-import { localhost } from "../core/env";
+import { localhost } from "../env";
 import { promisify } from "util";
 
 export interface ForwardProxy {
