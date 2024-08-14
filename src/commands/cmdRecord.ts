@@ -24,17 +24,18 @@ import { useTempDirectory } from "../util/TempDirectory";
 export interface RecordArgs {
   sitelistPath: string;
   concurrencyLimit: number;
+  workingDirectory: string;
 }
 
 export const cmdRecord = async (args: RecordArgs) => {
-  const { sitelistPath, concurrencyLimit } = args;
+  const { sitelistPath, concurrencyLimit, workingDirectory } = args;
 
   const creationTime = unixTime();
-  const outputPath = path.resolve("results", `${creationTime}-Record`);
-  console.log(`Output path: ${outputPath}`);
+  const archivePath = path.join(workingDirectory, `${creationTime}-Record`);
+  console.log(`Archive path: ${archivePath}`);
 
   const archive = Archive.init(
-    outputPath,
+    archivePath,
     "RecordLogfile",
     creationTime,
     readSitelistFromFile(sitelistPath)
@@ -42,19 +43,19 @@ export const cmdRecord = async (args: RecordArgs) => {
   console.log(`${archive.logfile.todoSites.length} sites`);
 
   await processEachSiteInArchive(archive, concurrencyLimit, async (site) => {
-    const args: RecordSiteArgs = { site, outputPath };
+    const args: RecordSiteArgs = { site, archivePath };
     await callAgent(__filename, recordSite.name, args);
   });
 };
 
 interface RecordSiteArgs {
   site: string;
-  outputPath: string;
+  archivePath: string;
 }
 
 const recordSite = async (args: RecordSiteArgs): Promise<void> => {
-  const { site, outputPath } = args;
-  const archive = Archive.open(outputPath, true);
+  const { site, archivePath } = args;
+  const archive = Archive.open(archivePath, true);
 
   const browserFactory = (forwardProxy: ForwardProxy) => (): Promise<Browser> =>
     addExtra(chromium)

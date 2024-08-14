@@ -9,6 +9,7 @@ import {
 } from "./commands/startTransparency";
 import yargs from "yargs/yargs";
 import { cmdRecord } from "./commands/cmdRecord";
+import path from "path";
 
 yargs(process.argv.slice(2))
   .command(
@@ -23,6 +24,10 @@ yargs(process.argv.slice(2))
         .option("concurrencyLimit", {
           type: "number",
           default: 1,
+        })
+        .option("workingDirectory", {
+          type: "string",
+          default: path.resolve("results"),
         });
     },
     (argv) => {
