@@ -16,6 +16,7 @@ import { headless } from "../env";
 import path from "path";
 import { processEachSiteInArchive } from "../util/processEachSiteInArchive";
 import { readSitelistFromFile } from "../util/Sitelist";
+import { retryOnce } from "../util/retryOnce";
 import { typenameRecordLogfile } from "../archive/typenameLogfile";
 import { unixTime } from "../util/time";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
@@ -127,26 +128,30 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
     };
   };
 
-  await useTempDirectory(async (tempPath) => {
-    const wprArchiveTempPath = path.join(tempPath, "archive.wprgo");
+  const result = await retryOnce(() =>
+    useTempDirectory(async (tempPath) => {
+      const wprArchiveTempPath = path.join(tempPath, "archive.wprgo");
 
-    const result = (await useForwardedWebPageReplay(
-      {
-        operation: "record",
-        archivePath: wprArchiveTempPath,
-      },
-      (forwardProxy) =>
-        usePlaywrightPage(browserFactory(forwardProxy), (page) =>
-          toCompletion(() => navigate(page))
-        )
-    )) as RecordSiteResult;
+      const result = await useForwardedWebPageReplay(
+        {
+          operation: "record",
+          archivePath: wprArchiveTempPath,
+        },
+        (forwardProxy) =>
+          usePlaywrightPage(browserFactory(forwardProxy), (page) =>
+            toCompletion(() => navigate(page))
+          )
+      );
 
-    archive.writeData(`${site}.json`, result);
+      if (isSuccess(result)) {
+        archive.moveFile(`${site}-archive.wprgo`, wprArchiveTempPath);
+      }
 
-    if (isSuccess(result)) {
-      archive.moveFile(`${site}-archive.wprgo`, wprArchiveTempPath);
-    }
-  });
+      return result;
+    })
+  );
+
+  archive.writeData(`${site}.json`, result satisfies RecordSiteResult);
 };
 
 registerAgent(() => [{ name: recordSite.name, fn: recordSite }]);
