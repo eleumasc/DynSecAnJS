@@ -4,6 +4,7 @@ import {
   RecordedSiteInfo,
 } from "../archive/RecordSiteResult";
 import { callAgent, registerAgent } from "../util/thread";
+import { isSuccess, toCompletion } from "../util/Completion";
 
 import Archive from "../archive/Archive";
 import Deferred from "../core/Deferred";
@@ -12,7 +13,6 @@ import assert from "assert";
 import path from "path";
 import { processEachSiteInArchive } from "../util/processEachSiteInArchive";
 import { readSitelistFromFile } from "../util/Sitelist";
-import { toCompletion } from "../util/Completion";
 import { unixTime } from "../util/time";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
 import { usePlaywrightPage } from "../util/PlaywrightPage";
@@ -114,7 +114,9 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
 
     archive.writeData(`${site}.json`, result);
 
-    archive.moveFile(`${site}-archive.wprgo`, wprArchiveTempPath);
+    if (isSuccess(result)) {
+      archive.moveFile(`${site}-archive.wprgo`, wprArchiveTempPath);
+    }
   });
 };
 
