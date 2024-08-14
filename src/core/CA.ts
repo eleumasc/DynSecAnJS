@@ -32,7 +32,7 @@ export default class CA {
 
   protected static instance: CA | null = null;
 
-  static get(): CA {
+  static getInstance(): CA {
     if (this.instance) {
       return this.instance;
     }

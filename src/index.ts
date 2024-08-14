@@ -1,18 +1,37 @@
-import { startCompatibility } from "./starters/startCompatibility";
-import { startOriginalAnalysis } from "./starters/startOriginalAnalysis";
-import { startSitelistRecovery } from "./starters/startSitelistRecovery";
-import { startToolAnalysis } from "./starters/startToolAnalysis";
+import { startCompatibility } from "./commands/startCompatibility";
+import { cmdCollectBrowser } from "./commands/cmdCollectBrowser";
+import { startSitelistRecovery } from "./commands/startSitelistRecovery";
+import { startToolAnalysis } from "./commands/startToolAnalysis";
 import {
   ArchivePathRecord,
   TransparencyArgs,
   startTransparency,
-} from "./starters/startTransparency";
+} from "./commands/startTransparency";
 import yargs from "yargs/yargs";
+import { cmdRecord } from "./commands/cmdRecord";
 
 yargs(process.argv.slice(2))
   .command(
-    "original-analysis <browserName> <sitelistPath>",
-    "Start original analysis",
+    "record <sitelistPath>",
+    "Collect original",
+    (yargs) => {
+      return yargs
+        .positional("sitelistPath", {
+          type: "string",
+          demandOption: true,
+        })
+        .option("concurrencyLimit", {
+          type: "number",
+          default: 1,
+        });
+    },
+    (argv) => {
+      cmdRecord(argv);
+    }
+  )
+  .command(
+    "collect:original <browserName> <sitelistPath>",
+    "Collect original",
     (yargs) => {
       return yargs
         .positional("browserName", {
@@ -23,13 +42,13 @@ yargs(process.argv.slice(2))
           type: "string",
           demandOption: true,
         })
-        .option("concurrencyLevel", {
+        .option("concurrencyLimit", {
           type: "number",
           default: 1,
         });
     },
     (argv) => {
-      startOriginalAnalysis(argv);
+      cmdCollectBrowser(argv);
     }
   )
   .command(

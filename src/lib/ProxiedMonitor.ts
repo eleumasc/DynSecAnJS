@@ -1,16 +1,14 @@
-import { getLocal } from "mockttp";
 import AnalysisProxy, {
   createExposedCallback,
   createInitScript,
   useAnalysisProxy,
 } from "./AnalysisProxy";
-import {
-  Options as WebPageReplayOptions,
-  useWebPageReplay,
-} from "./WebPageReplay";
-import { SendReporter, bundleMonitor, MonitorConfig } from "./monitor";
+import { MonitorConfig, SendReporter, bundleMonitor } from "./monitor";
+
 import CA from "../core/CA";
 import { ProxiedMonitorHooks } from "./ProxiedMonitorHooks";
+import { getLocal } from "mockttp";
+import { useWebPageReplay } from "../tools/WebPageReplay";
 
 interface Options {
   hooks: ProxiedMonitorHooks;
@@ -18,63 +16,64 @@ interface Options {
     MonitorConfig,
     "loadingTimeoutMs" | "timeSeedMs" | "ifaToolName"
   >;
-  wprOptions: Pick<WebPageReplayOptions, "operation" | "archivePath">;
+  wprOptions: any;
 }
 
 export const useProxiedMonitor = async <T>(
   options: Options,
   cb: (analysisProxy: AnalysisProxy) => Promise<T>
 ): Promise<T> => {
-  const {
-    hooks: {
-      reportCallback,
-      requestListener,
-      responseTransformer,
-      dnsLookupErrorListener,
-    },
-    monitorConfig,
-    wprOptions,
-  } = options;
+  throw new Error("Not implemented");
+  // const {
+  //   hooks: {
+  //     reportCallback,
+  //     requestListener,
+  //     responseTransformer,
+  //     dnsLookupErrorListener,
+  //   },
+  //   monitorConfig,
+  //   wprOptions,
+  // } = options;
 
-  return await useWebPageReplay(
-    {
-      ...wprOptions,
-      injectDeterministic: false,
-    },
-    async (wpr) => {
-      const reportExposedCallback = createExposedCallback(reportCallback);
+  // return await useWebPageReplay(
+  //   {
+  //     ...wprOptions,
+  //     injectDeterministic: false,
+  //   },
+  //   async (wpr) => {
+  //     const reportExposedCallback = createExposedCallback(reportCallback);
 
-      const monitorInitScript = createInitScript(
-        await bundleMonitor({
-          reporter: <SendReporter>{
-            type: "SendReporter",
-            url: reportExposedCallback.url,
-          },
-          ...monitorConfig,
-        })
-      );
+  //     const monitorInitScript = createInitScript(
+  //       await bundleMonitor({
+  //         reporter: <SendReporter>{
+  //           type: "SendReporter",
+  //           url: reportExposedCallback.url,
+  //         },
+  //         ...monitorConfig,
+  //       })
+  //     );
 
-      const mockttpServer = getLocal({
-        https: {
-          cert: CA.get().getCertificate(),
-          key: CA.get().getKey(),
-        },
-        recordTraffic: false,
-      });
+  //     const mockttpServer = getLocal({
+  //       https: {
+  //         cert: CA.getInstance().getCertificate(),
+  //         key: CA.getInstance().getKey(),
+  //       },
+  //       recordTraffic: false,
+  //     });
 
-      return await useAnalysisProxy(
-        mockttpServer,
-        {
-          exposedCallbacks: [reportExposedCallback],
-          initScripts: [monitorInitScript],
-          requestListener,
-          responseTransformer,
-          dnsLookupErrorListener,
-          httpForwardHost: wpr.getHttpHost(),
-          httpsForwardHost: wpr.getHttpsHost(),
-        },
-        cb
-      );
-    }
-  );
+  //     return await useAnalysisProxy(
+  //       mockttpServer,
+  //       {
+  //         exposedCallbacks: [reportExposedCallback],
+  //         initScripts: [monitorInitScript],
+  //         requestListener,
+  //         responseTransformer,
+  //         dnsLookupErrorListener,
+  //         httpForwardHost: wpr.getHttpHost(),
+  //         httpsForwardHost: wpr.getHttpsHost(),
+  //       },
+  //       cb
+  //     );
+  //   }
+  // );
 };

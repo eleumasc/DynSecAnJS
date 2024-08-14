@@ -4,7 +4,6 @@ import { Agent } from "./Agent";
 import { CompatibilityDetail } from "../compatibility/CompatibilityDetail";
 import { CompatibilityHooksProvider } from "./CompatibilityHooks";
 import { MonitorConfig } from "./monitor";
-import { Options as WebPageReplayOptions } from "./WebPageReplay";
 import { defaultViewport } from "../core/defaults";
 import { timeBomb } from "../core/async";
 import { useProxiedMonitor } from "./ProxiedMonitor";
@@ -14,7 +13,7 @@ export interface Options {
   agent: Agent;
   hooksProvider: CompatibilityHooksProvider;
   monitorConfig: Pick<MonitorConfig, "loadingTimeoutMs" | "timeSeedMs">;
-  wprOptions: Pick<WebPageReplayOptions, "operation" | "archivePath">;
+  wprOptions: any;
   toleranceMs: number;
 }
 

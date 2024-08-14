@@ -5,7 +5,6 @@ import { Agent } from "./Agent";
 import { ExecutionDetail } from "./ExecutionDetail";
 import { ExecutionHooksProvider } from "./ExecutionHooks";
 import { MonitorConfig } from "./monitor";
-import { Options as WebPageReplayOptions } from "./WebPageReplay";
 import { defaultViewport } from "../core/defaults";
 import { timeBomb } from "../core/async";
 import { useProxiedMonitor } from "./ProxiedMonitor";
@@ -19,7 +18,7 @@ export interface Options {
     MonitorConfig,
     "loadingTimeoutMs" | "timeSeedMs" | "ifaToolName"
   >;
-  wprOptions: Pick<WebPageReplayOptions, "operation" | "archivePath">;
+  wprOptions: any;
   toleranceMs: number;
   attachmentList?: AttachmentList;
 }
