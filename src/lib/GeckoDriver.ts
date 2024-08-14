@@ -1,5 +1,5 @@
 import { debugMode, geckoDriverPath, localhost } from "../env";
-import { getTcpPort, waitUntilUsed } from "../core/net";
+import { getTcpPort, waitUntilUsed } from "../util/getTcpPort";
 
 import path from "path";
 import { spawn } from "child_process";

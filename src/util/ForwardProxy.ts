@@ -1,7 +1,7 @@
-import { createServer as createHttpServer, request } from "http";
+import { Server, Socket, connect } from "net";
 
-import { connect } from "net";
-import { getTcpPort } from "../core/net";
+import assert from "assert";
+import { getTcpPort } from "./getTcpPort";
 import { localhost } from "../env";
 import { promisify } from "util";
 
@@ -23,40 +23,68 @@ export const useForwardProxy = async <T>(
   const proxyHostname = localhost;
   const proxyPort = await getTcpPort();
 
-  const server = createHttpServer((req, res) => {
-    const proxyReq = request(
-      {
-        hostname,
-        port: httpPort,
-        path: req.url,
-        method: req.method,
-        headers: req.headers,
-      },
-      (proxyRes) => {
-        res.writeHead(proxyRes.statusCode!, proxyRes.headers);
-        proxyRes.pipe(res, { end: true });
+  const server = new Server(async (clientSocket: Socket) => {
+    clientSocket.pause();
+    assert(clientSocket.readableFlowing === false);
+
+    clientSocket.on("error", () => {
+      /* suppress */
+    });
+
+    const readClientSocket = async (): Promise<Buffer> => {
+      let chunk = clientSocket.read();
+      if (chunk) {
+        return chunk;
       }
-    );
+      await promisify<void>((callback) => {
+        clientSocket.once("readable", callback);
+      })();
+      chunk = clientSocket.read();
+      assert(chunk);
+      return chunk;
+    };
 
-    req.pipe(proxyReq, { end: true });
-  });
+    let headerBuffer = Buffer.from([]);
+    let headerEnd: number;
+    do {
+      const chunk = await readClientSocket();
+      headerBuffer = Buffer.concat([headerBuffer, chunk]);
+      headerEnd = headerBuffer.indexOf("\r\n\r\n");
+    } while (headerEnd === -1);
 
-  server.on("connect", (_, clientSocket, head) => {
-    const serverSocket = connect(httpsPort, hostname, () => {
-      clientSocket.write("HTTP/1.1 200 Connection Established\r\n\r\n");
+    const headerString = headerBuffer.subarray(0, headerEnd).toString();
 
-      serverSocket.write(head);
-      serverSocket.pipe(clientSocket);
-      clientSocket.pipe(serverSocket);
-    });
+    if (/^CONNECT\s/i.test(headerString)) {
+      const targetSocket = connect(httpsPort, hostname, () => {
+        clientSocket.write("HTTP/1.1 200 Connection Established\r\n\r\n");
 
-    serverSocket.on("error", (err) => {
-      clientSocket.end(`HTTP/1.1 500 ${err.message}\r\n`);
-    });
+        clientSocket.pipe(targetSocket);
+        targetSocket.pipe(clientSocket);
+      });
 
-    clientSocket.on("error", (err) => {
-      serverSocket.end();
-    });
+      targetSocket.on("close", () => {
+        clientSocket.end();
+      });
+
+      clientSocket.on("close", () => {
+        targetSocket.end();
+      });
+    } else {
+      const targetSocket = connect(httpPort, hostname, () => {
+        targetSocket.write(headerBuffer);
+
+        clientSocket.pipe(targetSocket);
+        targetSocket.pipe(clientSocket);
+      });
+
+      targetSocket.on("close", () => {
+        clientSocket.end();
+      });
+
+      clientSocket.on("close", () => {
+        targetSocket.end();
+      });
+    }
   });
 
   server.listen(proxyPort, proxyHostname);
@@ -70,6 +98,5 @@ export const useForwardProxy = async <T>(
     await promisify<void>((callback) => {
       server.close(callback);
     })();
-    server.closeAllConnections();
   }
 };
