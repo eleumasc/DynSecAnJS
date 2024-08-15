@@ -138,15 +138,15 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
     useTempDirectory(async (tempPath) => {
       const wprArchiveTempPath = path.join(tempPath, "archive.wprgo");
 
-      const result = await useForwardedWebPageReplay(
-        {
-          operation: "record",
-          archivePath: wprArchiveTempPath,
-        },
-        (forwardProxy) =>
-          usePlaywrightPage(browserFactory(forwardProxy), (page) =>
-            toCompletion(() => navigate(page))
-          )
+      const result = await toCompletion(() =>
+        useForwardedWebPageReplay(
+          {
+            operation: "record",
+            archivePath: wprArchiveTempPath,
+          },
+          (forwardProxy) =>
+            usePlaywrightPage(browserFactory(forwardProxy), navigate)
+        )
       );
 
       if (isSuccess(result)) {
