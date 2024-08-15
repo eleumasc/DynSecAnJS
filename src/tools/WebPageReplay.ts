@@ -58,6 +58,8 @@ export const useWebPageReplay = async <T>(
 
   if (debugMode) {
     childProcess.stderr!.pipe(process.stderr);
+  } else {
+    childProcess.stderr!.resume();
   }
 
   try {

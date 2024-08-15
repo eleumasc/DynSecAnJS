@@ -22,7 +22,7 @@ import { unixTime } from "../util/time";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
 import { usePlaywrightPage } from "../util/PlaywrightPage";
 import { useTempDirectory } from "../util/TempDirectory";
-import { delay } from "../util/delay";
+import { delay } from "../util/timeout";
 
 export interface BaseRecordArgs {
   concurrencyLimit: number;
