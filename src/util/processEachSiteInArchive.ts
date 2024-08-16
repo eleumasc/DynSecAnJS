@@ -1,6 +1,9 @@
+import { isSuccess, toCompletion } from "./Completion";
+
 import Archive from "../archive/Archive";
 import _ from "lodash";
 import { eachLimit } from "async";
+import { retryOnce } from "./retryOnce";
 
 export const processEachSiteInArchive = async (
   archive: Archive,
@@ -18,8 +21,14 @@ export const processEachSiteInArchive = async (
     concurrencyLimit,
     async (site, eachCallback) => {
       log(`begin process ${site}`);
-      await callback(site);
-      archive.markSiteAsDone(site);
+      const completion = await retryOnce(() =>
+        toCompletion(() => callback(site))
+      );
+      if (isSuccess(completion)) {
+        archive.markSiteAsDone(site);
+      } else {
+        console.error(completion.message);
+      }
       log(`end process ${site}`);
 
       eachCallback();
