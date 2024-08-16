@@ -98,14 +98,14 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
       deferredComplete: Deferred<void>;
     }
     const scriptRequestLoadingQueue: ScriptRequestLoadingQueueEntry[] = [];
-    let lastScriptRequestTime: number = unixTime();
+    let scriptRequestTick: number = 0;
     page.on("request", (request) => {
       if (request.resourceType() !== "script") return;
       scriptRequestLoadingQueue.push({
         request,
         deferredComplete: new Deferred(),
       });
-      lastScriptRequestTime = unixTime();
+      scriptRequestTick = 0;
     });
     const handleRequestFinished = (request: Request) => {
       if (request.resourceType() !== "script") return;
@@ -121,7 +121,7 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
     const accessUrl = `http://${site}/`;
     await page.goto(accessUrl, { timeout: 60_000 });
 
-    while (unixTime() - lastScriptRequestTime < 5_000) {
+    for (; scriptRequestTick < 5; ++scriptRequestTick) {
       await delay(1_000);
     }
     for (const entry of scriptRequestLoadingQueue) {
