@@ -1,23 +1,29 @@
 import { isSuccess, toCompletion } from "./Completion";
 
-import Archive from "../archive/Archive";
 import _ from "lodash";
 import { eachLimit } from "async";
 import { retryOnce } from "./retryOnce";
 
-export const processEachSiteInArchive = async (
-  archive: Archive,
+export interface SiteProcessable {
+  getSites(): string[];
+  getProcessedSites(): string[];
+  onSiteProcessed(site: string): void;
+}
+
+export const processEachSite = async (
+  sp: SiteProcessable,
   concurrencyLimit: number,
   callback: (site: string) => Promise<void>
 ): Promise<void> => {
+  const sites = sp.getSites();
+  let processedSites = sp.getProcessedSites();
+
   const log = (msg: string) => {
-    console.log(
-      `[${archive.logfile.sites.length} / ${archive.logfile.todoSites.length}] ${msg}`
-    );
+    console.log(`[${processedSites.length} / ${sites.length}] ${msg}`);
   };
 
   await eachLimit(
-    archive.remainingSites,
+    _.difference(sites, processedSites),
     concurrencyLimit,
     async (site, eachCallback) => {
       log(`begin process ${site}`);
@@ -25,9 +31,10 @@ export const processEachSiteInArchive = async (
         toCompletion(() => callback(site))
       );
       if (isSuccess(completion)) {
-        archive.markSiteAsDone(site);
+        processedSites = [...processedSites, site];
+        sp.onSiteProcessed(site);
       } else {
-        console.error(completion.message);
+        console.error(completion.error);
       }
       log(`end process ${site}`);
 

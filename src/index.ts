@@ -9,7 +9,10 @@ import {
 } from "./commands/startTransparency";
 import yargs from "yargs/yargs";
 import { cmdRecord } from "./commands/cmdRecord";
+import { cmdPrepare } from "./commands/cmdPrepare";
 import path from "path";
+
+const workspacePath = path.resolve("workspace");
 
 yargs(process.argv.slice(2))
   .command(
@@ -21,17 +24,26 @@ yargs(process.argv.slice(2))
           type: "string",
           demandOption: true,
         })
+        .option("workingDirectory", {
+          type: "string",
+          default: workspacePath,
+        })
         .option("concurrencyLimit", {
           type: "number",
           default: 1,
-        })
-        .option("workingDirectory", {
-          type: "string",
-          default: path.resolve("results"),
         });
     },
     (argv) => {
-      cmdRecord(argv);
+      cmdRecord({
+        type: "normal",
+        depsArgs: {
+          sitelistPath: argv.sitelistPath,
+          workingDirectory: argv.workingDirectory,
+        },
+        processArgs: {
+          concurrencyLimit: argv.concurrencyLimit,
+        },
+      });
     }
   )
   .command(
@@ -49,7 +61,63 @@ yargs(process.argv.slice(2))
         });
     },
     (argv) => {
-      cmdRecord(argv);
+      cmdRecord({
+        type: "resume",
+        archivePath: argv.archivePath,
+        processArgs: {
+          concurrencyLimit: argv.concurrencyLimit,
+        },
+      });
+    }
+  )
+  .command(
+    "prepare <recordArchivePath>",
+    "Prepare",
+    (yargs) => {
+      return yargs
+        .positional("recordArchivePath", {
+          type: "string",
+          demandOption: true,
+        })
+        .option("concurrencyLimit", {
+          type: "number",
+          default: 1,
+        });
+    },
+    (argv) => {
+      cmdPrepare({
+        type: "normal",
+        depsArgs: {
+          recordArchivePath: argv.recordArchivePath,
+        },
+        processArgs: {
+          concurrencyLimit: argv.concurrencyLimit,
+        },
+      });
+    }
+  )
+  .command(
+    "prepare:resume <archivePath>",
+    "Resume Prepare",
+    (yargs) => {
+      return yargs
+        .positional("archivePath", {
+          type: "string",
+          demandOption: true,
+        })
+        .option("concurrencyLimit", {
+          type: "number",
+          default: 1,
+        });
+    },
+    (argv) => {
+      cmdPrepare({
+        type: "resume",
+        archivePath: argv.archivePath,
+        processArgs: {
+          concurrencyLimit: argv.concurrencyLimit,
+        },
+      });
     }
   )
   .command(

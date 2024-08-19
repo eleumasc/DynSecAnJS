@@ -1,8 +1,9 @@
 import { Browser, Page, Request, chromium } from "playwright";
 import {
+  RecordLogfile,
   RecordSiteResult,
-  RecordedSiteInfo,
-} from "../archive/RecordSiteResult";
+  RecordSiteDetail,
+} from "../archive/RecordLogfile";
 import { callAgent, registerAgent } from "../util/thread";
 import { isSuccess, toCompletion } from "../util/Completion";
 
@@ -14,63 +15,69 @@ import { addExtra } from "playwright-extra";
 import assert from "assert";
 import { headless } from "../env";
 import path from "path";
-import { processEachSiteInArchive } from "../util/processEachSiteInArchive";
+import { processEachSite } from "../util/processEachSite";
 import { readSitelistFromFile } from "../util/Sitelist";
 import { retryOnce } from "../util/retryOnce";
-import { typenameRecordLogfile } from "../archive/typenameLogfile";
-import { unixTime } from "../util/time";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
 import { usePlaywrightPage } from "../util/PlaywrightPage";
 import { useTempDirectory } from "../util/TempDirectory";
 import { delay } from "../util/timeout";
+import { Args, initCommand } from "../archive/initCommand";
 
-export interface BaseRecordArgs {
-  concurrencyLimit: number;
-}
-
-export interface DefaultRecordArgs extends BaseRecordArgs {
-  sitelistPath: string;
-  workingDirectory: string;
-}
-
-export interface ResumeRecordArgs extends BaseRecordArgs {
-  archivePath: string;
-}
-
-export type RecordArgs = DefaultRecordArgs | ResumeRecordArgs;
+export type RecordArgs = Args<
+  {
+    sitelistPath: string;
+    workingDirectory: string;
+  },
+  {
+    concurrencyLimit: number;
+  }
+>;
 
 export const cmdRecord = async (args: RecordArgs) => {
-  const { concurrencyLimit } = args;
-
-  const archive = (() => {
-    if ("sitelistPath" in args) {
-      const { sitelistPath, workingDirectory } = args;
-
-      const creationTime = unixTime();
-      const archivePath = path.join(workingDirectory, `${creationTime}-Record`);
-
-      return Archive.init(
-        archivePath,
-        typenameRecordLogfile,
-        creationTime,
-        readSitelistFromFile(sitelistPath)
-      );
-    } else {
-      const { archivePath } = args;
-
-      const archive = Archive.open(path.resolve(archivePath), true);
-      assert(archive.logfile.type === typenameRecordLogfile);
-      return archive;
+  const {
+    archive,
+    deps: { sitelist },
+    processArgs: { concurrencyLimit },
+  } = initCommand<RecordLogfile>()(
+    args,
+    (depsArgs) => path.resolve(depsArgs.workingDirectory, "Record"),
+    () => {
+      return { type: "RecordLogfile", sites: [] };
+    },
+    (depsArgs) => {
+      const sitelist = readSitelistFromFile(depsArgs.sitelistPath);
+      return { sitelist };
     }
-  })();
+  );
 
-  console.log(`Archive path: ${archive.archivePath}`);
-  console.log(`${archive.logfile.todoSites.length} sites`);
+  console.log(`${sitelist.length} sites`);
 
-  await processEachSiteInArchive(archive, concurrencyLimit, async (site) => {
-    const args: RecordSiteArgs = { site, archivePath: archive.archivePath };
-    await callAgent(__filename, recordSite.name, args);
-  });
+  await processEachSite(
+    {
+      getSites() {
+        return sitelist;
+      },
+      getProcessedSites() {
+        return archive.logfile.sites;
+      },
+      onSiteProcessed(site) {
+        const { logfile } = archive;
+        archive.logfile = {
+          ...logfile,
+          sites: [...logfile.sites, site],
+        };
+      },
+    },
+    concurrencyLimit,
+    async (site) => {
+      const { archivePath } = archive;
+      await callAgent(__filename, recordSite.name, {
+        site,
+        archivePath,
+      } satisfies RecordSiteArgs);
+    }
+  );
 };
 
 interface RecordSiteArgs {
@@ -80,7 +87,7 @@ interface RecordSiteArgs {
 
 const recordSite = async (args: RecordSiteArgs): Promise<void> => {
   const { site, archivePath } = args;
-  const archive = Archive.open(archivePath, true);
+  const archive = Archive.open<RecordLogfile>(archivePath, true);
 
   const browserFactory = (forwardProxy: ForwardProxy) => (): Promise<Browser> =>
     addExtra(chromium)
@@ -92,7 +99,7 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
         },
       });
 
-  const navigate = async (page: Page): Promise<RecordedSiteInfo> => {
+  const navigate = async (page: Page): Promise<RecordSiteDetail> => {
     interface ScriptRequestLoadingQueueEntry {
       request: Request;
       deferredComplete: Deferred<void>;
@@ -134,7 +141,7 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
     };
   };
 
-  const result = await retryOnce(() =>
+  const result: RecordSiteResult = await retryOnce(() =>
     useTempDirectory(async (tempPath) => {
       const wprArchiveTempPath = path.join(tempPath, "archive.wprgo");
 
@@ -157,7 +164,7 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
     })
   );
 
-  archive.writeData(`${site}.json`, result satisfies RecordSiteResult);
+  archive.writeData(`${site}.json`, result);
 };
 
 registerAgent(() => [{ name: recordSite.name, fn: recordSite }]);

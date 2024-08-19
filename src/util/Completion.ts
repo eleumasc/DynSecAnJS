@@ -9,7 +9,7 @@ export interface Success<T> extends BaseCompletion {
 
 export interface Failure extends BaseCompletion {
   status: "failure";
-  message: string;
+  error: string;
 }
 
 export type Completion<T> = Success<T> | Failure;
@@ -18,8 +18,8 @@ export const Success = <T>(value: T): Success<T> => {
   return { status: "success", value };
 };
 
-export const Failure = (message: string): Failure => {
-  return { status: "failure", message };
+export const Failure = (error: string): Failure => {
+  return { status: "failure", error };
 };
 
 export const isSuccess = <T>(
@@ -35,18 +35,12 @@ export const isFailure = <T>(
 };
 
 export const toCompletion = async <T>(
-  cb: () => Promise<T>
+  cb: () => T | Promise<T>
 ): Promise<Completion<T>> => {
   try {
     const value = await cb();
-    return {
-      status: "success",
-      value,
-    };
+    return Success(value);
   } catch (e) {
-    return {
-      status: "failure",
-      message: String(e),
-    };
+    return Failure(String(e));
   }
 };

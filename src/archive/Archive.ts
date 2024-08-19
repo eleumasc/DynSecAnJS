@@ -12,41 +12,30 @@ import _ from "lodash";
 import assert from "assert";
 import path from "path";
 
-export default class Archive {
-  protected _logfile: Logfile | null = null;
+export default class Archive<TLogfile extends Logfile> {
+  protected _logfile: TLogfile | null = null;
 
-  constructor(
+  protected constructor(
     readonly archivePath: string,
     readonly canWrite: boolean = false
   ) {}
 
-  get logfile() {
+  get logfile(): TLogfile {
     return (
       this._logfile ??
       (this._logfile = JSON.parse(
         readFileSync(Archive.getLogfilePath(this.archivePath)).toString()
-      ) as Logfile)
+      ) as TLogfile)
     );
   }
 
-  protected set logfile(logfile: Logfile) {
+  set logfile(logfile: TLogfile) {
     this._logfile = logfile;
 
     writeFileSync(
       Archive.getLogfilePath(this.archivePath),
       JSON.stringify(this.logfile)
     );
-  }
-
-  get remainingSites(): string[] {
-    return _.difference(this.logfile.todoSites, this.logfile.sites);
-  }
-
-  markSiteAsDone(site: string): void {
-    assert(this.canWrite);
-
-    const { logfile } = this;
-    this.logfile = { ...logfile, sites: [...logfile.sites, site] };
   }
 
   readData<T>(name: string): T {
@@ -61,6 +50,10 @@ export default class Archive {
     writeFileSync(dstPath, JSON.stringify(data));
   }
 
+  getFilePath(name: string): string {
+    return path.join(this.archivePath, name);
+  }
+
   moveFile(name: string, srcPath: string): void {
     assert(this.canWrite);
 
@@ -72,32 +65,29 @@ export default class Archive {
     }
   }
 
-  static init(
+  static init<TLogfile extends Logfile>(
     archivePath: string,
-    type: string,
-    creationTime: number,
-    todoSites: string[]
-  ): Archive {
+    logfile: TLogfile
+  ): Archive<TLogfile> {
     archivePath = path.resolve(archivePath);
 
     mkdirSync(archivePath, { recursive: true });
 
-    const archive = new Archive(archivePath, true);
-
-    archive.logfile = {
-      type,
-      creationTime,
-      todoSites,
-      sites: [],
-    };
-
+    const archive = new Archive<TLogfile>(archivePath, true);
+    archive.logfile = logfile;
     return archive;
   }
 
-  static open(archivePath: string, canWrite: boolean = false): Archive {
+  static open<TLogfile extends Logfile>(
+    archivePath: string,
+    canWrite: boolean = false
+  ): Archive<TLogfile> {
     archivePath = path.resolve(archivePath);
 
-    assert(existsSync(Archive.getLogfilePath(archivePath)));
+    assert(
+      existsSync(Archive.getLogfilePath(archivePath)),
+      `Cannot open archive: ${archivePath}`
+    );
 
     return new Archive(archivePath, canWrite);
   }

@@ -20,6 +20,29 @@ export default class WPRArchive {
     readonly disableFuzzyURLMatching: boolean
   ) {}
 
+  resolveRequest(url: string): ArchivedRequest {
+    const { requests } = this;
+    const req = requests.find((req) => req.url.toString() === url);
+    if (req) {
+      assert(req.method === "GET");
+      const res = req.response;
+      const { statusCode } = res;
+      if (statusCode >= 400) {
+        throw new Error(`Request resolved to error response: ${statusCode}`);
+      } else if (statusCode >= 300) {
+        const location = res.headers.get("location");
+        assert(location);
+        return this.resolveRequest(new URL(dropHash(location), url).toString());
+      } else if (statusCode >= 200) {
+        return req;
+      } else {
+        throw new Error(`Unsupported status code: ${statusCode}`);
+      }
+    } else {
+      throw new Error(`Cannot resolve request: ${url}`);
+    }
+  }
+
   editResponses(
     callback: (
       request: ArchivedRequest,
