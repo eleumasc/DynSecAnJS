@@ -15,7 +15,6 @@ import { dropHash } from "../util/url";
 import walk from "acorn-walk";
 import { getDiffEvidences } from "./getDiffEvidences";
 import { maxESVersion } from "./ESVersion";
-import SyntaxFeature from "./SyntaxFeature";
 
 export const getSiteSyntax = (
   wprArchive: WPRArchive,

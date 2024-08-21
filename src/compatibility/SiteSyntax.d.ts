@@ -1,5 +1,5 @@
 import { ESVersion } from "./ESVersion";
-import { SyntaxFeature } from "./SyntaxFeature";
+import SyntaxFeature from "./SyntaxFeature";
 
 export interface SiteSyntax {
   documentUrl: string;
