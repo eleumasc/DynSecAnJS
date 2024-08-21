@@ -15,7 +15,7 @@ import { headless, jalangiPath, projectFoxhoundPath } from "../env";
 import { Agent } from "./Agent";
 import { Browser } from "selenium-webdriver";
 import { DefaultToolAnalysis } from "./DefaultToolAnalysis";
-import { ESVersion } from "../compatibility/ESVersion";
+import { ESVersion } from "../syntax/ESVersion";
 import { PuppeteerAgent } from "./PuppeteerAgent";
 import { SeleniumAgent } from "./SeleniumAgent";
 import { ToolAnalysis } from "./ToolAnalysis";

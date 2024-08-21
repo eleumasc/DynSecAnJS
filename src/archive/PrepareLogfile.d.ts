@@ -1,4 +1,4 @@
-import { SiteSyntax } from "../compatibility/SiteSyntax";
+import { SiteSyntax } from "../syntax/SiteSyntax";
 import { Completion } from "../util/Completion";
 import { Logfile } from "./Logfile";
 

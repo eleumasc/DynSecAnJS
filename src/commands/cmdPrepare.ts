@@ -13,7 +13,7 @@ import path from "path";
 import { processEachSite } from "../util/processEachSite";
 import WPRArchive from "../wprarchive/WPRArchive";
 import { isSuccess, toCompletion } from "../util/Completion";
-import { getSiteSyntax } from "../compatibility/getSiteSyntax";
+import { getSiteSyntax } from "../syntax/getSiteSyntax";
 
 export type PrepareArgs = Args<
   {

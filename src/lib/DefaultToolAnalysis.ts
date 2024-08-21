@@ -1,4 +1,4 @@
-import { ESVersion, lessOrEqualToESVersion } from "../compatibility/ESVersion";
+import { ESVersion, lessOrEqualToESVersion } from "../syntax/ESVersion";
 import { Fallible, isFailure, retryIfFailure } from "../core/Fallible";
 import { RunOptions, ToolAnalysis, ToolAnalysisResult } from "./ToolAnalysis";
 

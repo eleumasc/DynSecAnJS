@@ -1,5 +1,5 @@
 import { AttachmentList } from "./ArchiveWriter";
-import { ESVersion } from "../compatibility/ESVersion";
+import { ESVersion } from "../syntax/ESVersion";
 import { ExecutionDetail } from "./ExecutionDetail";
 import { Fallible } from "../core/Fallible";
 import { RunnableAnalysis } from "./Analysis";

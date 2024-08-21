@@ -3,7 +3,7 @@ import { Fallible, toFallible } from "../core/Fallible";
 import { Agent } from "./Agent";
 import { CompatibilityHooksProvider } from "./CompatibilityHooks";
 import { MonitorConfig } from "./monitor";
-import { SiteSyntax } from "../compatibility/SiteSyntax";
+import { SiteSyntax } from "../syntax/SiteSyntax";
 import { defaultViewport } from "../core/defaults";
 import { timeBomb } from "../core/async";
 import { useProxiedMonitor } from "./ProxiedMonitor";

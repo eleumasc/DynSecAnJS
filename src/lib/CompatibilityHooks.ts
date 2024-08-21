@@ -1,5 +1,5 @@
 import { ProxiedMonitorHooks } from "./ProxiedMonitorHooks";
-import { SiteSyntax } from "../compatibility/SiteSyntax";
+import { SiteSyntax } from "../syntax/SiteSyntax";
 
 export interface CompatibilityHooks {
   hooks: ProxiedMonitorHooks;
