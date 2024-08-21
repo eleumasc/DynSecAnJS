@@ -1,9 +1,9 @@
 import { Fallible, toFallible } from "../core/Fallible";
 
 import { Agent } from "./Agent";
-import { CompatibilityDetail } from "../compatibility/CompatibilityDetail";
 import { CompatibilityHooksProvider } from "./CompatibilityHooks";
 import { MonitorConfig } from "./monitor";
+import { SiteSyntax } from "../compatibility/SiteSyntax";
 import { defaultViewport } from "../core/defaults";
 import { timeBomb } from "../core/async";
 import { useProxiedMonitor } from "./ProxiedMonitor";
@@ -19,7 +19,7 @@ export interface Options {
 
 export const runCompatibilityAnalysis = (
   options: Options
-): Promise<Fallible<CompatibilityDetail>> => {
+): Promise<Fallible<SiteSyntax>> => {
   const { url, agent, hooksProvider, monitorConfig, wprOptions, toleranceMs } =
     options;
 

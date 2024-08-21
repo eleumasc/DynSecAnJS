@@ -1,17 +1,17 @@
-import { Category } from "./CompatibilityDetail";
+import SyntaxFeature from "./SyntaxFeature";
 
 export interface DiffEvidence {
-  kind: string;
-  category: Category;
+  type: string;
+  feature: SyntaxFeature;
 }
 
 export interface NodeDiffEvidence extends DiffEvidence {
-  kind: "node";
-  type: string;
+  type: "node";
+  nodeType: string;
 }
 
 export interface PropDiffEvidence extends DiffEvidence {
-  kind: "prop";
-  type: string;
+  type: "prop";
+  base: string;
   prop: string;
 }

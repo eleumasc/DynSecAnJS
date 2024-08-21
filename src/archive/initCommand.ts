@@ -1,6 +1,5 @@
 import Archive from "./Archive";
 import { Logfile } from "./Logfile";
-import _ from "lodash";
 import path from "path";
 import { unixTime } from "../util/time";
 

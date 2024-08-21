@@ -2,7 +2,6 @@ import { HttpMessage, HttpRequest, HttpResponse } from "./HttpMessage";
 
 import { CRLF } from "./consts";
 import HeaderMap from "./HeaderMap";
-import _ from "lodash";
 import assert from "assert";
 
 export const buildHttpRequest = (model: HttpRequest): Buffer => {

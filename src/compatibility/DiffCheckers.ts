@@ -8,7 +8,7 @@ import {
   PropDiffEvidence,
 } from "./DiffEvidence";
 import { TypeChecker } from "./TypeChecker";
-import { Category } from "./CompatibilityDetail";
+import SyntaxFeature from "./SyntaxFeature";
 
 export type VisitorTypeName = keyof SimpleVisitors<any>;
 
@@ -26,7 +26,7 @@ export type DiffCheckers = {
 
 export class DiffCheckersBuilder {
   protected diffCheckers: DiffCheckers = {};
-  protected _category: Category | null = null;
+  protected _feature: SyntaxFeature | null = null;
 
   constructor(readonly esVersion: ESVersion) {}
 
@@ -36,53 +36,51 @@ export class DiffCheckersBuilder {
   ) {
     this.diffCheckers = {
       ...this.diffCheckers,
-      [typeName]: [...(this.diffCheckers[typeName] || []), diffChecker],
+      [typeName]: [...(this.diffCheckers[typeName] ?? []), diffChecker],
     };
   }
 
-  intro(categoryName: string) {
-    this._category = { name: categoryName, esVersion: this.esVersion };
+  intro(featureName: string) {
+    const { esVersion } = this;
+    this._feature = new SyntaxFeature(featureName, esVersion);
     return this;
   }
 
-  get category(): Category {
-    const category = this._category;
-    assert(
-      category !== null,
-      "Please use intro() first to introduce a category"
-    );
-    return category;
+  get currentFeature(): SyntaxFeature {
+    const feature = this._feature;
+    assert(feature !== null, "Use intro() first to introduce a feature");
+    return feature;
   }
 
   definesNode<TypeName extends VisitorTypeName>(typeName: TypeName) {
-    const { category } = this;
+    const { currentFeature: feature } = this;
     this.addDiffChecker(typeName, (node) => {
       return <NodeDiffEvidence>{
-        kind: "node",
-        category,
-        type: node.type,
+        type: "node",
+        feature,
+        nodeType: node.type,
       };
     });
     return this;
   }
 
   extendsProp<
-    TypeName extends VisitorTypeName,
-    PropName extends keyof VisitorType<TypeName>
+    Base extends VisitorTypeName,
+    Prop extends keyof VisitorType<Base>
   >(
-    typeName: TypeName,
-    propName: PropName,
-    diffTypeChecker: TypeChecker<VisitorType<TypeName>[PropName]>
+    base: Base,
+    prop: Prop,
+    diffTypeChecker: TypeChecker<VisitorType<Base>[Prop]>
   ) {
-    const { category } = this;
-    this.addDiffChecker(typeName, (node) => {
-      const value = node[propName];
+    const { currentFeature: feature } = this;
+    this.addDiffChecker(base, (node) => {
+      const value = node[prop];
       if (diffTypeChecker(value)) {
         return <PropDiffEvidence>{
-          kind: "prop",
-          category,
-          type: typeName,
-          prop: propName,
+          type: "prop",
+          feature: feature,
+          base,
+          prop,
         };
       }
     });
@@ -102,7 +100,7 @@ export const combineDiffCheckersArray = (
       acc = {
         ...acc,
         [typeName as VisitorTypeName]: [
-          ...(acc[typeName as VisitorTypeName] || []),
+          ...(acc[typeName as VisitorTypeName] ?? []),
           ...typeDiffCheckers,
         ],
       };

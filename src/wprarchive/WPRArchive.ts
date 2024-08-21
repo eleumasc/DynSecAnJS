@@ -8,6 +8,7 @@ import { readFileSync, writeFileSync } from "fs";
 import ArchivedRequest from "./ArchivedRequest";
 import ArchivedResponse from "./ArchivedResponse";
 import assert from "assert";
+import { dropHash } from "../util/url";
 
 export default class WPRArchive {
   constructor(

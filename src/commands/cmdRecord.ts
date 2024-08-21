@@ -17,7 +17,7 @@ import { headless } from "../env";
 import path from "path";
 import { processEachSite } from "../util/processEachSite";
 import { readSitelistFromFile } from "../util/Sitelist";
-import { retryOnce } from "../util/retryOnce";
+import { retryOnce, retryOnceCompletion } from "../util/retryOnce";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
 import { usePlaywrightPage } from "../util/PlaywrightPage";
 import { useTempDirectory } from "../util/TempDirectory";
@@ -72,10 +72,12 @@ export const cmdRecord = async (args: RecordArgs) => {
     concurrencyLimit,
     async (site) => {
       const { archivePath } = archive;
-      await callAgent(__filename, recordSite.name, {
-        site,
-        archivePath,
-      } satisfies RecordSiteArgs);
+      await retryOnce(() =>
+        callAgent(__filename, recordSite.name, {
+          site,
+          archivePath,
+        } satisfies RecordSiteArgs)
+      );
     }
   );
 };
@@ -141,7 +143,7 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
     };
   };
 
-  const result: RecordSiteResult = await retryOnce(() =>
+  const result: RecordSiteResult = await retryOnceCompletion(() =>
     useTempDirectory(async (tempPath) => {
       const wprArchiveTempPath = path.join(tempPath, "archive.wprgo");
 

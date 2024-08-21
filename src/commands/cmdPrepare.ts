@@ -13,7 +13,7 @@ import path from "path";
 import { processEachSite } from "../util/processEachSite";
 import WPRArchive from "../wprarchive/WPRArchive";
 import { isSuccess, toCompletion } from "../util/Completion";
-import ArchivedRequest from "../wprarchive/ArchivedRequest";
+import { getSiteSyntax } from "../compatibility/getSiteSyntax";
 
 export type PrepareArgs = Args<
   {
@@ -100,11 +100,9 @@ const prepareSite = async (args: PrepareSiteArgs): Promise<void> => {
       recordArchive.getFilePath(`${site}-archive.wprgo`)
     );
 
-    const mainRequest = wprArchive.resolveRequest(
-      recordSiteResult.value.accessUrl
-    );
-
-    return {};
+    return {
+      syntax: getSiteSyntax(wprArchive, recordSiteResult.value.accessUrl),
+    };
   });
 
   archive.writeData(`${site}.json`, result);

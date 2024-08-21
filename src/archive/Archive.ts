@@ -8,7 +8,6 @@ import {
 } from "fs";
 
 import { Logfile } from "./Logfile";
-import _ from "lodash";
 import assert from "assert";
 import path from "path";
 

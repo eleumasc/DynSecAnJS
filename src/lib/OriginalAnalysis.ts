@@ -1,8 +1,8 @@
 import { AttachmentList } from "./ArchiveWriter";
-import { CompatibilityDetail } from "../compatibility/CompatibilityDetail";
 import { ExecutionDetail } from "./ExecutionDetail";
 import { Fallible } from "../core/Fallible";
 import { RunnableAnalysis } from "./Analysis";
+import { SiteSyntax } from "../compatibility/SiteSyntax";
 
 export interface RunOptions {
   site: string;
@@ -13,7 +13,7 @@ export interface OriginalAnalysis
   extends RunnableAnalysis<RunOptions, OriginalAnalysisResult> {}
 
 export interface OriginalAnalysisResult {
-  compatibility: CompatibilityDetail;
+  compatibility: SiteSyntax;
   wprArchiveFile: string;
   timeSeedMs: number;
   originalExecutions: Fallible<ExecutionDetail>[];

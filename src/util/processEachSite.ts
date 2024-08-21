@@ -2,7 +2,6 @@ import { isSuccess, toCompletion } from "./Completion";
 
 import _ from "lodash";
 import { eachLimit } from "async";
-import { retryOnce } from "./retryOnce";
 
 export interface SiteProcessable {
   getSites(): string[];
@@ -27,9 +26,7 @@ export const processEachSite = async (
     concurrencyLimit,
     async (site, eachCallback) => {
       log(`begin process ${site}`);
-      const completion = await retryOnce(() =>
-        toCompletion(() => callback(site))
-      );
+      const completion = await toCompletion(() => callback(site));
       if (isSuccess(completion)) {
         processedSites = [...processedSites, site];
         sp.onSiteProcessed(site);

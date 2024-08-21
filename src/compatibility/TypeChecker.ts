@@ -18,33 +18,30 @@ export const inArray = <T>(typeChecker: TypeChecker<T>): TypeChecker<T[]> => {
 };
 
 export const isNode = (typeName: VisitorTypeName): TypeChecker<acorn.Node> => {
-  interface LocalVisitorState {
-    result: boolean | null;
-  }
+  let result: boolean | null = null;
 
   return (input) => {
-    const state: LocalVisitorState = { result: null };
-    walk.recursive(
+    walk.recursive<void>(
       input,
-      state,
+      undefined,
       {
-        [typeName]: (_: any, state: LocalVisitorState) => {
-          state.result = true;
+        [typeName]: (_: any) => {
+          result = true;
         },
       },
       new Proxy(
         {},
         {
           get() {
-            return (_: any, state: LocalVisitorState) => {
-              state.result = false;
+            return (_: any) => {
+              result = false;
             };
           },
         }
       )
     );
-    assert(state.result !== null);
-    return state.result;
+    assert(result !== null);
+    return result;
   };
 };
 

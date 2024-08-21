@@ -3,7 +3,6 @@ import { debugMode, localhost, wprgoPath } from "../env";
 import { getTcpPort, waitUntilUsed } from "../util/getTcpPort";
 
 import Deferred from "../core/Deferred";
-import _ from "lodash";
 import { spawn } from "child_process";
 
 export type WebPageReplayOperation = "record" | "replay";
@@ -36,11 +35,11 @@ export const useWebPageReplay = async <T>(
       operation,
       `--http_port=${httpPort}`,
       `--https_port=${httpsPort}`,
-      `--inject_scripts=${(_.defaultTo(injectDeterministic, true)
+      `--inject_scripts=${(injectDeterministic ?? true
         ? ["deterministic.js"]
         : []
       )
-        .concat(_.defaultTo(injectScripts, []))
+        .concat(injectScripts ?? [])
         .join(",")}`,
       archivePath,
     ],

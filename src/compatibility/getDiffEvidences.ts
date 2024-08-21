@@ -19,7 +19,7 @@ import { ESVersion } from "./ESVersion";
 import acorn from "acorn";
 import walk from "acorn-walk";
 
-export const collectDiffEvidences = (
+export const getDiffEvidences = (
   program: acorn.Program
 ): DiffEvidence[] => {
   const state: DiffVisitorsState = { evidences: [] };
