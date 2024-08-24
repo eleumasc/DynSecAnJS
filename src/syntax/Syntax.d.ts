@@ -1,10 +1,10 @@
 import { ESVersion } from "./ESVersion";
 import SyntaxFeature from "./SyntaxFeature";
 
-export interface SiteSyntax {
+export interface Syntax {
   documentUrl: string;
   minimumESVersion: ESVersion;
-  scripts: ScriptSyntax[];
+  scripts: SyntaxScript[];
 }
 
 export type SyntaxDetail = {
@@ -21,18 +21,20 @@ export type ModuleDetail =
       importUrls: string[];
     };
 
-export type BaseScriptSyntax = {
+export type BaseSyntaxScript = {
   type: string;
-  scriptUrl: string;
 } & SyntaxDetail &
   ModuleDetail;
 
-export type ExternalScriptSyntax = BaseScriptSyntax & {
+export type ExternalSyntaxScript = BaseSyntaxScript & {
   type: "external";
+  url: string;
+  dynamicLoading: boolean;
 };
 
-export type InlineScriptSyntax = BaseScriptSyntax & {
+export type InlineSyntaxScript = BaseSyntaxScript & {
   type: "inline";
+  hash: string;
 } & (
     | {
         isEventHandler: false;
@@ -42,4 +44,4 @@ export type InlineScriptSyntax = BaseScriptSyntax & {
       } & { isModule: false })
   );
 
-export type ScriptSyntax = ExternalScriptSyntax | InlineScriptSyntax;
+export type SyntaxScript = ExternalSyntaxScript | InlineSyntaxScript;

@@ -7,6 +7,7 @@ import {
 import {
   excludingNull,
   inArray,
+  isIdentifier,
   isLiteral,
   isNode,
   isNull,
@@ -19,9 +20,7 @@ import { ESVersion } from "./ESVersion";
 import acorn from "acorn";
 import walk from "acorn-walk";
 
-export const getDiffEvidences = (
-  program: acorn.Program
-): DiffEvidence[] => {
+export const getDiffEvidences = (program: acorn.Program): DiffEvidence[] => {
   const state: DiffVisitorsState = { evidences: [] };
   walk.simple(program, diffVisitors, undefined, state);
   return state.evidences;
@@ -101,7 +100,9 @@ const initDiffVisitors = (): DiffVisitors => {
       .definesNode("MethodDefinition")
       .definesNode("ClassDeclaration")
       .definesNode("ClassExpression")
-      .definesNode("MetaProperty")
+
+      .intro("new-target")
+      .extendsProp("MetaProperty", "meta", isIdentifier("new"))
 
       .intro("modules")
       .definesNode("ImportDeclaration")
@@ -183,6 +184,9 @@ const initDiffVisitors = (): DiffVisitors => {
 
       .intro("dynamic-import")
       .definesNode("ImportExpression")
+
+      .intro("import-meta")
+      .extendsProp("MetaProperty", "meta", isIdentifier("import"))
 
       .intro("export-namespace-from")
       .extendsProp("ExportAllDeclaration", "exported", not(isNull()))

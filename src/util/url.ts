@@ -1,4 +1,4 @@
-export const dropHash = (url: string) => {
-  const hashIndex = url.indexOf("#");
-  return hashIndex !== -1 ? url.substring(0, hashIndex) : url;
+export const dropHash = (url: string): string => {
+  const index = url.indexOf("#");
+  return index !== -1 ? url.substring(0, index) : url;
 };

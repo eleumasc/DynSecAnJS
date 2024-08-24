@@ -13,6 +13,10 @@ export const isLiteral = <T extends LiteralType, U extends T>(
   return (input) => input === value;
 };
 
+export const isIdentifier = (name: string): TypeChecker<acorn.Identifier> => {
+  return (input) => input.name === name;
+};
+
 export const inArray = <T>(typeChecker: TypeChecker<T>): TypeChecker<T[]> => {
   return (input) => input.some((element) => typeChecker(element));
 };

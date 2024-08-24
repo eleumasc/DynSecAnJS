@@ -1,4 +1,4 @@
-import { compressGzip, decompressGzip } from "../core/compression";
+import { compressGzip, decompressGzip } from "../util/encoding";
 import {
   getRequestsDataFromRequests,
   getRequestsFromRequestsData,
@@ -21,33 +21,36 @@ export default class WPRArchive {
     readonly disableFuzzyURLMatching: boolean
   ) {}
 
-  resolveRequest(url: string): ArchivedRequest {
+  resolveRequest(url: string, canUpgrade?: boolean): ArchivedRequest {
+    url = dropHash(url);
+
     const { requests } = this;
     const req = requests.find((req) => req.url.toString() === url);
     if (req) {
-      assert(req.method === "GET");
       const res = req.response;
       const { statusCode } = res;
-      if (statusCode >= 400) {
-        throw new Error(`Request resolved to error response: ${statusCode}`);
-      } else if (statusCode >= 300) {
+      if (statusCode >= 300 && statusCode <= 399) {
         const location = res.headers.get("location");
         assert(location);
-        return this.resolveRequest(new URL(dropHash(location), url).toString());
-      } else if (statusCode >= 200) {
-        return req;
+        return this.resolveRequest(new URL(location, url).toString());
       } else {
-        throw new Error(`Unsupported status code: ${statusCode}`);
+        return req;
       }
-    } else {
-      throw new Error(`Cannot resolve request: ${url}`);
+    } else if (canUpgrade ?? false) {
+      const newURL = new URL(url);
+      if (newURL.protocol === "http:") {
+        newURL.protocol = "https:";
+        return this.resolveRequest(newURL.toString());
+      }
     }
+
+    throw new Error(`Cannot resolve request: ${url}`);
   }
 
   editResponses(
     callback: (
       request: ArchivedRequest,
-      archive: WPRArchive
+      wprArchive: WPRArchive
     ) => ArchivedResponse
   ): WPRArchive {
     return new WPRArchive(
@@ -63,7 +66,7 @@ export default class WPRArchive {
     );
   }
 
-  toData(): any {
+  toObject(): any {
     return {
       Requests: getRequestsDataFromRequests(this.requests),
       Certs: this.certs,
@@ -79,11 +82,11 @@ export default class WPRArchive {
   toFile(file: string): void {
     writeFileSync(
       file,
-      compressGzip(Buffer.from(JSON.stringify(this.toData())))
+      compressGzip(Buffer.from(JSON.stringify(this.toObject())))
     );
   }
 
-  static fromData(data: any): WPRArchive {
+  static fromObject(data: any): WPRArchive {
     assert(typeof data === "object" && data !== null);
 
     const {
@@ -118,7 +121,7 @@ export default class WPRArchive {
   }
 
   static fromFile(file: string): WPRArchive {
-    return WPRArchive.fromData(
+    return WPRArchive.fromObject(
       JSON.parse(decompressGzip(readFileSync(file)).toString())
     );
   }

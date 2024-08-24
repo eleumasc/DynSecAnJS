@@ -9,11 +9,13 @@ import { Document, Node } from "parse5/dist/tree-adapters/default";
 import { getAttribute, getChildNodes, isElement } from "./util";
 
 import { htmlEventAttributes } from "./htmlEventAttributes";
+import { isJavaScriptMimeType } from "../util/mimeType";
 
 export default class HtmlDocument {
   constructor(
     readonly documentNode: Document,
-    readonly baseHref: string | undefined,
+    readonly baseUrl: string | undefined,
+    readonly rawImportMap: string | undefined,
     readonly scriptList: HtmlScript[]
   ) {}
 
@@ -23,28 +25,28 @@ export default class HtmlDocument {
 
   static parse(input: string): HtmlDocument {
     const documentNode = parse5.parse(input);
-    let baseHref: string | undefined;
+    let baseUrl: string | undefined;
+    let rawImportMap: string | undefined;
     const scriptList: HtmlScript[] = [];
     traverse(documentNode);
-    return new HtmlDocument(documentNode, baseHref, scriptList);
+    return new HtmlDocument(documentNode, baseUrl, rawImportMap, scriptList);
 
     function traverse(node: Node): void {
       if (isElement(node)) {
         if (node.tagName === "base") {
-          baseHref = getAttribute(node, "href");
+          baseUrl = baseUrl ?? getAttribute(node, "href");
         }
 
         if (node.tagName === "script") {
           const type = getAttribute(node, "type");
-          if (
-            typeof type === "undefined" ||
-            type.includes("javascript") ||
-            type === "module"
-          ) {
+          if (type === undefined || isJavaScriptMimeType(type)) {
             const htmlScript = new ElementHtmlScript(node);
             if (htmlScript.isExternal || htmlScript.inlineSource.length !== 0) {
               scriptList.push(htmlScript);
             }
+          } else if (type === "importmap") {
+            rawImportMap =
+              rawImportMap ?? new ElementHtmlScript(node).inlineSource;
           }
         }
 

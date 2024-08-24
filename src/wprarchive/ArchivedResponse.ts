@@ -1,4 +1,4 @@
-import { compress, decompress } from "../core/compression";
+import { decode, encode } from "../util/encoding";
 
 import HeaderMap from "../httputil/HeaderMap";
 import { HttpResponse } from "../httputil/HttpMessage";
@@ -46,7 +46,7 @@ export class OriginalArchivedResponse implements ArchivedResponse {
     const { headers, body } = this.m;
 
     const encoding = headers.get("content-encoding");
-    const decodedBody = encoding ? decompress(body, encoding) : body;
+    const decodedBody = encoding ? decode(body, encoding) : body;
 
     return (this._body = decodedBody);
   }
@@ -114,7 +114,7 @@ export class ModifiedArchivedResponse implements ArchivedResponse {
     } = this.m;
 
     const encoding = headers.get("content-encoding");
-    const encodedBody = encoding ? compress(this._body, encoding) : this._body;
+    const encodedBody = encoding ? encode(this._body, encoding) : this._body;
 
     const model: HttpResponse = {
       protocolVersion,
@@ -138,3 +138,6 @@ const fixContentLength = (headers: HeaderMap, body: Buffer): HeaderMap => {
     return headers;
   }
 };
+
+export const isOk = (response: ArchivedResponse): boolean =>
+  response.statusCode >= 200 && response.statusCode <= 299;

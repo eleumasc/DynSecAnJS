@@ -7,10 +7,24 @@ import {
   inflateSync,
 } from "zlib";
 
-export const compress = (input: Buffer, encoding: string): Buffer => {
-  switch (encoding) {
+type Encoding =
+  | ""
+  | "identity"
+  | "none"
+  | "utf-8"
+  | "utf8"
+  | "gzip"
+  | "deflate"
+  | "br";
+
+export const encode = (input: Buffer, encoding: string): Buffer => {
+  encoding = encoding.toLowerCase();
+  switch (encoding as Encoding) {
     case "":
     case "identity":
+    case "none":
+    case "utf-8":
+    case "utf8":
       return input;
     case "gzip":
       return compressGzip(input);
@@ -19,14 +33,18 @@ export const compress = (input: Buffer, encoding: string): Buffer => {
     case "br":
       return compressBrotli(input);
     default:
-      throw new Error(`Cannot compress`);
+      throw new Error(`Cannot encode: ${encoding}`);
   }
 };
 
-export const decompress = (input: Buffer, encoding: string): Buffer => {
-  switch (encoding) {
+export const decode = (input: Buffer, encoding: string): Buffer => {
+  encoding = encoding.toLowerCase();
+  switch (encoding as Encoding) {
     case "":
     case "identity":
+    case "none":
+    case "utf-8":
+    case "utf8":
       return input;
     case "gzip":
       return decompressGzip(input);
@@ -35,7 +53,7 @@ export const decompress = (input: Buffer, encoding: string): Buffer => {
     case "br":
       return decompressBrotli(input);
     default:
-      throw new Error(`Cannot decompress: ${encoding}`);
+      throw new Error(`Cannot decode: ${encoding}`);
   }
 };
 

@@ -1,9 +1,9 @@
 import { ProxiedMonitorHooks } from "./ProxiedMonitorHooks";
-import { SiteSyntax } from "../syntax/SiteSyntax";
+import { Syntax } from "../syntax/Syntax";
 
 export interface CompatibilityHooks {
   hooks: ProxiedMonitorHooks;
-  willCompleteAnalysis: () => Promise<SiteSyntax>;
+  willCompleteAnalysis: () => Promise<Syntax>;
 }
 
 export type CompatibilityHooksProvider = () => CompatibilityHooks;
