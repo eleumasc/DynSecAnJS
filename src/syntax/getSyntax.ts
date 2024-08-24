@@ -64,7 +64,7 @@ export const getSyntax = (
       result.push(script);
 
       if (script.isModule) {
-        for (const importUrl of script.importUrls) {
+        for (const importUrl of Object.values(script.moduleDeps)) {
           analyzerQueue.push(
             analyzeExternalScript(
               importUrl,
@@ -261,9 +261,18 @@ const getModuleDetail = (
       assert(typeof value === "string");
       importSrcs.push(value);
     },
+    ImportExpression(node) {
+      const { source: sourceNode } = node;
+      if (sourceNode.type === "Literal") {
+        importSrcs.push(String(sourceNode.value));
+      }
+    },
   });
-  const importUrls = importSrcs.map((importSrc) =>
-    dropHash(importMap.resolve(importSrc, parentUrl))
+  const moduleDeps = Object.fromEntries(
+    importSrcs.map((importSrc) => [
+      importSrc,
+      dropHash(importMap.resolve(importSrc, parentUrl)),
+    ])
   );
-  return { isModule, importUrls };
+  return { isModule, moduleDeps };
 };

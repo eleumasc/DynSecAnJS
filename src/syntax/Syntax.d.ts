@@ -18,7 +18,7 @@ export type ModuleDetail =
     }
   | {
       isModule: true;
-      importUrls: string[];
+      moduleDeps: Record<string, string>;
     };
 
 export type BaseSyntaxScript = {
