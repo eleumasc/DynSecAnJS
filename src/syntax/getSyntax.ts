@@ -1,20 +1,20 @@
 import { AttributeHtmlScript, ElementHtmlScript } from "../html/HTMLScript";
-import { ModuleDetail, SyntaxScript, Syntax, SyntaxDetail } from "./Syntax";
+import { IImportMap, ImportMap } from "../util/import-map";
+import { ModuleDetail, Syntax, SyntaxDetail, SyntaxScript } from "./Syntax";
 
+import DataURL from "../util/DataURL";
 import HtmlDocument from "../html/HTMLDocument";
 import WPRArchive from "../wprarchive/WPRArchive";
 import _ from "lodash";
 import acorn from "acorn";
 import assert from "assert";
-import walk from "acorn-walk";
-import { getDiffEvidences } from "./getDiffEvidences";
-import { maxESVersion } from "./ESVersion";
-import { isJavaScriptMimeType } from "../util/mimeType";
-import DataURL from "../util/DataURL";
-import { IImportMap, ImportMap } from "../util/import-map";
 import { dropHash } from "../util/url";
-import { md5 } from "../util/hash";
+import { getDiffEvidences } from "./getDiffEvidences";
+import { isJavaScriptMimeType } from "../util/mimeType";
 import { isOk } from "../wprarchive/ArchivedResponse";
+import { maxESVersion } from "./ESVersion";
+import { md5 } from "../util/hash";
+import walk from "acorn-walk";
 
 export const getSyntax = (
   wprArchive: WPRArchive,
@@ -28,10 +28,6 @@ export const getSyntax = (
     `Navigation request resolved to response with status code ${mainResponse.statusCode}`
   );
 
-  assert(
-    mainResponse.headers.get("content-type")?.includes("html") ?? true,
-    `Navigation request resolved to response with content type different from HTML`
-  );
   const htmlDocument = HtmlDocument.parse(mainResponse.body.toString());
 
   const documentUrl = (
@@ -57,28 +53,29 @@ export const getSyntax = (
   const processAnalyzerQueue = (
     analyzerQueue: ScriptSyntaxAnalyzer[]
   ): SyntaxScript[] => {
-    const result = <SyntaxScript[]>[];
+    const result: SyntaxScript[] = [];
     for (let analyzer; (analyzer = analyzerQueue.shift()) !== undefined; ) {
-      const script = analyzer(analyzerState);
+      let script;
+      try {
+        script = analyzer(analyzerState);
+      } catch {
+        script = null;
+      }
       if (!script) continue;
       result.push(script);
 
       if (script.isModule) {
         for (const importUrl of Object.values(script.moduleDeps)) {
-          analyzerQueue.push(
-            analyzeExternalScript(
-              importUrl,
-              true,
-              script.type === "external" ? script.dynamicLoading : false
-            )
-          );
+          analyzerQueue.push(analyzeExternalScript(importUrl, true));
         }
       }
     }
     return result;
   };
 
-  const staticScripts = processAnalyzerQueue(
+  const scriptUrlMap: Record<string, string> = {};
+
+  let scripts = processAnalyzerQueue(
     htmlDocument.scriptList
       .filter(
         (script) => !(script instanceof ElementHtmlScript && script.isNoModule)
@@ -87,11 +84,10 @@ export const getSyntax = (
         if (htmlScript instanceof ElementHtmlScript) {
           const { isExternal, isModule } = htmlScript;
           if (isExternal) {
-            return analyzeExternalScript(
-              dropHash(new URL(htmlScript.src, documentUrl).toString()),
-              isModule,
-              false
-            );
+            const { src } = htmlScript;
+            const url = dropHash(new URL(src, documentUrl).toString());
+            scriptUrlMap[src] = url;
+            return analyzeExternalScript(url, isModule);
           } else {
             return analyzeInlineScript(htmlScript.inlineSource, isModule);
           }
@@ -104,21 +100,21 @@ export const getSyntax = (
       })
   );
 
-  const dynamicLoadingExternalScriptUrls = _.difference(
-    knownExternalScriptUrls,
-    [...externalScriptUrls]
-  );
+  const residualScriptUrls = _.difference(knownExternalScriptUrls, [
+    ...externalScriptUrls,
+  ]);
 
-  const dynScripts = processAnalyzerQueue(
-    dynamicLoadingExternalScriptUrls.map((scriptUrl) =>
-      analyzeExternalScript(scriptUrl, undefined, true)
+  scripts = scripts.concat(
+    processAnalyzerQueue(
+      residualScriptUrls.map((scriptUrl) =>
+        analyzeExternalScript(scriptUrl, undefined)
+      )
     )
   );
 
-  const scripts = [...staticScripts, ...dynScripts];
-
   return {
     documentUrl,
+    scriptUrlMap,
     minimumESVersion: maxESVersion(
       scripts.map((script) => script.minimumESVersion)
     ),
@@ -137,11 +133,7 @@ type ScriptSyntaxAnalyzer = (
 ) => SyntaxScript | null;
 
 const analyzeExternalScript =
-  (
-    url: string,
-    isModule: boolean | undefined,
-    dynamicLoading: boolean
-  ): ScriptSyntaxAnalyzer =>
+  (url: string, isModule: boolean | undefined): ScriptSyntaxAnalyzer =>
   (state) => {
     const { wprArchive, importMap, externalScriptUrls } = state;
 
@@ -161,9 +153,7 @@ const analyzeExternalScript =
     externalScriptUrls.add(url);
 
     const response = wprArchive.resolveRequest(url, true).response;
-    if (!isOk(response)) {
-      return null;
-    }
+    assert(isOk(response));
     const source = response.body.toString();
     const { program, isModuleComputed } = (() => {
       if (isModule !== undefined) {
@@ -173,11 +163,11 @@ const analyzeExternalScript =
         try {
           const program = parseJavascript(source);
           return { program, isModuleComputed: false };
-        } catch (e) {
+        } catch {
           try {
             const program = parseJavascript(source, true);
             return { program, isModuleComputed: true };
-          } catch {
+          } catch (e) {
             throw e;
           }
         }
@@ -188,7 +178,6 @@ const analyzeExternalScript =
       url,
       ...getSyntaxDetail(program),
       ...getModuleDetail(isModuleComputed, program, importMap, url),
-      dynamicLoading,
     };
   };
 
@@ -254,7 +243,7 @@ const getModuleDetail = (
     return { isModule };
   }
 
-  const importSrcs = <string[]>[];
+  const importSrcs: string[] = [];
   walk.simple(program, {
     ImportDeclaration(node) {
       const { value } = node.source;

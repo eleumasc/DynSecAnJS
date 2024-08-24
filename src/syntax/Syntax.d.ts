@@ -3,6 +3,7 @@ import SyntaxFeature from "./SyntaxFeature";
 
 export interface Syntax {
   documentUrl: string;
+  scriptUrlMap: Record<string, string>;
   minimumESVersion: ESVersion;
   scripts: SyntaxScript[];
 }
@@ -29,7 +30,6 @@ export type BaseSyntaxScript = {
 export type ExternalSyntaxScript = BaseSyntaxScript & {
   type: "external";
   url: string;
-  dynamicLoading: boolean;
 };
 
 export type InlineSyntaxScript = BaseSyntaxScript & {

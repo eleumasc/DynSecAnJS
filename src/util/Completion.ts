@@ -35,10 +35,10 @@ export const isFailure = <T>(
 };
 
 export const toCompletion = async <T>(
-  cb: () => T | Promise<T>
+  callback: () => T | Promise<T>
 ): Promise<Completion<T>> => {
   try {
-    const value = await cb();
+    const value = await callback();
     return Success(value);
   } catch (e) {
     return Failure(String(e));
