@@ -1,9 +1,10 @@
 import { Completion } from "../util/Completion";
+import { SitesState } from "../util/SitesState";
 import { Logfile } from "./Logfile";
 
 export interface RecordLogfile extends Logfile {
   type: "RecordLogfile";
-  sites: string[];
+  sitesState: SitesState;
 }
 
 export type RecordSiteResult = Completion<RecordSiteDetail>;

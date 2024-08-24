@@ -1,10 +1,12 @@
 import { Syntax } from "../syntax/Syntax";
 import { Completion } from "../util/Completion";
+import { SitesState } from "../util/SitesState";
 import { Logfile } from "./Logfile";
 
 export interface PrepareLogfile extends Logfile {
   type: "PrepareLogfile";
-  sites: string[];
+  recordArchiveName: string;
+  sitesState: SitesState | null;
 }
 
 export type PrepareSiteResult = Completion<PrepareSiteDetail>;

@@ -8,9 +8,9 @@ import { callAgent, registerAgent } from "../util/thread";
 import Archive from "../archive/Archive";
 import { PrepareLogfile, PrepareSiteResult } from "../archive/PrepareLogfile";
 import { RecordLogfile, RecordSiteResult } from "../archive/RecordLogfile";
-import assert from "assert";
 import path from "path";
-import { processEachSite } from "../util/processEachSite";
+import { processSites } from "../util/processSites";
+import { createSitesStateFrom } from "../util/SitesState";
 import WPRArchive from "../wprarchive/WPRArchive";
 import { isSuccess, toCompletion } from "../util/Completion";
 import { getSyntax } from "../syntax/getSyntax";
@@ -27,40 +27,38 @@ export type PrepareArgs = Args<
 export const cmdPrepare = async (args: PrepareArgs) => {
   const {
     archive,
-    deps: { recordArchiveName },
     processArgs: { concurrencyLimit },
-    workingDirectory,
-  } = initCommand<PrepareLogfile>()(
+    requireArchive,
+  } = initCommand(
     args,
-    (depsArgs) =>
-      getPrefixFromArchivePath(depsArgs.recordArchivePath, "Prepare"),
-    () => {
-      return { type: "PrepareLogfile", sites: [] };
-    },
-    (depsArgs) => {
-      const recordArchiveName = path.basename(depsArgs.recordArchivePath);
-      return { recordArchiveName };
+    (requireArgs) =>
+      getPrefixFromArchivePath(requireArgs.recordArchivePath, "Prepare"),
+    (requireArgs): PrepareLogfile => {
+      return {
+        type: "PrepareLogfile",
+        recordArchiveName: path.basename(requireArgs.recordArchivePath),
+        sitesState: null,
+      };
     }
   );
 
-  const recordArchivePath = path.resolve(workingDirectory, recordArchiveName);
-  const recordArchive = Archive.open<RecordLogfile>(recordArchivePath);
-  assert(recordArchive.logfile.type === "RecordLogfile");
+  const { archive: recordArchive, archivePath: recordArchivePath } =
+    requireArchive<RecordLogfile>(
+      archive.logfile.recordArchiveName,
+      "RecordLogfile"
+    );
 
-  await processEachSite(
+  await processSites(
     {
-      getSites() {
-        return recordArchive.logfile.sites;
+      getInitialSitesState() {
+        return (
+          archive.logfile.sitesState ??
+          createSitesStateFrom(recordArchive.logfile.sitesState)
+        );
       },
-      getProcessedSites() {
-        return archive.logfile.sites;
-      },
-      onSiteProcessed(site) {
+      onSiteProcessed(_, sitesState) {
         const { logfile } = archive;
-        archive.logfile = {
-          ...logfile,
-          sites: [...logfile.sites, site],
-        };
+        archive.logfile = { ...logfile, sitesState };
       },
     },
     concurrencyLimit,

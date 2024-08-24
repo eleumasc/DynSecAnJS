@@ -68,8 +68,6 @@ export default class Archive<TLogfile extends Logfile> {
     archivePath: string,
     logfile: TLogfile
   ): Archive<TLogfile> {
-    archivePath = path.resolve(archivePath);
-
     mkdirSync(archivePath, { recursive: true });
 
     const archive = new Archive<TLogfile>(archivePath, true);
@@ -81,8 +79,6 @@ export default class Archive<TLogfile extends Logfile> {
     archivePath: string,
     canWrite: boolean = false
   ): Archive<TLogfile> {
-    archivePath = path.resolve(archivePath);
-
     assert(
       existsSync(Archive.getLogfilePath(archivePath)),
       `Cannot open archive: ${archivePath}`

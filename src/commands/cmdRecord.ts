@@ -15,7 +15,8 @@ import { addExtra } from "playwright-extra";
 import assert from "assert";
 import { headless } from "../env";
 import path from "path";
-import { processEachSite } from "../util/processEachSite";
+import { processSites } from "../util/processSites";
+import { createSitesState } from "../util/SitesState";
 import { readSitelistFromFile } from "../util/Sitelist";
 import { retryOnce, retryOnceCompletion } from "../util/retryOnce";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
@@ -37,36 +38,29 @@ export type RecordArgs = Args<
 export const cmdRecord = async (args: RecordArgs) => {
   const {
     archive,
-    deps: { sitelist },
     processArgs: { concurrencyLimit },
-  } = initCommand<RecordLogfile>()(
+  } = initCommand(
     args,
-    (depsArgs) => path.resolve(depsArgs.workingDirectory, "Record"),
-    () => {
-      return { type: "RecordLogfile", sites: [] };
-    },
-    (depsArgs) => {
-      const sitelist = readSitelistFromFile(depsArgs.sitelistPath);
-      return { sitelist };
+    (requireArgs) => path.resolve(requireArgs.workingDirectory, "Record"),
+    (requireArgs): RecordLogfile => {
+      const sitelist = readSitelistFromFile(requireArgs.sitelistPath);
+      return {
+        type: "RecordLogfile",
+        sitesState: createSitesState(sitelist),
+      };
     }
   );
 
-  console.log(`${sitelist.length} sites`);
+  console.log(`${Object.entries(archive.logfile.sitesState).length} sites`);
 
-  await processEachSite(
+  await processSites(
     {
-      getSites() {
-        return sitelist;
+      getInitialSitesState() {
+        return archive.logfile.sitesState;
       },
-      getProcessedSites() {
-        return archive.logfile.sites;
-      },
-      onSiteProcessed(site) {
+      onSiteProcessed(_, sitesState) {
         const { logfile } = archive;
-        archive.logfile = {
-          ...logfile,
-          sites: [...logfile.sites, site],
-        };
+        archive.logfile = { ...logfile, sitesState };
       },
     },
     concurrencyLimit,

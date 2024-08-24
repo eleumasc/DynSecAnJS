@@ -36,7 +36,7 @@ yargs(process.argv.slice(2))
     (argv) => {
       cmdRecord({
         type: "normal",
-        depsArgs: {
+        requireArgs: {
           sitelistPath: argv.sitelistPath,
           workingDirectory: argv.workingDirectory,
         },
@@ -87,7 +87,7 @@ yargs(process.argv.slice(2))
     (argv) => {
       cmdPrepare({
         type: "normal",
-        depsArgs: {
+        requireArgs: {
           recordArchivePath: argv.recordArchivePath,
         },
         processArgs: {
