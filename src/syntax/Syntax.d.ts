@@ -2,10 +2,11 @@ import { ESVersion } from "./ESVersion";
 import SyntaxFeature from "./SyntaxFeature";
 
 export interface Syntax {
-  documentUrl: string;
-  scriptUrlMap: Record<string, string>;
+  mainUrl: string;
   minimumESVersion: ESVersion;
+  scriptUrlMap: Record<string, string>;
   scripts: SyntaxScript[];
+  errors: string[];
 }
 
 export type SyntaxDetail = {
@@ -19,7 +20,7 @@ export type ModuleDetail =
     }
   | {
       isModule: true;
-      moduleDeps: Record<string, string>;
+      importUrlMap: Record<string, string>;
     };
 
 export type BaseSyntaxScript = {

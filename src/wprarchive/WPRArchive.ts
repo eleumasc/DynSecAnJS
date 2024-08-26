@@ -21,7 +21,7 @@ export default class WPRArchive {
     readonly disableFuzzyURLMatching: boolean
   ) {}
 
-  resolveRequest(url: string, canUpgrade?: boolean): ArchivedRequest {
+  getRequest(url: string, canUpgrade?: boolean): ArchivedRequest {
     url = dropHash(url);
 
     const { requests } = this;
@@ -32,7 +32,7 @@ export default class WPRArchive {
       if (statusCode >= 300 && statusCode <= 399) {
         const location = res.headers.get("location");
         assert(location);
-        return this.resolveRequest(new URL(location, url).toString());
+        return this.getRequest(new URL(location, url).toString());
       } else {
         return req;
       }
@@ -40,7 +40,7 @@ export default class WPRArchive {
       const newURL = new URL(url);
       if (newURL.protocol === "http:") {
         newURL.protocol = "https:";
-        return this.resolveRequest(newURL.toString());
+        return this.getRequest(newURL.toString());
       }
     }
 

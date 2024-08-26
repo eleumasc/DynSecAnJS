@@ -1,9 +1,9 @@
 import { AttributeHtmlScript, ElementHtmlScript } from "../html/HTMLScript";
-import { IImportMap, ImportMap } from "../util/import-map";
 import { ModuleDetail, Syntax, SyntaxDetail, SyntaxScript } from "./Syntax";
 
 import DataURL from "../util/DataURL";
 import HtmlDocument from "../html/HTMLDocument";
+import { ImportMap } from "../util/import-map";
 import WPRArchive from "../wprarchive/WPRArchive";
 import _ from "lodash";
 import acorn from "acorn";
@@ -22,7 +22,7 @@ export const getSyntax = (
   knownExternalScriptUrls: string[]
 ): Syntax => {
   const { url: mainUrl, response: mainResponse } =
-    wprArchive.resolveRequest(accessUrl);
+    wprArchive.getRequest(accessUrl);
   assert(
     isOk(mainResponse),
     `Navigation request resolved to response with status code ${mainResponse.statusCode}`
@@ -40,10 +40,11 @@ export const getSyntax = (
     htmlDocument.rawImportMap !== undefined
       ? new ImportMap({
           mapUrl: documentUrl,
-          map: JSON.stringify(htmlDocument.rawImportMap) as IImportMap,
+          map: JSON.parse(htmlDocument.rawImportMap),
         })
       : new ImportMap(documentUrl);
 
+  const errors: string[] = [];
   const externalScriptUrls = new Set<string>();
   const analyzerState: ScriptSyntaxAnalyzerState = {
     wprArchive,
@@ -58,14 +59,15 @@ export const getSyntax = (
       let script;
       try {
         script = analyzer(analyzerState);
-      } catch {
+      } catch (e) {
+        errors.push(String(e));
         script = null;
       }
       if (!script) continue;
       result.push(script);
 
       if (script.isModule) {
-        for (const importUrl of Object.values(script.moduleDeps)) {
+        for (const importUrl of Object.values(script.importUrlMap)) {
           analyzerQueue.push(analyzeExternalScript(importUrl, true));
         }
       }
@@ -73,36 +75,46 @@ export const getSyntax = (
     return result;
   };
 
-  const scriptUrlMap: Record<string, string> = {};
+  const htmlScripts = htmlDocument.scriptList.filter(
+    (script) => !(script instanceof ElementHtmlScript && script.isNoModule)
+  );
 
-  let scripts = processAnalyzerQueue(
-    htmlDocument.scriptList
+  const scriptUrlMap: Record<string, string> = Object.fromEntries(
+    htmlScripts
       .filter(
-        (script) => !(script instanceof ElementHtmlScript && script.isNoModule)
+        (htmlScript): htmlScript is ElementHtmlScript =>
+          htmlScript instanceof ElementHtmlScript && htmlScript.isExternal
       )
-      .map((htmlScript): ScriptSyntaxAnalyzer => {
-        if (htmlScript instanceof ElementHtmlScript) {
-          const { isExternal, isModule } = htmlScript;
-          if (isExternal) {
-            const { src } = htmlScript;
-            const url = dropHash(new URL(src, documentUrl).toString());
-            scriptUrlMap[src] = url;
-            return analyzeExternalScript(url, isModule);
-          } else {
-            return analyzeInlineScript(htmlScript.inlineSource, isModule);
-          }
-        } else if (htmlScript instanceof AttributeHtmlScript) {
-          const { inlineSource: source } = htmlScript;
-          return analyzeEventHandler(source);
-        } else {
-          throw new Error("Unsupported HTMLScript"); // This should never happen
-        }
+      .map((htmlScript) => {
+        const { src } = htmlScript;
+        const url = dropHash(new URL(src, documentUrl).toString());
+        return [src, url];
       })
   );
 
-  const residualScriptUrls = _.difference(knownExternalScriptUrls, [
-    ...externalScriptUrls,
-  ]);
+  let scripts = processAnalyzerQueue(
+    htmlScripts.map((htmlScript): ScriptSyntaxAnalyzer => {
+      if (htmlScript instanceof ElementHtmlScript) {
+        const { isExternal, isModule } = htmlScript;
+        if (isExternal) {
+          const url = scriptUrlMap[htmlScript.src];
+          assert(url !== undefined);
+          return analyzeExternalScript(url, isModule);
+        } else {
+          return analyzeInlineScript(htmlScript.inlineSource, isModule);
+        }
+      } else if (htmlScript instanceof AttributeHtmlScript) {
+        return analyzeEventHandler(htmlScript.inlineSource);
+      } else {
+        throw new Error("Unsupported HTMLScript"); // This should never happen
+      }
+    })
+  );
+
+  const residualScriptUrls = _.difference(
+    knownExternalScriptUrls.map((url) => dropHash(url)),
+    [...externalScriptUrls]
+  );
 
   scripts = scripts.concat(
     processAnalyzerQueue(
@@ -113,12 +125,13 @@ export const getSyntax = (
   );
 
   return {
-    documentUrl,
-    scriptUrlMap,
+    mainUrl: mainUrl.toString(),
     minimumESVersion: maxESVersion(
       scripts.map((script) => script.minimumESVersion)
     ),
+    scriptUrlMap,
     scripts,
+    errors,
   };
 };
 
@@ -137,14 +150,14 @@ const analyzeExternalScript =
   (state) => {
     const { wprArchive, importMap, externalScriptUrls } = state;
 
-    if (url.startsWith("blob:") || url.startsWith("chrome-extension:")) {
-      return null;
-    }
-
     if (url.startsWith("data:")) {
       const { content, mimeType: type } = DataURL.parse(url);
       assert(type === undefined || isJavaScriptMimeType(type));
       return analyzeInlineScript(content.toString(), type === "module")(state);
+    }
+
+    if (!url.startsWith("http:") && !url.startsWith("https:")) {
+      return null;
     }
 
     if (externalScriptUrls.has(url)) {
@@ -152,33 +165,33 @@ const analyzeExternalScript =
     }
     externalScriptUrls.add(url);
 
-    const response = wprArchive.resolveRequest(url, true).response;
-    assert(isOk(response));
-    const source = response.body.toString();
-    const { program, isModuleComputed } = (() => {
-      if (isModule !== undefined) {
-        const program = parseJavascript(source, isModule);
-        return { program, isModuleComputed: isModule };
-      } else {
-        try {
-          const program = parseJavascript(source);
-          return { program, isModuleComputed: false };
-        } catch {
+    try {
+      const response = wprArchive.getRequest(url, true).response;
+      assert(isOk(response));
+      const source = response.body.toString();
+      const { program, isModuleComputed } = (() => {
+        if (isModule !== undefined) {
+          const program = parseJavascript(source, isModule);
+          return { program, isModuleComputed: isModule };
+        } else {
           try {
+            const program = parseJavascript(source);
+            return { program, isModuleComputed: false };
+          } catch {
             const program = parseJavascript(source, true);
             return { program, isModuleComputed: true };
-          } catch (e) {
-            throw e;
           }
         }
-      }
-    })();
-    return {
-      type: "external",
-      url,
-      ...getSyntaxDetail(program),
-      ...getModuleDetail(isModuleComputed, program, importMap, url),
-    };
+      })();
+      return {
+        type: "external",
+        url,
+        ...getSyntaxDetail(program),
+        ...getModuleDetail(isModuleComputed, program, importMap, url),
+      };
+    } catch (e) {
+      throw `[${url}] ${e}`;
+    }
   };
 
 const analyzeInlineScript =
@@ -257,11 +270,11 @@ const getModuleDetail = (
       }
     },
   });
-  const moduleDeps = Object.fromEntries(
+  const importUrlMap = Object.fromEntries(
     importSrcs.map((importSrc) => [
       importSrc,
       dropHash(importMap.resolve(importSrc, parentUrl)),
     ])
   );
-  return { isModule, moduleDeps };
+  return { isModule, importUrlMap };
 };
