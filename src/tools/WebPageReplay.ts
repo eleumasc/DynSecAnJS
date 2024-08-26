@@ -47,11 +47,13 @@ export const useWebPageReplay = async <T>(
   );
 
   const deferredExit = new Deferred<void>();
-  childProcess.on("exit", (code, _signal) => {
-    if (code !== 0) {
-      deferredExit.reject(new Error(`Process has exited with code ${code}`));
-    } else {
+  childProcess.on("exit", (code, signal) => {
+    if (code === 0 || signal === "SIGINT") {
       deferredExit.resolve();
+    } else {
+      deferredExit.reject(
+        new Error(`Process has exited with code ${code} and signal ${signal}`)
+      );
     }
   });
 

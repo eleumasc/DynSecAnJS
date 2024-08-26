@@ -1,139 +1,179 @@
-import { Worker, isMainThread, parentPort } from "worker_threads";
+import {
+  ChildInitCommandController,
+  initCommand,
+} from "../archive/initCommand";
+import { Args } from "../archive/Args";
+import { callAgent, registerAgent } from "../util/thread";
 
-import { Agent } from "port_agent";
-import ArchiveWriter from "../lib/ArchiveWriter";
+import { AnalyzeSyntaxArchive } from "../archive/AnalyzeSyntaxArchive";
+import { RecordArchive } from "../archive/RecordArchive";
+import {
+  ArchiveProcessSitesController,
+  processSites,
+} from "../util/processSites";
+import { isSuccess, toCompletion } from "../util/Completion";
+import {
+  CollectBrowserArchive,
+  CollectBrowserLogfile,
+  CollectBrowserSiteDetail,
+  RunDetail,
+} from "../archive/CollectBrowserArchive";
+import { getBrowserLauncher } from "../collection/getBrowserLauncher";
+import { BrowserName } from "../collection/BrowserName";
+import { SiteResult } from "../archive/Archive";
+import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
+import { usePlaywrightPage } from "../collection/PlaywrightPage";
+import { ForwardProxy } from "../util/ForwardProxy";
+import { Browser, Page } from "playwright";
+import { addExtra } from "playwright-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import { headless } from "../env";
 import assert from "assert";
-import { chromium } from "playwright";
-import { eachLimit } from "async";
-import path from "path";
-import { readSitelistFromFile } from "../core/sitelist";
+import { timeBomb } from "../util/timeout";
 import { unixTime } from "../util/time";
-import { useForwardProxy } from "../util/ForwardProxy";
-import { useWebPageReplay } from "../tools/WebPageReplay";
+import { ProbesState, useProbesBundle } from "../collection/useProbesBundle";
+import { retryOnce } from "../util/retryOnce";
 
-export interface CollectBrowserArgs {
-  sitelistPath: string;
-  browserName: string;
-  concurrencyLimit: number;
-}
-
-export type BrowserName = "Chromium" | "Firefox";
-
-export const isBrowserName = (value: any): value is BrowserName => {
-  switch (value) {
-    case "Chromium":
-    case "Firefox":
-      return true;
-    default:
-      return false;
+export type CollectBrowserArgs = Args<
+  {
+    browserName: BrowserName;
+    analyzeSyntaxArchivePath: string;
+  },
+  {
+    concurrencyLimit: number;
   }
-};
-
-export interface BrowserLogfile {
-  type: "BrowserLogfile";
-  creationTime: number;
-  browserName: BrowserName;
-  sites: string[];
-  processedSites: string[];
-}
+>;
 
 export const cmdCollectBrowser = async (args: CollectBrowserArgs) => {
-  // const { browserName, sitelistPath, concurrencyLimit } = args;
+  const {
+    archive,
+    processArgs: { concurrencyLimit },
+    resolveArchivePath,
+  } = initCommand(
+    args,
+    CollectBrowserArchive,
+    new ChildInitCommandController(
+      AnalyzeSyntaxArchive,
+      (requireArgs) => requireArgs.analyzeSyntaxArchivePath,
+      (requireArgs) => `CollectBrowser-${requireArgs.browserName}`,
+      (
+        requireArgs,
+        { parentArchiveName, sitesState }
+      ): CollectBrowserLogfile => {
+        return {
+          type: "CollectBrowserLogfile",
+          browserName: requireArgs.browserName,
+          analyzeSyntaxArchiveName: parentArchiveName,
+          sitesState,
+        };
+      }
+    )
+  );
 
-  // assert(isBrowserName(browserName));
+  const analyzeSyntaxArchive = AnalyzeSyntaxArchive.open(
+    resolveArchivePath(archive.logfile.analyzeSyntaxArchiveName)
+  );
+  const recordArchive = RecordArchive.open(
+    resolveArchivePath(analyzeSyntaxArchive.logfile.recordArchiveName)
+  );
 
-  // const sites = readSitelistFromFile(sitelistPath);
-  // console.log(sites);
-  // console.log(`${sites.length} sites`);
-
-  // const creationTime = unixTime();
-  // const outputPath = path.resolve(
-  //   "results",
-  //   `${creationTime}-browser-${browserName}`
-  // );
-  // console.log(`Output path: ${outputPath}`);
-
-  // const archive = new ArchiveWriter(outputPath);
-
-  // let logfile: BrowserLogfile = {
-  //   type: "BrowserLogfile",
-  //   creationTime,
-  //   browserName,
-  //   sites,
-  //   processedSites: [],
-  // };
-
-  // const log = (msg: string) => {
-  //   console.log(
-  //     `[${logfile.processedSites.length} / ${logfile.sites.length}] ${msg}`
-  //   );
-  // };
-
-  // await eachLimit(sites, concurrencyLimit, async (site) => {
-  //   log(`begin analysis ${site}`);
-
-  //   const worker = new Worker(__filename);
-  //   try {
-  //     const agent = new Agent(worker);
-  //     agent.call(processSite.name, {
-  //       site,
-  //       outputPath,
-  //     } satisfies ProcessSiteArgs);
-
-  //     // archive.writeLogfile()
-  //   } finally {
-  //     worker.terminate();
-  //   }
-
-  //   log(`end analysis ${site}`);
-  // });
-
-  // console.log("done");
+  await useProbesBundle({}, async (bundlePath) =>
+    processSites(
+      new ArchiveProcessSitesController(archive),
+      concurrencyLimit,
+      async (site) => {
+        const { archivePath } = archive;
+        await callAgent(__filename, collectBrowserSite.name, {
+          site,
+          browserName: archive.logfile.browserName,
+          archivePath,
+          analyzeSyntaxArchivePath: analyzeSyntaxArchive.archivePath,
+          recordArchivePath: recordArchive.archivePath,
+          bundlePath,
+        } satisfies CollectBrowserSiteArgs);
+      }
+    )
+  );
 };
 
-// interface ProcessSiteArgs {
-//   browserName: BrowserName;
-//   site: string;
-//   outputPath: string;
-// }
+interface CollectBrowserSiteArgs {
+  site: string;
+  browserName: BrowserName;
+  archivePath: string;
+  analyzeSyntaxArchivePath: string;
+  recordArchivePath: string;
+  bundlePath: string;
+}
 
-// interface ProcessSiteResult {}
+const collectBrowserSite = async (
+  args: CollectBrowserSiteArgs
+): Promise<void> => {
+  const { site, browserName, archivePath, recordArchivePath, bundlePath } =
+    args;
 
-// const processSite = async (
-//   args: ProcessSiteArgs
-// ): Promise<ProcessSiteResult> => {
-//   const { browserName, site, outputPath } = args;
+  const archive = CollectBrowserArchive.open(archivePath, true);
 
-//   const archivePath = path.join(outputPath, `${site}-archive.wprgo`);
+  const recordArchive = RecordArchive.open(recordArchivePath);
+  const recordSiteResult = recordArchive.readSiteResult(site);
+  assert(isSuccess(recordSiteResult));
+  const {
+    value: { accessUrl },
+  } = recordSiteResult;
 
-//   await useWebPageReplay(
-//     {
-//       operation: "record",
-//       archivePath,
-//     },
-//     (wpr) =>
-//       useForwardProxy(wpr, async (forwardProxy) => {
-//         const browser = await chromium.launch({
-//           headless: false,
-//           proxy: { server: `${forwardProxy.hostname}:${forwardProxy.port}` },
-//         });
+  const browserFactory = (forwardProxy: ForwardProxy) => (): Promise<Browser> =>
+    addExtra(getBrowserLauncher(browserName))
+      .use(StealthPlugin())
+      .launch({
+        headless,
+        proxy: {
+          server: `${forwardProxy.hostname}:${forwardProxy.port}`,
+        },
+      });
 
-//         const browserContext = await browser.newContext({
-//           ignoreHTTPSErrors: true,
-//         });
+  const navigate = async (page: Page): Promise<RunDetail> => {
+    const startTime = unixTime();
+    let executionTime;
+    try {
+      await page.goto(accessUrl, { timeout: 120_000 });
+      executionTime = unixTime() - startTime;
+    } catch {}
+    const probesState = (await timeBomb(
+      page.evaluate(`$__probes && $__probes();`),
+      15_000
+    )) as ProbesState | undefined;
+    assert(probesState);
+    assert(executionTime !== undefined);
+    return { probesState, executionTime };
+  };
 
-//         const page = await browserContext.newPage();
+  const result = await toCompletion(async () => {
+    const runs: RunDetail[] = [];
 
-//         await page.goto(`http://${site}`);
+    for (let i = 0; i < 5; ++i) {
+      const runDetail = await retryOnce(() =>
+        useForwardedWebPageReplay(
+          {
+            operation: "replay",
+            archivePath: recordArchive.getFilePath(`${site}-archive.wprgo`),
+            injectScripts: [bundlePath],
+          },
+          (forwardProxy) =>
+            usePlaywrightPage(browserFactory(forwardProxy), navigate)
+        )
+      );
 
-//         await browser.close();
-//       })
-//   );
-// };
+      runs.push(runDetail);
+    }
 
-// if (isMainThread) {
-// } else {
-//   assert(parentPort !== null);
-//   const agent = new Agent(parentPort);
-//   agent.register(processSite.name, processSite);
-// }
+    return { runs };
+  });
+
+  archive.writeSiteResult(
+    site,
+    result satisfies SiteResult<CollectBrowserSiteDetail>
+  );
+};
+
+registerAgent(() => [
+  { name: collectBrowserSite.name, fn: collectBrowserSite },
+]);

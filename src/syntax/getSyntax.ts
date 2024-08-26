@@ -106,7 +106,7 @@ export const getSyntax = (
       } else if (htmlScript instanceof AttributeHtmlScript) {
         return analyzeEventHandler(htmlScript.inlineSource);
       } else {
-        throw new Error("Unsupported HTMLScript"); // This should never happen
+        throw new Error("Unknown type of HTMLScript"); // This should never happen
       }
     })
   );

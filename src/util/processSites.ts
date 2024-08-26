@@ -1,10 +1,13 @@
 import {
+  HasSitesState,
   SitesState,
   getProcessedSitesInSitesState,
   getSitesInSitesState,
-} from "./SitesState";
+} from "../archive/SitesState";
 import { isSuccess, toCompletion } from "./Completion";
 
+import Archive from "../archive/Archive";
+import { Logfile } from "../archive/Logfile";
 import _ from "lodash";
 import { eachLimit } from "async";
 
@@ -47,3 +50,19 @@ export const processSites = async (
 
   console.log("DONE");
 };
+
+export class ArchiveProcessSitesController<
+  TLogfile extends Logfile & HasSitesState
+> implements ProcessSitesController
+{
+  constructor(readonly archive: Archive<TLogfile, unknown>) {}
+
+  getInitialSitesState(): SitesState {
+    return this.archive.logfile.sitesState;
+  }
+
+  onSiteProcessed(_site: string, sitesState: SitesState): void {
+    const { logfile } = this.archive;
+    this.archive.logfile = { ...logfile, sitesState };
+  }
+}

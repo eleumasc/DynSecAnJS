@@ -7,14 +7,33 @@ import {
   writeFileSync,
 } from "fs";
 
+import { Completion } from "../util/Completion";
 import { Logfile } from "./Logfile";
 import assert from "assert";
 import path from "path";
 
-export default class Archive<TLogfile extends Logfile> {
+export type SiteResult<TSiteData> = Completion<TSiteData>;
+
+export type ArchiveConstructor<TLogfile extends Logfile, TSiteData> = {
+  new (archivePath: string, canWrite?: boolean): Archive<TLogfile, TSiteData>;
+
+  init<TLogfile extends Logfile, TSiteData>(
+    this: ArchiveConstructor<TLogfile, TSiteData>,
+    archivePath: string,
+    logfile: TLogfile
+  ): Archive<TLogfile, TSiteData>;
+
+  open<TLogfile extends Logfile, TSiteData>(
+    this: ArchiveConstructor<TLogfile, TSiteData>,
+    archivePath: string,
+    canWrite?: boolean
+  ): Archive<TLogfile, TSiteData>;
+};
+
+export default class Archive<TLogfile extends Logfile, TSiteData = unknown> {
   protected _logfile: TLogfile | null = null;
 
-  protected constructor(
+  constructor(
     readonly archivePath: string,
     readonly canWrite: boolean = false
   ) {}
@@ -37,16 +56,18 @@ export default class Archive<TLogfile extends Logfile> {
     );
   }
 
-  readData<T>(name: string): T {
-    const dstPath = path.join(this.archivePath, name);
-    return JSON.parse(readFileSync(dstPath).toString()) as T;
+  readSiteResult(site: string): SiteResult<TSiteData> {
+    const dstPath = Archive.getSiteDataPath(this.archivePath, site);
+    return JSON.parse(
+      readFileSync(dstPath).toString()
+    ) as SiteResult<TSiteData>;
   }
 
-  writeData<T>(name: string, data: T): void {
+  writeSiteResult(site: string, result: SiteResult<TSiteData>): void {
     assert(this.canWrite);
 
-    const dstPath = path.join(this.archivePath, name);
-    writeFileSync(dstPath, JSON.stringify(data));
+    const dstPath = Archive.getSiteDataPath(this.archivePath, site);
+    writeFileSync(dstPath, JSON.stringify(result));
   }
 
   getFilePath(name: string): string {
@@ -64,21 +85,23 @@ export default class Archive<TLogfile extends Logfile> {
     }
   }
 
-  static init<TLogfile extends Logfile>(
+  static init<TLogfile extends Logfile, TSiteData>(
+    this: ArchiveConstructor<TLogfile, TSiteData>,
     archivePath: string,
     logfile: TLogfile
-  ): Archive<TLogfile> {
+  ): Archive<TLogfile, TSiteData> {
     mkdirSync(archivePath, { recursive: true });
 
-    const archive = new Archive<TLogfile>(archivePath, true);
+    const archive = new Archive<TLogfile, TSiteData>(archivePath, true);
     archive.logfile = logfile;
     return archive;
   }
 
-  static open<TLogfile extends Logfile>(
+  static open<TLogfile extends Logfile, TSiteData>(
+    this: ArchiveConstructor<TLogfile, TSiteData>,
     archivePath: string,
     canWrite: boolean = false
-  ): Archive<TLogfile> {
+  ): Archive<TLogfile, TSiteData> {
     assert(
       existsSync(Archive.getLogfilePath(archivePath)),
       `Cannot open archive: ${archivePath}`
@@ -89,5 +112,9 @@ export default class Archive<TLogfile extends Logfile> {
 
   protected static getLogfilePath(archivePath: string): string {
     return path.join(archivePath, "logfile.json");
+  }
+
+  protected static getSiteDataPath(archivePath: string, site: string): string {
+    return path.join(archivePath, `${site}.json`);
   }
 }

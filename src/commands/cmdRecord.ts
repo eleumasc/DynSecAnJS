@@ -1,13 +1,9 @@
 import { Browser, Page, Request, chromium } from "playwright";
-import {
-  RecordLogfile,
-  RecordSiteResult,
-  RecordSiteDetail,
-} from "../archive/RecordLogfile";
+import { RecordArchive, RecordSiteDetail } from "../archive/RecordArchive";
 import { callAgent, registerAgent } from "../util/thread";
 import { isSuccess, toCompletion } from "../util/Completion";
 
-import Archive from "../archive/Archive";
+import { SiteResult } from "../archive/Archive";
 import Deferred from "../core/Deferred";
 import { ForwardProxy } from "../util/ForwardProxy";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
@@ -15,15 +11,19 @@ import { addExtra } from "playwright-extra";
 import assert from "assert";
 import { headless } from "../env";
 import path from "path";
-import { processSites } from "../util/processSites";
-import { createSitesState } from "../util/SitesState";
+import {
+  ArchiveProcessSitesController,
+  processSites,
+} from "../util/processSites";
+import { createSitesState } from "../archive/SitesState";
 import { readSitelistFromFile } from "../util/Sitelist";
 import { retryOnce, retryOnceCompletion } from "../util/retryOnce";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
-import { usePlaywrightPage } from "../util/PlaywrightPage";
+import { usePlaywrightPage } from "../collection/PlaywrightPage";
 import { useTempDirectory } from "../util/TempDirectory";
 import { delay } from "../util/timeout";
-import { Args, initCommand } from "../archive/initCommand";
+import { initCommand } from "../archive/initCommand";
+import { Args } from "../archive/Args";
 
 export type RecordArgs = Args<
   {
@@ -39,30 +39,23 @@ export const cmdRecord = async (args: RecordArgs) => {
   const {
     archive,
     processArgs: { concurrencyLimit },
-  } = initCommand(
-    args,
-    (requireArgs) => path.resolve(requireArgs.workingDirectory, "Record"),
-    (requireArgs): RecordLogfile => {
+  } = initCommand(args, RecordArchive, {
+    getPrefix(requireArgs) {
+      return path.resolve(requireArgs.workingDirectory, "Record");
+    },
+    createLogfile(requireArgs) {
       const sitelist = readSitelistFromFile(requireArgs.sitelistPath);
       return {
         type: "RecordLogfile",
         sitesState: createSitesState(sitelist),
       };
-    }
-  );
+    },
+  });
 
   console.log(`${Object.entries(archive.logfile.sitesState).length} sites`);
 
   await processSites(
-    {
-      getInitialSitesState() {
-        return archive.logfile.sitesState;
-      },
-      onSiteProcessed(_, sitesState) {
-        const { logfile } = archive;
-        archive.logfile = { ...logfile, sitesState };
-      },
-    },
+    new ArchiveProcessSitesController(archive),
     concurrencyLimit,
     async (site) => {
       const { archivePath } = archive;
@@ -83,7 +76,7 @@ interface RecordSiteArgs {
 
 const recordSite = async (args: RecordSiteArgs): Promise<void> => {
   const { site, archivePath } = args;
-  const archive = Archive.open<RecordLogfile>(archivePath, true);
+  const archive = RecordArchive.open(archivePath, true);
 
   const browserFactory = (forwardProxy: ForwardProxy) => (): Promise<Browser> =>
     addExtra(chromium)
@@ -137,7 +130,7 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
     };
   };
 
-  const result: RecordSiteResult = await retryOnceCompletion(() =>
+  const result = await retryOnceCompletion(() =>
     useTempDirectory(async (tempPath) => {
       const wprArchiveTempPath = path.join(tempPath, "archive.wprgo");
 
@@ -160,7 +153,7 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
     })
   );
 
-  archive.writeData(`${site}.json`, result);
+  archive.writeSiteResult(site, result satisfies SiteResult<RecordSiteDetail>);
 };
 
 registerAgent(() => [{ name: recordSite.name, fn: recordSite }]);

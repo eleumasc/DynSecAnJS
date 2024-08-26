@@ -1,5 +1,5 @@
-var $ = require("./builtin");
-var config = require("./config");
+var $ = require("./lib/builtin");
+var env = require("./env");
 
 function collectFlowsFromJalangiTT() {
   return $.global["__ytjs_getTrackingResult"]();
@@ -10,7 +10,7 @@ function collectFlowsFromProjectFoxhound() {
 }
 
 function selectExport() {
-  switch (config.ifaToolName) {
+  switch (env.ifaToolName) {
     case "JalangiTT":
       return collectFlowsFromJalangiTT;
     case "ProjectFoxhound":
