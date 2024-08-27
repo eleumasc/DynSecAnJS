@@ -6,13 +6,13 @@ import { promisify } from "util";
 import { useTempDirectory } from "../util/TempDirectory";
 import { writeFileSync } from "fs";
 
-const probesDir = path.resolve("probes");
+const monitorDir = path.resolve("monitor");
 
-export interface ProbesEnv {
+export interface MonitorEnv {
   ifaToolName?: string;
 }
 
-export type ProbesState =
+export type MonitorState =
   | {
       loadingCompleted: false;
     }
@@ -22,13 +22,13 @@ export type ProbesState =
       flows?: any;
     };
 
-export const useProbesBundle = <T>(
-  env: ProbesEnv,
+export const useMonitorBundle = <T>(
+  env: MonitorEnv,
   use: (bundlePath: string) => Promise<T>
 ): Promise<T> =>
   useTempDirectory(async (tempPath) => {
     const bundle = await promisify<Buffer>((callback) =>
-      browserify({ basedir: probesDir })
+      browserify({ basedir: monitorDir })
         .add("./index.js")
         .transform(EnvifyCustomPlugin(env))
         .bundle(callback)

@@ -2,7 +2,7 @@ var $ = require("./lib/builtin");
 var ArraySet = require("./lib/ArraySet");
 var collectFlows = require("./collectFlows");
 
-function installProbes() {
+function setupMonitor() {
   var Apply = $.Apply;
 
   var state = { loadingCompleted: false };
@@ -25,4 +25,4 @@ function installProbes() {
   };
 }
 
-$.global["$__probes"] = installProbes();
+$.global["$__monitor"] = setupMonitor();

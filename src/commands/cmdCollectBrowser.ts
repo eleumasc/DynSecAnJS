@@ -31,7 +31,7 @@ import { headless } from "../env";
 import assert from "assert";
 import { timeBomb } from "../util/timeout";
 import { unixTime } from "../util/time";
-import { ProbesState, useProbesBundle } from "../collection/useProbesBundle";
+import { MonitorState, useMonitorBundle } from "../collection/useMonitorBundle";
 import { retryOnce } from "../util/retryOnce";
 
 export type CollectBrowserArgs = Args<
@@ -77,7 +77,7 @@ export const cmdCollectBrowser = async (args: CollectBrowserArgs) => {
     resolveArchivePath(analyzeSyntaxArchive.logfile.recordArchiveName)
   );
 
-  await useProbesBundle({}, async (bundlePath) =>
+  await useMonitorBundle({}, async (bundlePath) =>
     processSites(
       new ArchiveProcessSitesController(archive),
       concurrencyLimit,
@@ -137,13 +137,13 @@ const collectBrowserSite = async (
       await page.goto(accessUrl, { timeout: 120_000 });
       executionTime = unixTime() - startTime;
     } catch {}
-    const probesState = (await timeBomb(
-      page.evaluate(`$__probes && $__probes();`),
+    const monitorState = (await timeBomb(
+      page.evaluate(`$__monitor && $__monitor();`),
       15_000
-    )) as ProbesState | undefined;
-    assert(probesState);
+    )) as MonitorState | undefined;
+    assert(monitorState);
     assert(executionTime !== undefined);
-    return { probesState, executionTime };
+    return { monitorState, executionTime };
   };
 
   const result = await toCompletion(async () => {

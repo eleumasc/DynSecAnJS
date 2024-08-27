@@ -2,7 +2,7 @@ import Archive from "./Archive";
 import { BrowserName } from "../collection/BrowserName";
 import { HasSitesState } from "./SitesState";
 import { Logfile } from "./Logfile";
-import { ProbesState } from "../collection/useProbesBundle";
+import { MonitorState } from "../collection/useMonitorBundle";
 
 export interface CollectBrowserLogfile extends Logfile, HasSitesState {
   type: "CollectBrowserLogfile";
@@ -15,7 +15,7 @@ export interface CollectBrowserSiteDetail {
 }
 
 export interface RunDetail {
-  probesState: ProbesState;
+  monitorState: MonitorState;
   executionTime: number;
 }
 
