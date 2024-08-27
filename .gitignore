@@ -3,5 +3,5 @@ node_modules/
 build/
 workspace/
 sitelists/
-ca/
 test-results/
+nohup*.out
