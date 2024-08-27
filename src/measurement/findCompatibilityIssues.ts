@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { TransformErrorDetail } from "../lib/ExecutionDetail";
 
 export enum CompatibilityIssue {

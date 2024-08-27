@@ -1,6 +1,6 @@
 import { Agent, AgentController, UseOptions, Viewport } from "./Agent";
 import { Browser, Builder, Capabilities, WebDriver } from "selenium-webdriver";
-import { TimeoutError, timeBomb } from "../core/async";
+import { TimeoutError, timeBomb } from "../util/timeout";
 
 import { Buffer } from "buffer";
 import firefox from "selenium-webdriver/firefox";

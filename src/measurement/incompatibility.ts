@@ -1,6 +1,6 @@
 import { CompatibilityInfo, ScriptCompatibilityDetail } from "./SiteInfo";
 
-import { distinctArray } from "../core/Array";
+import _ from "lodash";
 
 export interface IncompatibilityAnalysisResult {
   probIncompatible: number;
@@ -64,9 +64,9 @@ export const executeIncompatibilityAnalysis = (
   };
 
   const features = [
-    ...distinctArray(
-      scriptCompatibilityDetails.flatMap((info) => info.features)
-    ).map((feature) => analyze(feature, isUsingFeature(feature))),
+    ..._.uniq(scriptCompatibilityDetails.flatMap((info) => info.features)).map(
+      (feature) => analyze(feature, isUsingFeature(feature))
+    ),
     analyze(
       "ES5",
       (scriptCompatibility) => scriptCompatibility.features.length === 0
@@ -86,7 +86,7 @@ export const createIncompatibilityCSV = (
     (compatibility) => compatibility.scriptCompatibilityDetails
   );
 
-  const features = distinctArray(
+  const features = _.uniq(
     scriptCompatibilityDetails.flatMap((info) => info.features)
   );
   const rows = [

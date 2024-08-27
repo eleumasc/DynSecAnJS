@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import {
   ExecutionTrace,
   brokenExecutionTraces,
@@ -70,142 +72,140 @@ export const getCompatibilityInfo = (
   originalResult: OriginalAnalysisResult,
   fallibleToolResult: Fallible<ToolAnalysisResult>
 ): CompatibilityInfo => {
-  throw new Error("Not implemented");
+  assert(isSuccess(fallibleToolResult));
 
-  // assert(isSuccess(fallibleToolResult));
+  const { val: toolResult } = fallibleToolResult;
+  const {
+    toolName,
+    compatible: syntacticallyCompatible,
+    toolExecutions: fallibleToolExecutions,
+  } = toolResult;
 
-  // const { val: toolResult } = fallibleToolResult;
-  // const {
-  //   toolName,
-  //   compatible: syntacticallyCompatible,
-  //   toolExecutions: fallibleToolExecutions,
-  // } = toolResult;
+  const findFirstExecution = (
+    fallibleExecutions: Fallible<ExecutionDetail>[]
+  ): ExecutionDetail | null => {
+    const executions = fallibleExecutions
+      .filter(isSuccess)
+      .map(({ val }) => val);
+    return executions.length > 0
+      ? executions.find(({ loadingCompleted }) => loadingCompleted) ??
+          executions[0]
+      : null;
+  };
+  const toolFirstExecution = findFirstExecution(fallibleToolExecutions);
 
-  // const findFirstExecution = (
-  //   fallibleExecutions: Fallible<ExecutionDetail>[]
-  // ): ExecutionDetail | null => {
-  //   const executions = fallibleExecutions
-  //     .filter(isSuccess)
-  //     .map(({ val }) => val);
-  //   return executions.length > 0
-  //     ? executions.find(({ loadingCompleted }) => loadingCompleted) ??
-  //         executions[0]
-  //     : null;
-  // };
-  // const toolFirstExecution = findFirstExecution(fallibleToolExecutions);
+  const analyzable = toolFirstExecution !== null;
+  const eventuallyCompatible =
+    analyzable && isToolAnalysisOk(toolName, toolFirstExecution)
+      ? toolFirstExecution.loadingCompleted
+        ? true
+        : null
+      : false;
 
-  // const analyzable = toolFirstExecution !== null;
-  // const eventuallyCompatible =
-  //   analyzable && isToolAnalysisOk(toolName, toolFirstExecution)
-  //     ? toolFirstExecution.loadingCompleted
-  //       ? true
-  //       : null
-  //     : false;
+  const isCompletelyLoaded = (
+    execution: Fallible<ExecutionDetail>
+  ): execution is Success<ExecutionDetail> =>
+    isSuccess(execution) && execution.val.loadingCompleted;
+  const isNotCompletelyLoaded = (
+    execution: Fallible<ExecutionDetail>
+  ): boolean => !isCompletelyLoaded(execution);
+  const { originalExecutions: fallibleOriginalExecutions } = originalResult;
 
-  // const isCompletelyLoaded = (
-  //   execution: Fallible<ExecutionDetail>
-  // ): execution is Success<ExecutionDetail> =>
-  //   isSuccess(execution) && execution.val.loadingCompleted;
-  // const isNotCompletelyLoaded = (
-  //   execution: Fallible<ExecutionDetail>
-  // ): boolean => !isCompletelyLoaded(execution);
-  // const { originalExecutions: fallibleOriginalExecutions } = originalResult;
+  const transpilationRequired = !syntacticallyCompatible && analyzable;
+  const babelErrorFound = (execution: ExecutionDetail): boolean =>
+    execution.transformErrors.some(
+      (transformError) => transformError.transformName === "Babel"
+    );
 
-  // const transpilationRequired = !syntacticallyCompatible && analyzable;
-  // const babelErrorFound = (execution: ExecutionDetail): boolean =>
-  //   execution.transformErrors.some(
-  //     (transformError) => transformError.transformName === "Babel"
-  //   );
+  const scriptCompatibilityDetails = analyzable
+    ? originalResult.compatibility.scripts
+        .filter(
+          (script): script is ExternalSyntaxScript => script.type === "external"
+        )
+        .map((script): ScriptCompatibilityDetail => {
+          const compatible = !toolFirstExecution.transformErrors.some(
+            (transformError) => transformError.url === script.url
+          );
+          const features = distinctArray(
+            script.categories.map(
+              (category) => `${category.esVersion}:${category.name}`
+            )
+          );
+          return { compatible, features };
+        })
+        .filter(
+          (scriptCompatibility) => scriptCompatibility.features.length > 0
+        )
+    : [];
 
-  // const scriptCompatibilityDetails = analyzable
-  //   ? originalResult.compatibility.scripts
-  //       .filter(
-  //         (script): script is ExternalSyntaxScript => script.type === "external"
-  //       )
-  //       .map((script): ScriptCompatibilityDetail => {
-  //         const compatible = !toolFirstExecution.transformErrors.some(
-  //           (transformError) => transformError.url === script.url
-  //         );
-  //         const features = distinctArray(
-  //           script.categories.map(
-  //             (category) => `${category.esVersion}:${category.name}`
-  //           )
-  //         );
-  //         return { compatible, features };
-  //       })
-  //       .filter(
-  //         (scriptCompatibility) => scriptCompatibility.features.length > 0
-  //       )
-  //   : [];
+  const baseResult = {
+    syntacticallyCompatible,
+    scriptCompatibilityDetails,
+    analyzable,
+    eventuallyCompatible,
+    transpilationOK:
+      transpilationRequired && !babelErrorFound(toolFirstExecution),
+    transpilationKO:
+      transpilationRequired && babelErrorFound(toolFirstExecution),
+    originalSomeSuccessSomeFailure:
+      eventuallyCompatible === true &&
+      fallibleOriginalExecutions.some(isCompletelyLoaded) &&
+      fallibleOriginalExecutions.some(isNotCompletelyLoaded),
+    toolSomeSuccessSomeFailure:
+      eventuallyCompatible === true &&
+      fallibleToolExecutions.some(isCompletelyLoaded) &&
+      fallibleToolExecutions.some(isNotCompletelyLoaded),
+    issues: findCompatibilityIssues(
+      toolFirstExecution?.transformErrors ?? null,
+      toolName
+    ),
+  };
 
-  // const baseResult = {
-  //   syntacticallyCompatible,
-  //   scriptCompatibilityDetails,
-  //   analyzable,
-  //   eventuallyCompatible,
-  //   transpilationOK:
-  //     transpilationRequired && !babelErrorFound(toolFirstExecution),
-  //   transpilationKO:
-  //     transpilationRequired && babelErrorFound(toolFirstExecution),
-  //   originalSomeSuccessSomeFailure:
-  //     eventuallyCompatible === true &&
-  //     fallibleOriginalExecutions.some(isCompletelyLoaded) &&
-  //     fallibleOriginalExecutions.some(isNotCompletelyLoaded),
-  //   toolSomeSuccessSomeFailure:
-  //     eventuallyCompatible === true &&
-  //     fallibleToolExecutions.some(isCompletelyLoaded) &&
-  //     fallibleToolExecutions.some(isNotCompletelyLoaded),
-  //   issues: findCompatibilityIssues(
-  //     toolFirstExecution?.transformErrors ?? null,
-  //     toolName
-  //   ),
-  // };
+  if (
+    eventuallyCompatible === true &&
+    fallibleOriginalExecutions.every(isCompletelyLoaded) &&
+    fallibleToolExecutions.every(isCompletelyLoaded)
+  ) {
+    const originalExecutions = fallibleOriginalExecutions.map(({ val }) => val);
+    const toolExecutions = fallibleToolExecutions.map(({ val }) => val);
 
-  // if (
-  //   eventuallyCompatible === true &&
-  //   fallibleOriginalExecutions.every(isCompletelyLoaded) &&
-  //   fallibleToolExecutions.every(isCompletelyLoaded)
-  // ) {
-  //   const originalExecutions = fallibleOriginalExecutions.map(({ val }) => val);
-  //   const toolExecutions = fallibleToolExecutions.map(({ val }) => val);
+    const EXPECTED_EXECUTIONS_COUNT = 5;
+    const MAJORITY_VOTING_THRESHOLD = 3;
 
-  //   const EXPECTED_EXECUTIONS_COUNT = 5;
-  //   const MAJORITY_VOTING_THRESHOLD = 3;
+    assert(originalExecutions.length === EXPECTED_EXECUTIONS_COUNT);
+    assert(toolExecutions.length === EXPECTED_EXECUTIONS_COUNT);
 
-  //   assert(originalExecutions.length === EXPECTED_EXECUTIONS_COUNT);
-  //   assert(toolExecutions.length === EXPECTED_EXECUTIONS_COUNT);
+    const originalTrace = findPredominantExecutionTrace(
+      originalExecutions.map((execution) => createExecutionTrace(execution)),
+      MAJORITY_VOTING_THRESHOLD
+    );
+    const toolTrace = findPredominantExecutionTrace(
+      toolExecutions.map((execution) => createExecutionTrace(execution)),
+      MAJORITY_VOTING_THRESHOLD
+    );
+    const originalTraceExists = originalTrace !== null;
+    const toolTraceExists = toolTrace !== null;
+    const bothTracesExist = originalTraceExists && toolTraceExists;
 
-  //   const originalTrace = findPredominantExecutionTrace(
-  //     originalExecutions.map((execution) => createExecutionTrace(execution)),
-  //     MAJORITY_VOTING_THRESHOLD
-  //   );
-  //   const toolTrace = findPredominantExecutionTrace(
-  //     toolExecutions.map((execution) => createExecutionTrace(execution)),
-  //     MAJORITY_VOTING_THRESHOLD
-  //   );
-  //   const originalTraceExists = originalTrace !== null;
-  //   const toolTraceExists = toolTrace !== null;
-  //   const bothTracesExist = originalTraceExists && toolTraceExists;
+    if (bothTracesExist) {
+      return {
+        ...baseResult,
+        transparencyAnalyzable: true,
+        transparency: getTransparencyInfo(
+          originalTrace,
+          toolTrace,
+          originalExecutions,
+          toolExecutions
+        ),
+      };
+    }
+  }
 
-  //   if (bothTracesExist) {
-  //     return {
-  //       ...baseResult,
-  //       transparencyAnalyzable: true,
-  //       transparency: getTransparencyInfo(
-  //         originalTrace,
-  //         toolTrace,
-  //         originalExecutions,
-  //         toolExecutions
-  //       ),
-  //     };
-  //   }
-  // }
-
-  // return {
-  //   ...baseResult,
-  //   transparencyAnalyzable: false,
-  //   transparency: null,
-  // };
+  return {
+    ...baseResult,
+    transparencyAnalyzable: false,
+    transparency: null,
+  };
 };
 
 export const getTransparencyInfo = (

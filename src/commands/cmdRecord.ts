@@ -1,10 +1,14 @@
 import { Browser, Page, Request, chromium } from "playwright";
 import { RecordArchive, RecordSiteDetail } from "../archive/RecordArchive";
-import { callAgent, registerAgent } from "../util/thread";
+import {
+  callIPCallback,
+  isChildProcess,
+  registerIPCallback,
+} from "../util/interprocess";
 import { isSuccess, toCompletion } from "../util/Completion";
 
 import { SiteResult } from "../archive/Archive";
-import Deferred from "../core/Deferred";
+import Deferred from "../util/Deferred";
 import { ForwardProxy } from "../util/ForwardProxy";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { addExtra } from "playwright-extra";
@@ -16,7 +20,7 @@ import {
   processSites,
 } from "../util/processSites";
 import { createSitesState } from "../archive/SitesState";
-import { readSitelistFromFile } from "../util/Sitelist";
+import { readSitelistFromFile } from "../util/sitelist";
 import { retryOnce, retryOnceCompletion } from "../util/retryOnce";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
 import { usePlaywrightPage } from "../collection/PlaywrightPage";
@@ -60,7 +64,7 @@ export const cmdRecord = async (args: RecordArgs) => {
     async (site) => {
       const { archivePath } = archive;
       await retryOnce(() =>
-        callAgent(__filename, recordSite.name, {
+        callIPCallback(__filename, recordSite.name, {
           site,
           archivePath,
         } satisfies RecordSiteArgs)
@@ -156,4 +160,6 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
   archive.writeSiteResult(site, result satisfies SiteResult<RecordSiteDetail>);
 };
 
-registerAgent(() => [{ name: recordSite.name, fn: recordSite }]);
+if (isChildProcess) {
+  registerIPCallback(() => [{ name: recordSite.name, fn: recordSite }]);
+}

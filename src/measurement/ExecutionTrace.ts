@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { equalSets, isSubsetOf, subtractSets } from "../core/Set";
 
 import { ExecutionDetail } from "../lib/ExecutionDetail";

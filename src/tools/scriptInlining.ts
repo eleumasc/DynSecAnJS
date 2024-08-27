@@ -1,14 +1,12 @@
-import { BodyTransformer } from "../lib/BodyTransformer";
-import { inlineExternalScripts } from "../html/inlineExternalScripts";
-import { transformHtml } from "../html/transformHtml";
+export const scriptInlining = () => {
+  throw new Error("Not implemented");
 
-export const scriptInlining =
-  (): BodyTransformer =>
-  async (content, { contentType, req }) => {
-    switch (contentType) {
-      case "html":
-        return await transformHtml(content, inlineExternalScripts(req.url));
-      case "javascript":
-        return content;
-    }
-  };
+  // return async (content, { contentType, req }) => {
+  //   switch (contentType) {
+  //     case "html":
+  //       return await transformHtml(content, inlineExternalScripts(req.url));
+  //     case "javascript":
+  //       return content;
+  //   }
+  // };
+};

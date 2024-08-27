@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { ExecutionDetail } from "../lib/ExecutionDetail";
 
 export const isToolAnalysisOk = (

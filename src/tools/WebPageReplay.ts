@@ -2,7 +2,7 @@ import { ForwardProxy, useForwardProxy } from "../util/ForwardProxy";
 import { debugMode, localhost, wprgoPath } from "../env";
 import { getTcpPort, waitUntilUsed } from "../util/getTcpPort";
 
-import Deferred from "../core/Deferred";
+import Deferred from "../util/Deferred";
 import { spawn } from "child_process";
 
 export type WebPageReplayOperation = "record" | "replay";
@@ -48,12 +48,12 @@ export const useWebPageReplay = async <T>(
 
   const deferredExit = new Deferred<void>();
   childProcess.on("exit", (code, signal) => {
-    if (code === 0 || signal === "SIGINT") {
-      deferredExit.resolve();
-    } else {
+    if (code !== null || signal !== "SIGINT") {
       deferredExit.reject(
-        new Error(`Process has exited with code ${code} and signal ${signal}`)
+        new Error(`Process has exited prematurely [${code}, ${signal}]`)
       );
+    } else {
+      deferredExit.resolve();
     }
   });
 

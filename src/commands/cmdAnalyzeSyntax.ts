@@ -3,7 +3,6 @@ import {
   ChildInitCommandController,
 } from "../archive/initCommand";
 import { Args } from "../archive/Args";
-import { callAgent, registerAgent } from "../util/thread";
 
 import {
   AnalyzeSyntaxArchive,
@@ -20,6 +19,11 @@ import { isSuccess, toCompletion } from "../util/Completion";
 import { getSyntax } from "../syntax/getSyntax";
 import assert from "assert";
 import { SiteResult } from "../archive/Archive";
+import {
+  callThreadCallback,
+  isChildThread,
+  registerThreadCallback,
+} from "../util/thread";
 
 export type AnalyzeSyntaxArgs = Args<
   {
@@ -64,7 +68,7 @@ export const cmdAnalyzeSyntax = async (args: AnalyzeSyntaxArgs) => {
     concurrencyLimit,
     async (site) => {
       const { archivePath } = archive;
-      await callAgent(__filename, analyzeSyntaxSite.name, {
+      await callThreadCallback(__filename, analyzeSyntaxSite.name, {
         site,
         archivePath,
         recordArchivePath: recordArchive.archivePath,
@@ -108,4 +112,8 @@ const analyzeSyntaxSite = async (
   );
 };
 
-registerAgent(() => [{ name: analyzeSyntaxSite.name, fn: analyzeSyntaxSite }]);
+if (isChildThread) {
+  registerThreadCallback(() => [
+    { name: analyzeSyntaxSite.name, fn: analyzeSyntaxSite },
+  ]);
+}

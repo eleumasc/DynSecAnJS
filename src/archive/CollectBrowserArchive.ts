@@ -2,7 +2,7 @@ import Archive from "./Archive";
 import { BrowserName } from "../collection/BrowserName";
 import { HasSitesState } from "./SitesState";
 import { Logfile } from "./Logfile";
-import { MonitorState } from "../collection/useMonitorBundle";
+import { MonitorState } from "../collection/MonitorBundle";
 
 export interface CollectBrowserLogfile extends Logfile, HasSitesState {
   type: "CollectBrowserLogfile";

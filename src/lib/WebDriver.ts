@@ -1,7 +1,7 @@
 import { Builder, WebDriver } from "selenium-webdriver";
 
 import { rmSync } from "fs";
-import { timeBomb } from "../core/async";
+import { timeBomb } from "../util/timeout";
 
 export const useWebDriver = async <T>(
   builder: Builder,

@@ -3,7 +3,11 @@ import {
   initCommand,
 } from "../archive/initCommand";
 import { Args } from "../archive/Args";
-import { callAgent, registerAgent } from "../util/thread";
+import {
+  callIPCallback,
+  isChildProcess,
+  registerIPCallback,
+} from "../util/interprocess";
 
 import { AnalyzeSyntaxArchive } from "../archive/AnalyzeSyntaxArchive";
 import { RecordArchive } from "../archive/RecordArchive";
@@ -31,7 +35,7 @@ import { headless } from "../env";
 import assert from "assert";
 import { timeBomb } from "../util/timeout";
 import { unixTime } from "../util/time";
-import { MonitorState, useMonitorBundle } from "../collection/useMonitorBundle";
+import { MonitorState, useMonitorBundle } from "../collection/MonitorBundle";
 import { retryOnce } from "../util/retryOnce";
 
 export type CollectBrowserArgs = Args<
@@ -83,7 +87,7 @@ export const cmdCollectBrowser = async (args: CollectBrowserArgs) => {
       concurrencyLimit,
       async (site) => {
         const { archivePath } = archive;
-        await callAgent(__filename, collectBrowserSite.name, {
+        await callIPCallback(__filename, collectBrowserSite.name, {
           site,
           browserName: archive.logfile.browserName,
           archivePath,
@@ -174,6 +178,8 @@ const collectBrowserSite = async (
   );
 };
 
-registerAgent(() => [
-  { name: collectBrowserSite.name, fn: collectBrowserSite },
-]);
+if (isChildProcess) {
+  registerIPCallback(() => [
+    { name: collectBrowserSite.name, fn: collectBrowserSite },
+  ]);
+}

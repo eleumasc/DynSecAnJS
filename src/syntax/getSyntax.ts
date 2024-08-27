@@ -1,8 +1,8 @@
-import { AttributeHtmlScript, ElementHtmlScript } from "../html/HTMLScript";
+import { AttributeHtmlScript, ElementHtmlScript } from "../htmlutil/HTMLScript";
 import { ModuleDetail, Syntax, SyntaxDetail, SyntaxScript } from "./Syntax";
 
 import DataURL from "../util/DataURL";
-import HtmlDocument from "../html/HTMLDocument";
+import HtmlDocument from "../htmlutil/HTMLDocument";
 import { ImportMap } from "../util/import-map";
 import WPRArchive from "../wprarchive/WPRArchive";
 import _ from "lodash";

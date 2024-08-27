@@ -1,34 +1,31 @@
-import { composeHtmlTransformers, transformHtml } from "../html/transformHtml";
-import { createJavascriptDataUrl, injectScripts } from "../html/injectScripts";
-
-import { BodyTransformer } from "../lib/BodyTransformer";
 import { ifTranspilerPath } from "../env";
 import { ignoreJSON } from "./ignoreJSON";
 import path from "path";
 import { spawnStdio } from "./spawnStdio";
-import { transformInlineScripts } from "../html/transformInlineScripts";
 
-export const transformWithIFTranspiler =
-  (): BodyTransformer =>
-  async (content, { contentType }) => {
-    switch (contentType) {
-      case "html":
-        return await transformHtml(
-          content,
-          composeHtmlTransformers([
-            transformInlineScripts(async (code, isEventHandler) => {
-              if (isEventHandler) {
-                return code;
-              }
-              return await ifTranspiler(code);
-            }),
-            injectScripts([createJavascriptDataUrl(setupCode)]),
-          ])
-        );
-      case "javascript":
-        return await ifTranspiler(content);
-    }
-  };
+export const transformWithIFTranspiler = () => {
+  throw new Error("Not implemented");
+
+  // return async (content, { contentType }) => {
+  //   switch (contentType) {
+  //     case "html":
+  //       return await transformHtml(
+  //         content,
+  //         composeHtmlTransformers([
+  //           transformInlineScripts(async (code, isEventHandler) => {
+  //             if (isEventHandler) {
+  //               return code;
+  //             }
+  //             return await ifTranspiler(code);
+  //           }),
+  //           injectScripts([createJavascriptDataUrl(setupCode)]),
+  //         ])
+  //       );
+  //     case "javascript":
+  //       return await ifTranspiler(content);
+  //   }
+  // };
+};
 
 export const ifTranspiler = (code: string): Promise<string> =>
   ignoreJSON(code, async (code) => {
