@@ -39,6 +39,8 @@ import { MonitorState, useMonitorBundle } from "../collection/MonitorBundle";
 import { retryOnce } from "../util/retryOnce";
 import { useTransformedWPRArchive } from "../collection/TransformedWPRArchive";
 import { transpile } from "../collection/transpile";
+import { ESVersion, lessOrEqualToESVersion } from "../syntax/ESVersion";
+import WPRArchive from "../wprarchive/WPRArchive";
 
 export type CollectBrowserArgs = Args<
   {
@@ -167,10 +169,17 @@ const collectBrowserSite = async (
     return { monitorState, executionTime };
   };
 
+  const transpileTransform = lessOrEqualToESVersion(
+    syntax.minimumESVersion,
+    ESVersion.ES5
+  )
+    ? null
+    : (wprArchive: WPRArchive) => transpile(wprArchive, syntax);
+
   const result = await toCompletion(() =>
     useTransformedWPRArchive(
       recordArchive.getFilePath(`${site}-archive.wprgo`),
-      (wprArchive) => transpile(wprArchive, syntax),
+      transpileTransform,
       async (wprArchivePath) => {
         const runs: RunDetail[] = [];
 
@@ -190,7 +199,10 @@ const collectBrowserSite = async (
           runs.push(runDetail);
         }
 
-        return { runs };
+        return {
+          transpiled: transpileTransform !== null,
+          runs,
+        } satisfies CollectBrowserSiteDetail;
       }
     )
   );

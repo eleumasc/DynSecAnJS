@@ -11,6 +11,7 @@ export interface CollectBrowserLogfile extends Logfile, HasSitesState {
 }
 
 export interface CollectBrowserSiteDetail {
+  transpiled: boolean;
   runs: RunDetail[];
 }
 
