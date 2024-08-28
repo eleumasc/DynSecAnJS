@@ -106,7 +106,7 @@ export const getSyntax = (
       } else if (htmlScript instanceof AttributeHtmlScript) {
         return analyzeEventHandler(htmlScript.inlineSource);
       } else {
-        throw new Error("Unknown type of HTMLScript"); // This should never happen
+        throw new Error("Unknown type of HtmlScript"); // This should never happen
       }
     })
   );
@@ -152,8 +152,9 @@ const analyzeExternalScript =
 
     if (url.startsWith("data:")) {
       const { content, mimeType: type } = DataURL.parse(url);
+      assert(isModule !== undefined);
       assert(type === undefined || isJavaScriptMimeType(type));
-      return analyzeInlineScript(content.toString(), type === "module")(state);
+      return analyzeInlineScript(content.toString(), isModule)(state);
     }
 
     if (!url.startsWith("http:") && !url.startsWith("https:")) {
@@ -262,12 +263,6 @@ const getModuleDetail = (
       const { value } = node.source;
       assert(typeof value === "string");
       importSrcs.push(value);
-    },
-    ImportExpression(node) {
-      const { source: sourceNode } = node;
-      if (sourceNode.type === "Literal") {
-        importSrcs.push(String(sourceNode.value));
-      }
     },
   });
   const importUrlMap = Object.fromEntries(

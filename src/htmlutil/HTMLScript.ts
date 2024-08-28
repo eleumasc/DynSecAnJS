@@ -14,6 +14,10 @@ export class ElementHtmlScript implements HtmlScript {
     return getAttribute(this.element, "src") !== undefined;
   }
 
+  get isInline(): boolean {
+    return !this.isExternal;
+  }
+
   get src(): string {
     const value = getAttribute(this.element, "src");
     assert(value !== undefined);
@@ -32,6 +36,42 @@ export class ElementHtmlScript implements HtmlScript {
   set inlineSource(x: string) {
     this.textContent = x;
     removeAttribute(this.element, "src");
+  }
+
+  get isDefer(): boolean {
+    return getAttribute(this.element, "defer") !== undefined;
+  }
+
+  set isDefer(x: boolean) {
+    if (x) {
+      setAttribute(this.element, "defer", "");
+    } else {
+      removeAttribute(this.element, "defer");
+    }
+  }
+
+  get isAsync(): boolean {
+    return getAttribute(this.element, "async") !== undefined;
+  }
+
+  set isAsync(x: boolean) {
+    if (x) {
+      setAttribute(this.element, "async", "");
+    } else {
+      removeAttribute(this.element, "async");
+    }
+  }
+
+  get integrity(): string | undefined {
+    return getAttribute(this.element, "integrity");
+  }
+
+  set integrity(x: string | undefined) {
+    if (x !== undefined) {
+      setAttribute(this.element, "integrity", x);
+    } else {
+      removeAttribute(this.element, "integrity");
+    }
   }
 
   get isModule(): boolean {
@@ -72,7 +112,7 @@ export class ElementHtmlScript implements HtmlScript {
           parentNode: this.element,
           value: x,
         };
-        this.element.childNodes = [...this.element.childNodes, textContentNode];
+        this.element.childNodes = [textContentNode, ...this.element.childNodes];
       }
     } else {
       if (textContentNode) {

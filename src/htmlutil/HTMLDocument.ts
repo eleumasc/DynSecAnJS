@@ -7,9 +7,9 @@ import {
 } from "./HTMLScript";
 import { Document, Node } from "parse5/dist/tree-adapters/default";
 import { getAttribute, getChildNodes, isElement } from "./util";
+import { isESModuleMimeType, isJavaScriptMimeType } from "../util/mimeType";
 
 import { htmlEventAttributes } from "./htmlEventAttributes";
-import { isJavaScriptMimeType } from "../util/mimeType";
 
 export default class HtmlDocument {
   constructor(
@@ -39,7 +39,11 @@ export default class HtmlDocument {
 
         if (node.tagName === "script") {
           const type = getAttribute(node, "type");
-          if (type === undefined || isJavaScriptMimeType(type)) {
+          if (
+            type === undefined ||
+            isJavaScriptMimeType(type) ||
+            isESModuleMimeType(type)
+          ) {
             const htmlScript = new ElementHtmlScript(node);
             if (htmlScript.isExternal || htmlScript.inlineSource.length !== 0) {
               scriptList.push(htmlScript);

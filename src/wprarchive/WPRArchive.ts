@@ -47,16 +47,19 @@ export default class WPRArchive {
     throw new Error(`Cannot resolve request: ${url}`);
   }
 
-  editResponses(
-    callback: (
-      request: ArchivedRequest,
-      wprArchive: WPRArchive
-    ) => ArchivedResponse
+  alterResponse(
+    existingRequest: ArchivedRequest,
+    newResponse: ArchivedResponse
   ): WPRArchive {
+    const { requests } = this;
+    const existingRequestIndex = requests.indexOf(existingRequest);
+    assert(existingRequestIndex !== -1);
     return new WPRArchive(
-      this.requests.map((request) =>
-        request.withResponse(callback(request, this))
-      ),
+      [
+        ...requests.slice(0, existingRequestIndex),
+        existingRequest.withResponse(newResponse),
+        ...requests.slice(existingRequestIndex + 1),
+      ],
       this.certs,
       this.negotiatedProtocol,
       this.deterministicTimeSeedMs,
