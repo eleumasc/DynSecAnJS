@@ -37,6 +37,8 @@ import { timeBomb } from "../util/timeout";
 import { unixTime } from "../util/time";
 import { MonitorState, useMonitorBundle } from "../collection/MonitorBundle";
 import { retryOnce } from "../util/retryOnce";
+import { useTransformedWPRArchive } from "../collection/TransformedWPRArchive";
+import { transpile } from "../collection/transpile";
 
 export type CollectBrowserArgs = Args<
   {
@@ -87,14 +89,16 @@ export const cmdCollectBrowser = async (args: CollectBrowserArgs) => {
       concurrencyLimit,
       async (site) => {
         const { archivePath } = archive;
-        await callIPCallback(__filename, collectBrowserSite.name, {
-          site,
-          browserName: archive.logfile.browserName,
-          archivePath,
-          analyzeSyntaxArchivePath: analyzeSyntaxArchive.archivePath,
-          recordArchivePath: recordArchive.archivePath,
-          bundlePath,
-        } satisfies CollectBrowserSiteArgs);
+        await retryOnce(() =>
+          callIPCallback(__filename, collectBrowserSite.name, {
+            site,
+            browserName: archive.logfile.browserName,
+            archivePath,
+            analyzeSyntaxArchivePath: analyzeSyntaxArchive.archivePath,
+            recordArchivePath: recordArchive.archivePath,
+            bundlePath,
+          } satisfies CollectBrowserSiteArgs)
+        );
       }
     )
   );
@@ -112,10 +116,23 @@ interface CollectBrowserSiteArgs {
 const collectBrowserSite = async (
   args: CollectBrowserSiteArgs
 ): Promise<void> => {
-  const { site, browserName, archivePath, recordArchivePath, bundlePath } =
-    args;
+  const {
+    site,
+    browserName,
+    archivePath,
+    analyzeSyntaxArchivePath,
+    recordArchivePath,
+    bundlePath,
+  } = args;
 
   const archive = CollectBrowserArchive.open(archivePath, true);
+
+  const analyzeSyntaxArchive = AnalyzeSyntaxArchive.open(
+    analyzeSyntaxArchivePath
+  );
+  const analyzeSyntaxSiteResult = analyzeSyntaxArchive.readSiteResult(site);
+  assert(isSuccess(analyzeSyntaxSiteResult));
+  const { value: syntax } = analyzeSyntaxSiteResult;
 
   const recordArchive = RecordArchive.open(recordArchivePath);
   const recordSiteResult = recordArchive.readSiteResult(site);
@@ -150,27 +167,33 @@ const collectBrowserSite = async (
     return { monitorState, executionTime };
   };
 
-  const result = await toCompletion(async () => {
-    const runs: RunDetail[] = [];
+  const result = await toCompletion(() =>
+    useTransformedWPRArchive(
+      recordArchive.getFilePath(`${site}-archive.wprgo`),
+      (wprArchive) => transpile(wprArchive, syntax),
+      async (wprArchivePath) => {
+        const runs: RunDetail[] = [];
 
-    for (let i = 0; i < 5; ++i) {
-      const runDetail = await retryOnce(() =>
-        useForwardedWebPageReplay(
-          {
-            operation: "replay",
-            archivePath: recordArchive.getFilePath(`${site}-archive.wprgo`),
-            injectScripts: [bundlePath],
-          },
-          (forwardProxy) =>
-            usePlaywrightPage(browserFactory(forwardProxy), navigate)
-        )
-      );
+        for (let i = 0; i < 5; ++i) {
+          const runDetail = await retryOnce(() =>
+            useForwardedWebPageReplay(
+              {
+                operation: "replay",
+                archivePath: wprArchivePath,
+                injectScripts: [bundlePath],
+              },
+              (forwardProxy) =>
+                usePlaywrightPage(browserFactory(forwardProxy), navigate)
+            )
+          );
 
-      runs.push(runDetail);
-    }
+          runs.push(runDetail);
+        }
 
-    return { runs };
-  });
+        return { runs };
+      }
+    )
+  );
 
   archive.writeSiteResult(
     site,

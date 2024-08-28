@@ -14,13 +14,14 @@ export const transpile = async (
   wprArchive: WPRArchive,
   syntax: Syntax
 ): Promise<WPRArchive> => {
+  // TODO: add optional user-defined transformation
+  // TODO: add optional external script inlining (e.g., for supporting JEST)
   const { mainUrl, scriptUrlMap, scripts } = syntax;
 
   const transpileJavascript = async (
     source: string,
     isEventHandler: boolean = false
   ): Promise<string> => {
-    // TODO: add optional user-defined transformation
     return transformSync(source, {
       parserOpts: {
         sourceType: "script",
@@ -31,8 +32,8 @@ export const transpile = async (
     })!.code!;
   };
 
-  const transpileHtml = async (source: string): Promise<string> => {
-    const htmlDocument = HtmlDocument.parse(source);
+  const transpileHtml = async (htmlSource: string): Promise<string> => {
+    const htmlDocument = HtmlDocument.parse(htmlSource);
     const htmlScripts = htmlDocument.scriptList.filter(
       (script) => !(script instanceof ElementHtmlScript && script.isNoModule)
     );
@@ -138,7 +139,10 @@ export const transpile = async (
           }
         }
       } else if (htmlScript instanceof AttributeHtmlScript) {
-        htmlScript.inlineSource = await transpileJavascript(source, true);
+        htmlScript.inlineSource = await transpileJavascript(
+          htmlScript.inlineSource,
+          true
+        );
       } else {
         throw new Error("Unknown type of HtmlScript"); // This should never happen
       }

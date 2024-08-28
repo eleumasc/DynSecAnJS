@@ -39,7 +39,12 @@ export const buildHttpResponse = (model: HttpResponse): Buffer => {
 };
 
 const buildHttpMessage = (model: HttpMessage): Buffer => {
-  const { headLine0: headLinePart0, headLine1: headLinePart1, headLine2: headLinePart2, headers } = model;
+  const {
+    headLine0: headLinePart0,
+    headLine1: headLinePart1,
+    headLine2: headLinePart2,
+    headers,
+  } = model;
 
   return Buffer.concat([
     Buffer.from(`${headLinePart0} ${headLinePart1} ${headLinePart2}`),
@@ -54,12 +59,10 @@ const buildBody = (model: HttpMessage): Buffer => {
   const { headers, body, trailingHeaders } = model;
 
   const len = headers.get("content-length");
-  const encoding = headers.get("content-encoding");
   const transferEncoding = headers.get("transfer-encoding");
 
   if (transferEncoding !== undefined) {
     assert(transferEncoding === "chunked");
-    assert(encoding === undefined);
     assert(len === undefined);
 
     return Buffer.concat(
