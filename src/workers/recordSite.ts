@@ -26,7 +26,7 @@ export interface RecordSiteArgs {
   archivePath: string;
 }
 
-export const recordSite = async (args: RecordSiteArgs): Promise<void> => {
+const recordSite = async (args: RecordSiteArgs): Promise<void> => {
   const { site, archivePath } = args;
   const archive = RecordArchive.open(archivePath, true);
 

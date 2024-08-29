@@ -1,4 +1,5 @@
 import workerpool from "workerpool";
+import { AnalyzeSyntaxSiteArgs } from "../workers/analyzeSyntaxSite";
 import { Args } from "../archive/Args";
 import { getWorkerFilename } from "../workers/getWorkerFilename";
 import { RecordArchive } from "../archive/RecordArchive";
@@ -14,7 +15,6 @@ import {
   ArchiveProcessSitesController,
   processSites,
 } from "../util/processSites";
-import type { AnalyzeSyntaxSiteArgs } from "../workers/analyzeSyntaxSite";
 
 export type AnalyzeSyntaxArgs = Args<
   {

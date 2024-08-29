@@ -6,12 +6,12 @@ import { getWorkerFilename } from "../workers/getWorkerFilename";
 import { initCommand } from "../archive/initCommand";
 import { readSitelistFromFile } from "../util/sitelist";
 import { RecordArchive } from "../archive/RecordArchive";
+import { RecordSiteArgs } from "../workers/recordSite";
 import { retryOnce } from "../util/retryOnce";
 import {
   ArchiveProcessSitesController,
   processSites,
 } from "../util/processSites";
-import type { RecordSiteArgs } from "../workers/recordSite";
 
 export type RecordArgs = Args<
   {

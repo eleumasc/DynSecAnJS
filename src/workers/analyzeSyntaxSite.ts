@@ -16,7 +16,7 @@ export interface AnalyzeSyntaxSiteArgs {
   recordArchivePath: string;
 }
 
-export const analyzeSyntaxSite = async (
+const analyzeSyntaxSite = async (
   args: AnalyzeSyntaxSiteArgs
 ): Promise<void> => {
   const { site, archivePath, recordArchivePath } = args;

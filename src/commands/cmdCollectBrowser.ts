@@ -2,6 +2,7 @@ import workerpool from "workerpool";
 import { AnalyzeSyntaxArchive } from "../archive/AnalyzeSyntaxArchive";
 import { Args } from "../archive/Args";
 import { BrowserName } from "../collection/BrowserName";
+import { CollectBrowserSiteArgs } from "../workers/collectBrowserSite";
 import { getWorkerFilename } from "../workers/getWorkerFilename";
 import { RecordArchive } from "../archive/RecordArchive";
 import { retryOnce } from "../util/retryOnce";
@@ -18,7 +19,6 @@ import {
   CollectBrowserArchive,
   CollectBrowserLogfile,
 } from "../archive/CollectBrowserArchive";
-import type { CollectBrowserSiteArgs } from "../workers/collectBrowserSite";
 
 export type CollectBrowserArgs = Args<
   {

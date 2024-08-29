@@ -27,8 +27,6 @@ import {
   RunDetail,
 } from "../archive/CollectBrowserArchive";
 
-export const collectBrowserSiteFilename = __filename;
-
 export interface CollectBrowserSiteArgs {
   site: string;
   browserName: BrowserName;
@@ -38,7 +36,7 @@ export interface CollectBrowserSiteArgs {
   bundlePath: string;
 }
 
-export const collectBrowserSite = async (
+const collectBrowserSite = async (
   args: CollectBrowserSiteArgs
 ): Promise<void> => {
   const {
