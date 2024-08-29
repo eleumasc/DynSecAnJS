@@ -1,5 +1,6 @@
 import workerpool from "workerpool";
 import { Args } from "../archive/Args";
+import { getWorkerFilename } from "../workers/getWorkerFilename";
 import { RecordArchive } from "../archive/RecordArchive";
 import {
   initCommand,
@@ -13,11 +14,7 @@ import {
   ArchiveProcessSitesController,
   processSites,
 } from "../util/processSites";
-import {
-  analyzeSyntaxSite,
-  AnalyzeSyntaxSiteArgs,
-  analyzeSyntaxSiteFilename,
-} from "../workers/analyzeSyntaxSite";
+import type { AnalyzeSyntaxSiteArgs } from "../workers/analyzeSyntaxSite";
 
 export type AnalyzeSyntaxArgs = Args<
   {
@@ -57,7 +54,8 @@ export const cmdAnalyzeSyntax = async (args: AnalyzeSyntaxArgs) => {
     resolveArchivePath(archive.logfile.recordArchiveName)
   );
 
-  const pool = workerpool.pool(analyzeSyntaxSiteFilename, {
+  const workerName = "analyzeSyntaxSite";
+  const pool = workerpool.pool(getWorkerFilename(workerName), {
     workerType: "thread",
   });
   await processSites(
@@ -65,7 +63,7 @@ export const cmdAnalyzeSyntax = async (args: AnalyzeSyntaxArgs) => {
     concurrencyLimit,
     async (site) => {
       const { archivePath } = archive;
-      await pool.exec(analyzeSyntaxSite.name, [
+      await pool.exec(workerName, [
         {
           site,
           archivePath,
@@ -74,4 +72,5 @@ export const cmdAnalyzeSyntax = async (args: AnalyzeSyntaxArgs) => {
       ]);
     }
   );
+  await pool.terminate();
 };

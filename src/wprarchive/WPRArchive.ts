@@ -1,14 +1,12 @@
+import ArchivedRequest from "./ArchivedRequest";
+import assert from "assert";
 import { compressGzip, decompressGzip } from "../util/encoding";
+import { dropHash } from "../util/url";
+import { readFileSync, writeFileSync } from "fs";
 import {
   getRequestsDataFromRequests,
   getRequestsFromRequestsData,
 } from "./requests";
-import { readFileSync, writeFileSync } from "fs";
-
-import ArchivedRequest from "./ArchivedRequest";
-import ArchivedResponse from "./ArchivedResponse";
-import assert from "assert";
-import { dropHash } from "../util/url";
 
 export default class WPRArchive {
   constructor(
@@ -47,17 +45,22 @@ export default class WPRArchive {
     throw new Error(`Cannot resolve request: ${url}`);
   }
 
-  alterResponse(
-    existingRequest: ArchivedRequest,
-    newResponse: ArchivedResponse
-  ): WPRArchive {
+  tryGetRequest(url: string, canUpgrade?: boolean): ArchivedRequest | null {
+    try {
+      return this.getRequest(url, canUpgrade);
+    } catch {
+      return null;
+    }
+  }
+
+  editResponseBody(existingRequest: ArchivedRequest, body: Buffer): WPRArchive {
     const { requests } = this;
     const existingRequestIndex = requests.indexOf(existingRequest);
     assert(existingRequestIndex !== -1);
     return new WPRArchive(
       [
         ...requests.slice(0, existingRequestIndex),
-        existingRequest.withResponse(newResponse),
+        existingRequest.withResponse(existingRequest.response.withBody(body)),
         ...requests.slice(existingRequestIndex + 1),
       ],
       this.certs,

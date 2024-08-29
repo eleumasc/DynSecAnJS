@@ -1,4 +1,5 @@
 import assert from "assert";
+import workerpool from "workerpool";
 import WPRArchive from "../wprarchive/WPRArchive";
 import { getSyntax } from "../syntax/getSyntax";
 import { isSuccess, toCompletion } from "../util/Completion";
@@ -8,8 +9,6 @@ import {
   AnalyzeSyntaxArchive,
   AnalyzeSyntaxSiteDetail,
 } from "../archive/AnalyzeSyntaxArchive";
-
-export const analyzeSyntaxSiteFilename = __filename;
 
 export interface AnalyzeSyntaxSiteArgs {
   site: string;
@@ -45,3 +44,7 @@ export const analyzeSyntaxSite = async (
     result satisfies SiteResult<AnalyzeSyntaxSiteDetail>
   );
 };
+
+workerpool.worker({
+  analyzeSyntaxSite,
+});

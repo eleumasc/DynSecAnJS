@@ -2,6 +2,7 @@ import workerpool from "workerpool";
 import { AnalyzeSyntaxArchive } from "../archive/AnalyzeSyntaxArchive";
 import { Args } from "../archive/Args";
 import { BrowserName } from "../collection/BrowserName";
+import { getWorkerFilename } from "../workers/getWorkerFilename";
 import { RecordArchive } from "../archive/RecordArchive";
 import { retryOnce } from "../util/retryOnce";
 import { useMonitorBundle } from "../collection/MonitorBundle";
@@ -17,11 +18,7 @@ import {
   CollectBrowserArchive,
   CollectBrowserLogfile,
 } from "../archive/CollectBrowserArchive";
-import {
-  collectBrowserSite,
-  CollectBrowserSiteArgs,
-  collectBrowserSiteFilename,
-} from "../workers/collectBrowserSite";
+import type { CollectBrowserSiteArgs } from "../workers/collectBrowserSite";
 
 export type CollectBrowserArgs = Args<
   {
@@ -66,17 +63,18 @@ export const cmdCollectBrowser = async (args: CollectBrowserArgs) => {
     resolveArchivePath(analyzeSyntaxArchive.logfile.recordArchiveName)
   );
 
-  const pool = workerpool.pool(collectBrowserSiteFilename, {
-    workerType: "process",
-  });
-  await useMonitorBundle({}, async (bundlePath) =>
-    processSites(
+  await useMonitorBundle({}, async (bundlePath) => {
+    const workerName = "collectBrowserSite";
+    const pool = workerpool.pool(getWorkerFilename(workerName), {
+      workerType: "process",
+    });
+    await processSites(
       new ArchiveProcessSitesController(archive),
       concurrencyLimit,
       async (site) => {
         const { archivePath } = archive;
         await retryOnce(async () => {
-          await pool.exec(collectBrowserSite.name, [
+          await pool.exec(workerName, [
             {
               site,
               browserName: archive.logfile.browserName,
@@ -88,6 +86,7 @@ export const cmdCollectBrowser = async (args: CollectBrowserArgs) => {
           ]);
         });
       }
-    )
-  );
+    );
+    await pool.terminate();
+  });
 };

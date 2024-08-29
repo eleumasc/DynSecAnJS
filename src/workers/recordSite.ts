@@ -2,6 +2,7 @@ import assert from "assert";
 import Deferred from "../util/Deferred";
 import path from "path";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import workerpool from "workerpool";
 import { addExtra } from "playwright-extra";
 import {
   Browser,
@@ -19,9 +20,6 @@ import { SiteResult } from "../archive/Archive";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
 import { usePlaywrightPage } from "../collection/PlaywrightPage";
 import { useTempDirectory } from "../util/TempDirectory";
-
-
-export const recordSiteFilename = __filename;
 
 export interface RecordSiteArgs {
   site: string;
@@ -109,3 +107,7 @@ export const recordSite = async (args: RecordSiteArgs): Promise<void> => {
 
   archive.writeSiteResult(site, result satisfies SiteResult<RecordSiteDetail>);
 };
+
+workerpool.worker({
+  recordSite,
+});

@@ -2,6 +2,7 @@ import path from "path";
 import workerpool from "workerpool";
 import { Args } from "../archive/Args";
 import { createSitesState } from "../archive/SitesState";
+import { getWorkerFilename } from "../workers/getWorkerFilename";
 import { initCommand } from "../archive/initCommand";
 import { readSitelistFromFile } from "../util/sitelist";
 import { RecordArchive } from "../archive/RecordArchive";
@@ -10,11 +11,7 @@ import {
   ArchiveProcessSitesController,
   processSites,
 } from "../util/processSites";
-import {
-  recordSite,
-  RecordSiteArgs,
-  recordSiteFilename,
-} from "../workers/recordSite";
+import type { RecordSiteArgs } from "../workers/recordSite";
 
 export type RecordArgs = Args<
   {
@@ -45,7 +42,8 @@ export const cmdRecord = async (args: RecordArgs) => {
 
   console.log(`${Object.entries(archive.logfile.sitesState).length} sites`);
 
-  const pool = workerpool.pool(recordSiteFilename, {
+  const workerName = "recordSite";
+  const pool = workerpool.pool(getWorkerFilename(workerName), {
     workerType: "process",
   });
   await processSites(
@@ -54,7 +52,7 @@ export const cmdRecord = async (args: RecordArgs) => {
     async (site) => {
       const { archivePath } = archive;
       await retryOnce(async () => {
-        await pool.exec(recordSite.name, [
+        await pool.exec(workerName, [
           {
             site,
             archivePath,
@@ -63,4 +61,5 @@ export const cmdRecord = async (args: RecordArgs) => {
       });
     }
   );
+  await pool.terminate();
 };

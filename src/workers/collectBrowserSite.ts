@@ -1,5 +1,6 @@
 import assert from "assert";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import workerpool from "workerpool";
 import WPRArchive from "../wprarchive/WPRArchive";
 import { addExtra } from "playwright-extra";
 import { AnalyzeSyntaxArchive } from "../archive/AnalyzeSyntaxArchive";
@@ -134,3 +135,7 @@ export const collectBrowserSite = async (
     result satisfies SiteResult<CollectBrowserSiteDetail>
   );
 };
+
+workerpool.worker({
+  collectBrowserSite,
+});

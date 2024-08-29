@@ -1,20 +1,27 @@
 import * as parse5 from "parse5";
+import assert from "assert";
+import { Document, Element, Node } from "parse5/dist/tree-adapters/default";
+import {
+  getAttribute,
+  getChildNodes,
+  isElement,
+  setAttribute
+  } from "./util";
+import { htmlEventAttributes } from "./htmlEventAttributes";
+import { isESModuleMimeType, isJavaScriptMimeType } from "../util/mimeType";
 
 import {
   AttributeHtmlScript,
   ElementHtmlScript,
   HtmlScript,
 } from "./HTMLScript";
-import { Document, Node } from "parse5/dist/tree-adapters/default";
-import { getAttribute, getChildNodes, isElement } from "./util";
-import { isESModuleMimeType, isJavaScriptMimeType } from "../util/mimeType";
-
-import { htmlEventAttributes } from "./htmlEventAttributes";
 
 export default class HtmlDocument {
   constructor(
     readonly documentNode: Document,
+    readonly headNode: Element,
     readonly baseUrl: string | undefined,
+    readonly nonce: string | undefined,
     readonly rawImportMap: string | undefined,
     readonly scriptList: HtmlScript[]
   ) {}
@@ -23,31 +30,58 @@ export default class HtmlDocument {
     return parse5.serialize(this.documentNode);
   }
 
+  createInitHtmlScript(): ElementHtmlScript {
+    const element = parse5.parseFragment("<script></script>").childNodes[0];
+    assert(isElement(element) && element.tagName === "script");
+    this.headNode.childNodes.unshift(element);
+
+    if (this.nonce) {
+      setAttribute(element, "nonce", this.nonce);
+    }
+
+    const htmlScript = new ElementHtmlScript(element);
+    this.scriptList.push(htmlScript);
+    return htmlScript;
+  }
+
   static parse(input: string): HtmlDocument {
     const documentNode = parse5.parse(input);
+    let headNode: Element | undefined;
     let baseUrl: string | undefined;
+    let nonce: string | undefined;
     let rawImportMap: string | undefined;
     const scriptList: HtmlScript[] = [];
+
     traverse(documentNode);
-    return new HtmlDocument(documentNode, baseUrl, rawImportMap, scriptList);
+
+    assert(headNode);
+    return new HtmlDocument(
+      documentNode,
+      headNode,
+      baseUrl,
+      nonce,
+      rawImportMap,
+      scriptList
+    );
 
     function traverse(node: Node): void {
       if (isElement(node)) {
-        if (node.tagName === "base") {
-          baseUrl = baseUrl ?? getAttribute(node, "href");
-        }
+        const { tagName } = node;
 
-        if (node.tagName === "script") {
+        if (tagName === "head") {
+          headNode = headNode ?? node;
+        } else if (tagName === "base") {
+          baseUrl = baseUrl ?? getAttribute(node, "href");
+        } else if (tagName === "script") {
           const type = getAttribute(node, "type");
           if (
             type === undefined ||
             isJavaScriptMimeType(type) ||
             isESModuleMimeType(type)
           ) {
+            nonce = nonce ?? getAttribute(node, "nonce");
             const htmlScript = new ElementHtmlScript(node);
-            if (htmlScript.isExternal || htmlScript.inlineSource.length !== 0) {
-              scriptList.push(htmlScript);
-            }
+            scriptList.push(htmlScript);
           } else if (type === "importmap") {
             rawImportMap =
               rawImportMap ?? new ElementHtmlScript(node).inlineSource;
