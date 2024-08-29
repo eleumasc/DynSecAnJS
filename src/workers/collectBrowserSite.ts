@@ -90,12 +90,19 @@ const collectBrowserSite = async (
     return { monitorState, executionTime };
   };
 
-  const transpileTransform = lessOrEqualToESVersion(
-    syntax.minimumESVersion,
-    ESVersion.ES5
-  )
-    ? null
-    : (wprArchive: WPRArchive) => transpile(wprArchive, syntax);
+  const transpileTransform = (() => {
+    switch (browserName) {
+      case "Chromium-ES5":
+        return lessOrEqualToESVersion(syntax.minimumESVersion, ESVersion.ES5)
+          ? null
+          : (wprArchive: WPRArchive) => transpile(wprArchive, syntax);
+      case "Firefox":
+        return null;
+    }
+  })();
+
+  // TODO: add user-defined transformation
+  // TODO: add external script inlining (e.g., for supporting JEST)
 
   const result = await toCompletion(() =>
     useTransformedWPRArchive(

@@ -1,3 +1,4 @@
+import _ from "lodash";
 import assert from "assert";
 import DataURL from "../util/DataURL";
 import HtmlDocument from "../htmlutil/HTMLDocument";
@@ -6,15 +7,13 @@ import { AttributeHtmlScript, ElementHtmlScript } from "../htmlutil/HTMLScript";
 import { BrowserPackEntry, bundleModule } from "./bundleModule";
 import { isJavaScriptMimeType } from "../util/mimeType";
 import { md5 } from "../util/hash";
-import { Syntax } from "../syntax/Syntax";
+import { Syntax, SyntaxScript } from "../syntax/Syntax";
 import { transformSync } from "@babel/core";
 
 export const transpile = async (
   wprArchive: WPRArchive,
   syntax: Syntax
 ): Promise<WPRArchive> => {
-  // TODO: add optional user-defined transformation
-  // TODO: add optional external script inlining (e.g., for supporting JEST)
   const { mainUrl, scriptUrlMap, scripts } = syntax;
 
   const transpileJavascript = async (
@@ -31,8 +30,44 @@ export const transpile = async (
     })!.code!;
   };
 
-  const generateModuleLoadingSource = (moduleName: string) =>
+  const generateRequire = (moduleName: string) =>
     `window["\$__require"](${JSON.stringify(moduleName)});`;
+
+  const transpileScript = async (
+    script: SyntaxScript | undefined,
+    scriptId: string,
+    getSource: () => string
+  ): Promise<string> => {
+    return script
+      ? script.isModule
+        ? generateRequire(scriptId)
+        : await transpileJavascript(getSource())
+      : "";
+  };
+
+  const transpileExternalScript = (
+    scriptUrl: string,
+    getSource: () => string
+  ): Promise<string> =>
+    transpileScript(
+      scripts.find(
+        (script) => script.type === "external" && script.url === scriptUrl
+      ),
+      scriptUrl,
+      getSource
+    );
+
+  const transpileInlineScript = (
+    scriptHash: string,
+    getSource: () => string
+  ): Promise<string> =>
+    transpileScript(
+      scripts.find(
+        (script) => script.type === "inline" && script.hash === scriptHash
+      ),
+      scriptHash,
+      getSource
+    );
 
   const transpileHtml = async (htmlSource: string): Promise<string> => {
     const htmlDocument = HtmlDocument.parse(htmlSource);
@@ -61,22 +96,18 @@ export const transpile = async (
     for (const htmlScript of htmlScripts) {
       if (htmlScript instanceof ElementHtmlScript) {
         if (htmlScript.isInline) {
-          const { inlineSource: source } = htmlScript;
-          const scriptHash = md5(source);
+          const scriptHash = md5(htmlScript.inlineSource);
 
-          const script = scripts.find(
-            (script) => script.type === "inline" && script.hash === scriptHash
+          htmlScript.inlineSource = await transpileInlineScript(
+            scriptHash,
+            () => htmlScript.inlineSource
           );
-          assert(script);
-
-          htmlScript.inlineSource = script.isModule
-            ? generateModuleLoadingSource(scriptHash)
-            : await transpileJavascript(source);
         }
       } else if (htmlScript instanceof AttributeHtmlScript) {
-        const { inlineSource: source } = htmlScript;
-
-        htmlScript.inlineSource = await transpileJavascript(source, true);
+        htmlScript.inlineSource = await transpileJavascript(
+          htmlScript.inlineSource,
+          true
+        );
       } else {
         throw new Error("Unknown type of HtmlScript"); // This should never happen
       }
@@ -133,18 +164,26 @@ export const transpile = async (
     Buffer.from(await transpileHtml(mainRequest.response.body.toString()))
   );
 
-  for (const script of scripts) {
-    if (script.type !== "external") continue;
-
-    const scriptRequest = wprArchive.tryGetRequest(script.url);
+  const scriptUrls = _.uniq(
+    scripts.flatMap((script): string[] =>
+      script.type === "external"
+        ? [
+            script.url,
+            ...(script.isModule ? Object.values(script.importUrlMap) : []),
+          ]
+        : []
+    )
+  );
+  for (const scriptUrl of scriptUrls) {
+    const scriptRequest = wprArchive.tryGetRequest(scriptUrl);
     if (!scriptRequest) continue;
 
     newWprArchive = newWprArchive.editResponseBody(
       scriptRequest,
       Buffer.from(
-        script.isModule
-          ? generateModuleLoadingSource(script.url)
-          : await transpileJavascript(scriptRequest.response.body.toString())
+        await transpileExternalScript(scriptUrl, () =>
+          scriptRequest.response.body.toString()
+        )
       )
     );
   }
