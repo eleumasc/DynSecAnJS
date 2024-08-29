@@ -9,7 +9,7 @@ import { isSuccess, toCompletion } from "./Completion";
 import Archive from "../archive/Archive";
 import { Logfile } from "../archive/Logfile";
 import _ from "lodash";
-import { eachLimit } from "async";
+import { queue } from "async";
 
 export interface ProcessSitesController {
   getInitialSitesState(): SitesState;
@@ -19,7 +19,7 @@ export interface ProcessSitesController {
 export const processSites = async (
   controller: ProcessSitesController,
   concurrencyLimit: number,
-  callback: (site: string) => Promise<void>
+  processSite: (site: string) => Promise<void>
 ): Promise<void> => {
   let sitesState = controller.getInitialSitesState();
   const sites = getSitesInSitesState(sitesState);
@@ -29,26 +29,27 @@ export const processSites = async (
     console.log(`[${processedSites.length} / ${sites.length}] ${msg}`);
   };
 
-  await eachLimit(
-    _.difference(sites, processedSites),
-    concurrencyLimit,
-    async (site, eachCallback) => {
-      log(`begin process ${site}`);
-      const completion = await toCompletion(() => callback(site));
-      if (isSuccess(completion)) {
-        processedSites.push(site);
-        sitesState = { ...sitesState, [site]: true };
-        controller.onSiteProcessed(site, sitesState);
-      } else {
-        console.error(completion.error);
-      }
-      log(`end process ${site}`);
-
-      eachCallback();
+  const q = queue<string>(async (site, callback) => {
+    log(`begin process ${site}`);
+    const completion = await toCompletion(() => processSite(site));
+    if (isSuccess(completion)) {
+      processedSites.push(site);
+      sitesState = { ...sitesState, [site]: true };
+      controller.onSiteProcessed(site, sitesState);
+    } else {
+      console.error(completion.error);
     }
-  );
+    log(`end process ${site}`);
+    callback();
+  }, concurrencyLimit);
 
-  console.log("DONE");
+  for (const site of _.difference(sites, processedSites)) {
+    q.push(site);
+  }
+
+  await q.drain();
+
+  log("DONE");
 };
 
 export class ArchiveProcessSitesController<

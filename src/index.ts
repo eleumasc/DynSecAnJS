@@ -125,6 +125,30 @@ yargs(process.argv.slice(2))
       });
     }
   )
+  .command(
+    "collectBrowser:resume <archivePath>",
+    "",
+    (yargs) => {
+      return yargs
+        .positional("archivePath", {
+          type: "string",
+          demandOption: true,
+        })
+        .option("concurrencyLimit", {
+          type: "number",
+          default: 1,
+        });
+    },
+    ({ archivePath, concurrencyLimit }) => {
+      cmdCollectBrowser({
+        type: "resume",
+        archivePath,
+        processArgs: {
+          concurrencyLimit,
+        },
+      });
+    }
+  )
   .strictCommands()
   .demandCommand(1)
   .parse();
