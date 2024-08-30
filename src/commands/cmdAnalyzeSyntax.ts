@@ -1,8 +1,10 @@
-import workerpool from "workerpool";
-import { AnalyzeSyntaxSiteArgs } from "../workers/analyzeSyntaxSite";
 import { Args } from "../archive/Args";
-import { getWorkerFilename } from "../workers/getWorkerFilename";
 import { RecordArchive } from "../archive/RecordArchive";
+import { threadExec } from "../util/thread";
+import {
+  AnalyzeSyntaxSiteArgs,
+  analyzeSyntaxSiteFilename,
+} from "../workers/analyzeSyntaxSite";
 import {
   initCommand,
   ChildInitCommandController,
@@ -54,16 +56,12 @@ export const cmdAnalyzeSyntax = async (args: AnalyzeSyntaxArgs) => {
     resolveArchivePath(archive.logfile.recordArchiveName)
   );
 
-  const workerName = "analyzeSyntaxSite";
-  const pool = workerpool.pool(getWorkerFilename(workerName), {
-    workerType: "thread",
-  });
   await processSites(
     new ArchiveProcessSitesController(archive),
     concurrencyLimit,
     async (site) => {
       const { archivePath } = archive;
-      await pool.exec(workerName, [
+      await threadExec(analyzeSyntaxSiteFilename, [
         {
           site,
           archivePath,
@@ -72,5 +70,4 @@ export const cmdAnalyzeSyntax = async (args: AnalyzeSyntaxArgs) => {
       ]);
     }
   );
-  await pool.terminate();
 };

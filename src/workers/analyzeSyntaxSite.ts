@@ -1,10 +1,10 @@
 import assert from "assert";
-import workerpool from "workerpool";
 import WPRArchive from "../wprarchive/WPRArchive";
 import { getSyntax } from "../syntax/getSyntax";
 import { isSuccess, toCompletion } from "../util/Completion";
 import { RecordArchive } from "../archive/RecordArchive";
 import { SiteResult } from "../archive/Archive";
+import { threadRegister } from "../util/thread";
 import {
   AnalyzeSyntaxArchive,
   AnalyzeSyntaxSiteDetail,
@@ -15,6 +15,8 @@ export interface AnalyzeSyntaxSiteArgs {
   archivePath: string;
   recordArchivePath: string;
 }
+
+export const analyzeSyntaxSiteFilename = __filename;
 
 const analyzeSyntaxSite = async (
   args: AnalyzeSyntaxSiteArgs
@@ -45,6 +47,4 @@ const analyzeSyntaxSite = async (
   );
 };
 
-workerpool.worker({
-  analyzeSyntaxSite,
-});
+threadRegister(analyzeSyntaxSite);

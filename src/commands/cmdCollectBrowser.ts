@@ -1,12 +1,14 @@
-import workerpool from "workerpool";
 import { AnalyzeSyntaxArchive } from "../archive/AnalyzeSyntaxArchive";
 import { Args } from "../archive/Args";
 import { BrowserName } from "../collection/BrowserName";
-import { CollectBrowserSiteArgs } from "../workers/collectBrowserSite";
-import { getWorkerFilename } from "../workers/getWorkerFilename";
+import { ipExec } from "../util/interprocess";
 import { RecordArchive } from "../archive/RecordArchive";
 import { retryOnce } from "../util/retryOnce";
 import { useMonitorBundle } from "../collection/MonitorBundle";
+import {
+  CollectBrowserSiteArgs,
+  collectBrowserSiteFilename,
+} from "../workers/collectBrowserSite";
 import {
   ChildInitCommandController,
   initCommand,
@@ -64,17 +66,13 @@ export const cmdCollectBrowser = async (args: CollectBrowserArgs) => {
   );
 
   await useMonitorBundle({}, async (bundlePath) => {
-    const workerName = "collectBrowserSite";
-    const pool = workerpool.pool(getWorkerFilename(workerName), {
-      workerType: "process",
-    });
     await processSites(
       new ArchiveProcessSitesController(archive),
       concurrencyLimit,
       async (site) => {
         const { archivePath } = archive;
         await retryOnce(async () => {
-          await pool.exec(workerName, [
+          await ipExec(collectBrowserSiteFilename, [
             {
               site,
               browserName: archive.logfile.browserName,
@@ -87,6 +85,5 @@ export const cmdCollectBrowser = async (args: CollectBrowserArgs) => {
         });
       }
     );
-    await pool.terminate();
   });
 };

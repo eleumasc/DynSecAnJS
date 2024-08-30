@@ -1,6 +1,5 @@
 import assert from "assert";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
-import workerpool from "workerpool";
 import WPRArchive from "../wprarchive/WPRArchive";
 import { addExtra } from "playwright-extra";
 import { AnalyzeSyntaxArchive } from "../archive/AnalyzeSyntaxArchive";
@@ -10,6 +9,7 @@ import { ESVersion, lessOrEqualToESVersion } from "../syntax/ESVersion";
 import { ForwardProxy } from "../util/ForwardProxy";
 import { getBrowserLauncher } from "../collection/getBrowserLauncher";
 import { headless } from "../env";
+import { ipRegister } from "../util/interprocess";
 import { isSuccess, toCompletion } from "../util/Completion";
 import { MonitorState } from "../collection/MonitorBundle";
 import { RecordArchive } from "../archive/RecordArchive";
@@ -35,6 +35,8 @@ export interface CollectBrowserSiteArgs {
   recordArchivePath: string;
   bundlePath: string;
 }
+
+export const collectBrowserSiteFilename = __filename;
 
 const collectBrowserSite = async (
   args: CollectBrowserSiteArgs
@@ -141,6 +143,4 @@ const collectBrowserSite = async (
   );
 };
 
-workerpool.worker({
-  collectBrowserSite,
-});
+ipRegister(collectBrowserSite);
