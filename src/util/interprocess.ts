@@ -29,45 +29,40 @@ export const ipExec = async (
   const childProcess = fork(filename);
 
   try {
-    return await new Promise<Completion<any>>((resolve, reject) => {
-      let responseReceived = false;
+    return await new Promise<any>((res, rej) => {
+      let settled = false;
 
       childProcess.on("message", (message: IPMessage) => {
-        responseReceived = true;
-
-        childProcess.on("exit", () => {
-          const { type } = message;
-          if (type === "completion") {
-            resolve(message.completion);
-          } else if (type === "error") {
-            reject(new Error(message.error));
-          } else {
-            reject(new Error("Protocol error"));
-          }
-        });
-      });
-
-      childProcess.on("error", (error) => {
-        responseReceived = true;
-
-        reject(error);
-      });
-
-      childProcess.on("exit", (code, signal) => {
-        if (!responseReceived) {
-          reject(
-            new Error(`Process has exited prematurely [${code}, ${signal}]`)
-          );
+        settled = true;
+        const { type } = message;
+        if (type === "completion") {
+          res(message.completion);
+        } else if (type === "error") {
+          rej(new Error(message.error));
+        } else {
+          rej(new Error("Protocol error"));
         }
       });
 
-      childProcess.send({
-        type: "request",
-        args,
-      } satisfies IPRequestMessage);
+      childProcess.on("error", (err) => {
+        settled = true;
+        rej(err);
+      });
+
+      childProcess.on("exit", (code) => {
+        if (!settled) {
+          rej(new Error(`Process has exited prematurely with code ${code}`));
+        }
+      });
+
+      childProcess.send({ type: "request", args } satisfies IPRequestMessage);
     });
   } finally {
-    childProcess.kill();
+    await new Promise((resolve) => {
+      childProcess.on("exit", resolve);
+
+      childProcess.kill();
+    });
   }
 };
 
@@ -76,7 +71,7 @@ export const ipRegister = (
 ): void => {
   if (!process.send) return;
 
-  process.once("message", async (message: IPMessage) => {
+  process.on("message", async (message: IPMessage) => {
     const { type } = message;
 
     if (type === "request") {
