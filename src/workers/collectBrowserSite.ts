@@ -1,7 +1,5 @@
 import assert from "assert";
-import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import WPRArchive from "../wprarchive/WPRArchive";
-import { addExtra } from "playwright-extra";
 import { AnalyzeSyntaxArchive } from "../archive/AnalyzeSyntaxArchive";
 import { Browser, Page } from "playwright";
 import { BrowserName } from "../collection/BrowserName";
@@ -67,14 +65,12 @@ const collectBrowserSite = async (
   } = recordSiteResult;
 
   const browserFactory = (forwardProxy: ForwardProxy) => (): Promise<Browser> =>
-    addExtra(getBrowserLauncher(browserName))
-      .use(StealthPlugin())
-      .launch({
-        headless,
-        proxy: {
-          server: `${forwardProxy.hostname}:${forwardProxy.port}`,
-        },
-      });
+    getBrowserLauncher(browserName).launch({
+      headless,
+      proxy: {
+        server: `${forwardProxy.hostname}:${forwardProxy.port}`,
+      },
+    });
 
   const navigate = async (page: Page): Promise<RunDetail> => {
     const startTime = unixTime();
