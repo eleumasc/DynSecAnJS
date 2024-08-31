@@ -84,7 +84,7 @@ const collectBrowserSite = async (
       executionTime = unixTime() - startTime;
     } catch {}
     const monitorState = (await timeBomb(
-      page.evaluate(`$__monitor && $__monitor();`),
+      page.evaluate(`$__monitor()`),
       15_000
     )) as MonitorState | undefined;
     assert(monitorState);

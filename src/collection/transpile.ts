@@ -1,4 +1,5 @@
 import _ from "lodash";
+import ArchivedRequest from "../wprarchive/ArchivedRequest";
 import assert from "assert";
 import DataURL from "../util/DataURL";
 import HtmlDocument from "../htmlutil/HTMLDocument";
@@ -80,6 +81,11 @@ export const transpile = async (
         htmlScript.integrity = undefined;
         htmlScript.isAsync = false;
 
+        if (htmlScript.isModule) {
+          htmlScript.isModule = false;
+          htmlScript.isDefer = true;
+        }
+
         if (htmlScript.isExternal) {
           const scriptUrl = scriptUrlMap[htmlScript.src];
           assert(scriptUrl !== undefined);
@@ -90,26 +96,6 @@ export const transpile = async (
             htmlScript.inlineSource = content.toString();
           }
         }
-      }
-    }
-
-    for (const htmlScript of htmlScripts) {
-      if (htmlScript instanceof ElementHtmlScript) {
-        if (htmlScript.isInline) {
-          const scriptHash = md5(htmlScript.inlineSource);
-
-          htmlScript.inlineSource = await transpileInlineScript(
-            scriptHash,
-            () => htmlScript.inlineSource
-          );
-        }
-      } else if (htmlScript instanceof AttributeHtmlScript) {
-        htmlScript.inlineSource = await transpileJavascript(
-          htmlScript.inlineSource,
-          true
-        );
-      } else {
-        throw new Error("Unknown type of HtmlScript"); // This should never happen
       }
     }
 
@@ -145,9 +131,30 @@ export const transpile = async (
         ];
       }
     });
+
+    for (const htmlScript of htmlScripts) {
+      if (htmlScript instanceof ElementHtmlScript) {
+        if (htmlScript.isInline) {
+          const scriptHash = md5(htmlScript.inlineSource);
+
+          htmlScript.inlineSource = await transpileInlineScript(
+            scriptHash,
+            () => htmlScript.inlineSource
+          );
+        }
+      } else if (htmlScript instanceof AttributeHtmlScript) {
+        htmlScript.inlineSource = await transpileJavascript(
+          htmlScript.inlineSource,
+          true
+        );
+      } else {
+        throw new Error("Unknown type of HtmlScript"); // This should never happen
+      }
+    }
+
     if (mbEntries.length > 0) {
       const mbHtmlScript = htmlDocument.createInitHtmlScript();
-      mbHtmlScript.isModule = true;
+      mbHtmlScript.isDefer = true;
       mbHtmlScript.inlineSource = await transpileJavascript(
         await bundleModule(mbEntries)
       );
@@ -164,6 +171,7 @@ export const transpile = async (
     Buffer.from(await transpileHtml(mainRequest.response.body.toString()))
   );
 
+  const transpiledScriptRequests = new Set<ArchivedRequest>();
   const scriptUrls = _.uniq(
     scripts.flatMap((script): string[] =>
       script.type === "external"
@@ -177,6 +185,9 @@ export const transpile = async (
   for (const scriptUrl of scriptUrls) {
     const scriptRequest = wprArchive.tryGetRequest(scriptUrl);
     if (!scriptRequest) continue;
+
+    if (transpiledScriptRequests.has(scriptRequest)) continue;
+    transpiledScriptRequests.add(scriptRequest);
 
     newWprArchive = newWprArchive.editResponseBody(
       scriptRequest,
