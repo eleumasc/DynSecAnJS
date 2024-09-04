@@ -1,7 +1,6 @@
 import _ from "lodash";
 import ArchivedRequest from "../wprarchive/ArchivedRequest";
 import WPRArchive from "../wprarchive/WPRArchive";
-import { Completion, isSuccess } from "../util/Completion";
 import { PreanalyzeReport } from "../archive/PreanalyzeArchive";
 
 export type WPRArchiveTransformer = (
@@ -15,8 +14,10 @@ export type TransformWPRArchiveResult =
 
 export type ResponseBodyTransformer = (
   body: string,
-  request: ArchivedRequest
-) => Promise<Completion<string>>;
+  request: ArchivedRequest,
+  originalWPRArchive: WPRArchive,
+  preanalyzeReport: PreanalyzeReport
+) => Promise<string>;
 
 export const transformWPRArchive =
   (
@@ -24,8 +25,29 @@ export const transformWPRArchive =
     transformScriptResponseBody: ResponseBodyTransformer
   ): WPRArchiveTransformer =>
   async (originalWPRArchive, preanalyzeReport) => {
-    const transformErrors: string[] = [];
-    const editResponseBody = createEditResponseBody(transformErrors);
+    const transformErrorsArray: string[] = [];
+    const editResponseBody = async (
+      wprArchive: WPRArchive,
+      request: ArchivedRequest,
+      transformResponseBody: ResponseBodyTransformer
+    ): Promise<WPRArchive> => {
+      try {
+        const originalBody = request.response.body.toString();
+        const transformedBody = await transformResponseBody(
+          originalBody,
+          request,
+          originalWPRArchive,
+          preanalyzeReport
+        );
+        return wprArchive.editResponseBody(
+          request,
+          Buffer.from(transformedBody)
+        );
+      } catch (e) {
+        transformErrorsArray.push(String(e));
+        return wprArchive;
+      }
+    };
 
     const { mainUrl, scripts } = preanalyzeReport;
 
@@ -63,42 +85,9 @@ export const transformWPRArchive =
       );
     }
 
-    if (transformErrors.length > 0) {
-      return { status: "failure", transformErrors };
+    if (transformErrorsArray.length > 0) {
+      return { status: "failure", transformErrors: transformErrorsArray };
     }
 
     return { status: "success", transformedWPRArchive };
-  };
-
-const createEditResponseBody =
-  (transformErrorsArray: string[]) =>
-  async (
-    wprArchive: WPRArchive,
-    request: ArchivedRequest,
-    transformResponseBody: ResponseBodyTransformer
-  ): Promise<WPRArchive> => {
-    const completion = await transformResponseBody(
-      request.response.body.toString(),
-      request
-    );
-
-    if (isSuccess(completion)) {
-      return wprArchive.editResponseBody(
-        request,
-        Buffer.from(completion.value)
-      );
-    } else {
-      transformErrorsArray.push(completion.error);
-      return wprArchive;
-    }
-  };
-
-export const composeWPRArchiveTransformers =
-  (a: WPRArchiveTransformer, b: WPRArchiveTransformer): WPRArchiveTransformer =>
-  async (originalWPRArchive, preanalyzeReport) => {
-    const transformResult = await a(originalWPRArchive, preanalyzeReport);
-    if (transformResult.status === "failure") {
-      return transformResult;
-    }
-    return await b(transformResult.transformedWPRArchive, preanalyzeReport);
   };

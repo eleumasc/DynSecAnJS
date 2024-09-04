@@ -12,28 +12,28 @@ import { htmlEventAttributes } from "./htmlEventAttributes";
 import { isESModuleMimeType, isJavaScriptMimeType } from "../util/mimeType";
 
 import {
-  AttributeHtmlScript,
-  ElementHtmlScript,
-  HtmlScript,
+  AttributeHTMLScript,
+  ElementHTMLScript,
+  HTMLScript,
 } from "./HTMLScript";
 
-export default class HtmlDocument {
+export default class HTMLDocument {
   constructor(
     readonly documentNode: Document,
     readonly headNode: Element,
     readonly baseUrl: string | undefined,
     readonly nonce: string | undefined,
     readonly rawImportMap: string | undefined,
-    protected scriptArray: HtmlScript[]
+    protected scriptArray: HTMLScript[]
   ) {}
 
-  get scripts(): HtmlScript[] {
+  get scripts(): HTMLScript[] {
     return [...this.scriptArray];
   }
 
-  get activeScripts(): HtmlScript[] {
+  get activeScripts(): HTMLScript[] {
     return this.scriptArray.filter(
-      (script) => !(script instanceof ElementHtmlScript && script.isNoModule)
+      (script) => !(script instanceof ElementHTMLScript && script.isNoModule)
     );
   }
 
@@ -41,7 +41,7 @@ export default class HtmlDocument {
     return parse5.serialize(this.documentNode);
   }
 
-  removeElementHtmlScript(htmlScript: ElementHtmlScript): void {
+  removeElementScript(htmlScript: ElementHTMLScript): void {
     assert(this.scriptArray.includes(htmlScript));
 
     const scriptNode = htmlScript.element;
@@ -58,7 +58,7 @@ export default class HtmlDocument {
     );
   }
 
-  createInitHtmlScript(): ElementHtmlScript {
+  createInitScript(): ElementHTMLScript {
     const element = parse5.parseFragment("<script></script>").childNodes[0];
     assert(isElement(element) && element.tagName === "script");
     this.headNode.childNodes.unshift(element);
@@ -67,23 +67,23 @@ export default class HtmlDocument {
       setAttribute(element, "nonce", this.nonce);
     }
 
-    const htmlScript = new ElementHtmlScript(element);
+    const htmlScript = new ElementHTMLScript(element);
     this.scriptArray = [...this.scriptArray, htmlScript];
     return htmlScript;
   }
 
-  static parse(input: string): HtmlDocument {
+  static parse(input: string): HTMLDocument {
     const documentNode = parse5.parse(input);
     let headNode: Element | undefined;
     let baseUrl: string | undefined;
     let nonce: string | undefined;
     let rawImportMap: string | undefined;
-    const scriptArray: HtmlScript[] = [];
+    const scriptArray: HTMLScript[] = [];
 
     traverse(documentNode);
 
     assert(headNode);
-    return new HtmlDocument(
+    return new HTMLDocument(
       documentNode,
       headNode,
       baseUrl,
@@ -108,17 +108,17 @@ export default class HtmlDocument {
             isESModuleMimeType(type)
           ) {
             nonce = nonce ?? getAttribute(node, "nonce");
-            const htmlScript = new ElementHtmlScript(node);
+            const htmlScript = new ElementHTMLScript(node);
             scriptArray.push(htmlScript);
           } else if (type === "importmap") {
             rawImportMap =
-              rawImportMap ?? new ElementHtmlScript(node).inlineSource;
+              rawImportMap ?? new ElementHTMLScript(node).inlineSource;
           }
         }
 
         for (const attr of node.attrs) {
           if (htmlEventAttributes.includes(attr.name)) {
-            scriptArray.push(new AttributeHtmlScript(attr));
+            scriptArray.push(new AttributeHTMLScript(attr));
           }
         }
       }

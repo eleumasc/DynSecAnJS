@@ -1,11 +1,6 @@
 import assert from "assert";
 import path from "path";
-import {
-  Completion,
-  Failure,
-  isSuccess,
-  Success
-  } from "../util/Completion";
+import ToolError from "./ToolError";
 import { readFileSync, writeFileSync } from "fs";
 import { spawn } from "child_process";
 import { useChildProcess } from "../util/ChildProcess";
@@ -19,7 +14,7 @@ export const execLanguageBasedTool = (
     modifiedPath: string,
     cwd: string
   ) => string[]
-): Promise<Completion<string>> =>
+): Promise<string> =>
   useTempDirectory(async (tempPath) => {
     extension = extension ?? "txt";
     const originalPath = path.join(tempPath, `original.${extension}`);
@@ -30,7 +25,7 @@ export const execLanguageBasedTool = (
     const cmdParams = getCmdParams(originalPath, modifiedPath, tempPath);
     assert(cmdParams.length >= 1);
 
-    const completion = await useChildProcess(
+    await useChildProcess(
       spawn(cmdParams[0], cmdParams.slice(1), {
         stdio: ["ignore", "ignore", "pipe"],
       }),
@@ -40,21 +35,17 @@ export const execLanguageBasedTool = (
           stderr += data.toString();
         });
 
-        return new Promise<Completion<void>>((resolve) => {
+        return new Promise<void>((res, rej) => {
           childProcess.on("close", (code) => {
             if (code === 0) {
-              resolve(Success(undefined));
+              res();
             } else {
-              resolve(Failure(stderr));
+              rej(new ToolError(stderr));
             }
           });
         });
       }
     );
 
-    if (!isSuccess(completion)) {
-      return completion;
-    }
-
-    return Success(readFileSync(modifiedPath).toString());
+    return readFileSync(modifiedPath).toString();
   });

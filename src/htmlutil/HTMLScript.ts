@@ -1,13 +1,12 @@
+import _ from "lodash";
+import assert from "assert";
+import { Attribute } from "parse5/dist/common/token";
 import { Element, TextNode } from "parse5/dist/tree-adapters/default";
 import { getAttribute, removeAttribute, setAttribute } from "./util";
 
-import { Attribute } from "parse5/dist/common/token";
-import assert from "assert";
-import _ from "lodash";
+export interface HTMLScript {}
 
-export interface HtmlScript {}
-
-export class ElementHtmlScript implements HtmlScript {
+export class ElementHTMLScript implements HTMLScript {
   constructor(readonly element: Element) {}
 
   get isExternal(): boolean {
@@ -125,7 +124,7 @@ export class ElementHtmlScript implements HtmlScript {
   }
 }
 
-export class AttributeHtmlScript implements HtmlScript {
+export class AttributeHTMLScript implements HTMLScript {
   constructor(readonly attr: Attribute) {}
 
   get inlineSource(): string {

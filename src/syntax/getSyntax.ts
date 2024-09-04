@@ -2,10 +2,10 @@ import _ from "lodash";
 import acorn from "acorn";
 import assert from "assert";
 import DataURL from "../util/DataURL";
-import HtmlDocument from "../htmlutil/HTMLDocument";
+import HTMLDocument from "../htmlutil/HTMLDocument";
 import walk from "acorn-walk";
 import WPRArchive from "../wprarchive/WPRArchive";
-import { AttributeHtmlScript, ElementHtmlScript } from "../htmlutil/HTMLScript";
+import { AttributeHTMLScript, ElementHTMLScript } from "../htmlutil/HTMLScript";
 import { dropHash } from "../util/url";
 import { getDiffEvidences } from "./getDiffEvidences";
 import { ImportMap } from "../util/import-map";
@@ -32,7 +32,7 @@ export const getSyntax = (
     `Navigation request resolved to response with status code ${mainResponse.statusCode}`
   );
 
-  const htmlDocument = HtmlDocument.parse(mainResponse.body.toString());
+  const htmlDocument = HTMLDocument.parse(mainResponse.body.toString());
   const htmlScripts = htmlDocument.activeScripts;
 
   const documentUrl = (
@@ -83,8 +83,8 @@ export const getSyntax = (
   const scriptUrlMap: Record<string, string> = Object.fromEntries(
     htmlScripts
       .filter(
-        (htmlScript): htmlScript is ElementHtmlScript =>
-          htmlScript instanceof ElementHtmlScript && htmlScript.isExternal
+        (htmlScript): htmlScript is ElementHTMLScript =>
+          htmlScript instanceof ElementHTMLScript && htmlScript.isExternal
       )
       .map((htmlScript) => {
         const { src } = htmlScript;
@@ -95,7 +95,7 @@ export const getSyntax = (
 
   let scripts = processAnalyzerQueue(
     htmlScripts.map((htmlScript): ScriptSyntaxAnalyzer => {
-      if (htmlScript instanceof ElementHtmlScript) {
+      if (htmlScript instanceof ElementHTMLScript) {
         const { isExternal, isModule } = htmlScript;
         if (isExternal) {
           const url = scriptUrlMap[htmlScript.src];
@@ -104,7 +104,7 @@ export const getSyntax = (
         } else {
           return analyzeInlineScript(htmlScript.inlineSource, isModule);
         }
-      } else if (htmlScript instanceof AttributeHtmlScript) {
+      } else if (htmlScript instanceof AttributeHTMLScript) {
         return analyzeEventHandler(htmlScript.inlineSource);
       } else {
         throw new Error("Unknown type of HtmlScript"); // This should never happen

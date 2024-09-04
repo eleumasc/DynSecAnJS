@@ -1,13 +1,12 @@
 import _ from "lodash";
 import assert from "assert";
 import DataURL from "../util/DataURL";
-import HtmlDocument from "../htmlutil/HTMLDocument";
-import { AttributeHtmlScript, ElementHtmlScript } from "../htmlutil/HTMLScript";
+import HTMLDocument from "../htmlutil/HTMLDocument";
+import { AttributeHTMLScript, ElementHTMLScript } from "../htmlutil/HTMLScript";
 import { BrowserPackEntry, bundleModule } from "./bundleModule";
 import { isJavaScriptMimeType } from "../util/mimeType";
 import { md5 } from "../util/hash";
 import { SyntaxScript } from "../syntax/Syntax";
-import { toCompletion } from "../util/Completion";
 import { transformSync } from "@babel/core";
 import {
   transformWPRArchive,
@@ -76,11 +75,11 @@ export const transpile =
       );
 
     const transpileHtml = async (htmlSource: string): Promise<string> => {
-      const htmlDocument = HtmlDocument.parse(htmlSource);
+      const htmlDocument = HTMLDocument.parse(htmlSource);
       const htmlScripts = htmlDocument.activeScripts;
 
       for (const htmlScript of htmlScripts) {
-        if (htmlScript instanceof ElementHtmlScript) {
+        if (htmlScript instanceof ElementHTMLScript) {
           htmlScript.integrity = undefined;
           htmlScript.isAsync = false;
 
@@ -118,8 +117,8 @@ export const transpile =
           ];
         } else {
           const htmlScript = htmlScripts.find(
-            (htmlScript): htmlScript is ElementHtmlScript =>
-              htmlScript instanceof ElementHtmlScript &&
+            (htmlScript): htmlScript is ElementHTMLScript =>
+              htmlScript instanceof ElementHTMLScript &&
               htmlScript.isInline &&
               script.hash === md5(htmlScript.inlineSource)
           );
@@ -136,7 +135,7 @@ export const transpile =
       });
 
       for (const htmlScript of htmlScripts) {
-        if (htmlScript instanceof ElementHtmlScript) {
+        if (htmlScript instanceof ElementHTMLScript) {
           if (htmlScript.isInline) {
             const scriptHash = md5(htmlScript.inlineSource);
 
@@ -145,18 +144,16 @@ export const transpile =
               htmlScript.inlineSource
             );
           }
-        } else if (htmlScript instanceof AttributeHtmlScript) {
+        } else if (htmlScript instanceof AttributeHTMLScript) {
           htmlScript.inlineSource = await transpileJavascript(
             htmlScript.inlineSource,
             true
           );
-        } else {
-          throw new Error("Unknown type of HtmlScript"); // This should never happen
         }
       }
 
       if (mbEntries.length > 0) {
-        const mbHtmlScript = htmlDocument.createInitHtmlScript();
+        const mbHtmlScript = htmlDocument.createInitScript();
         mbHtmlScript.isDefer = true;
         mbHtmlScript.inlineSource = await transpileJavascript(
           await bundleModule(mbEntries)
@@ -167,10 +164,8 @@ export const transpile =
     };
 
     return transformWPRArchive(
-      async (body) => await toCompletion(() => transpileHtml(body)),
+      async (body) => transpileHtml(body),
       async (body, request) =>
-        await toCompletion(() =>
-          transpileExternalScript(request.url.toString(), body)
-        )
+        transpileExternalScript(request.url.toString(), body)
     )(originalWPRArchive, preanalyzeReport);
   };

@@ -1,5 +1,4 @@
 import path from "path";
-import { Completion } from "../util/Completion";
 import { execLanguageBasedTool } from "./execLanguageBasedTool";
 import { jalangiPath } from "../env";
 import {
@@ -19,7 +18,7 @@ export const jalangi = (
   analysisPath: string,
   source: string,
   extension: "html" | "js"
-): Promise<Completion<string>> =>
+): Promise<string> =>
   execLanguageBasedTool(
     source,
     extension,

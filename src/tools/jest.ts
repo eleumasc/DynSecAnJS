@@ -1,27 +1,32 @@
 import path from "path";
-import { Completion } from "../util/Completion";
+import { composeHTMLManipulators } from "../collection/htmlmanip/HTMLManipulator";
 import { execLanguageBasedTool } from "./execLanguageBasedTool";
-import { inlineExternalScripts } from "../collection/inlineExternalScripts";
+import { inlineExternalScripts } from "../collection/htmlmanip/inlineExternalScripts";
 import { jestPath } from "../env";
+import { manipulateHTML } from "../collection/htmlmanip/manipulateHTML";
+import { transformInlineScripts } from "../collection/htmlmanip/transformInlineScripts";
 import {
-  composeWPRArchiveTransformers,
   transformWPRArchive,
   WPRArchiveTransformer,
 } from "../collection/WPRArchiveTransformer";
 
 export const transformWithJEST = (): WPRArchiveTransformer =>
-  composeWPRArchiveTransformers(
-    inlineExternalScripts(true),
-    transformWPRArchive(
-      (body) => jest(body, "html"),
-      (body) => jest(body, "js")
-    )
+  transformWPRArchive(
+    (body, _, originalWPRArchive, preanalyzeReport) =>
+      manipulateHTML(
+        body,
+        composeHTMLManipulators(
+          inlineExternalScripts(originalWPRArchive, preanalyzeReport, true),
+          transformInlineScripts(() => jest(body, "html"))
+        )
+      ),
+    (body) => jest(body, "js")
   );
 
 export const jest = (
   source: string,
   extension: "html" | "js"
-): Promise<Completion<string>> => {
+): Promise<string> => {
   return execLanguageBasedTool(
     source,
     extension,
