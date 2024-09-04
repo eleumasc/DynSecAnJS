@@ -67,4 +67,6 @@ export const cmdPreanalyze = async (args: PreanalyzeArgs) => {
       ]);
     }
   );
+
+  process.exit(0);
 };

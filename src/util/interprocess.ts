@@ -1,5 +1,6 @@
 import { Completion, toCompletion } from "./Completion";
 import { fork } from "child_process";
+import { useChildProcess } from "./ChildProcess";
 
 export interface BaseIPMessage {
   type: string;
@@ -24,49 +25,47 @@ export type IPMessage = IPRequestMessage | IPCompletionMessage | IPErrorMessage;
 
 export const defaultTimeout = 10 * 60 * 1000; // 10 minutes
 
-export const ipExec = async (
+export const ipExec = (
   filename: string,
   args: any[]
-): Promise<Completion<any>> => {
-  const childProcess = fork(filename, { timeout: defaultTimeout });
+): Promise<Completion<any>> =>
+  useChildProcess(
+    fork(filename, { timeout: defaultTimeout }),
+    async (childProcess, controller) => {
+      try {
+        return await new Promise<any>((res, rej) => {
+          let responseReceived = false;
 
-  try {
-    return await new Promise<any>((res, rej) => {
-      let settled = false;
+          childProcess.on("message", (message: IPMessage) => {
+            responseReceived = true;
+            const { type } = message;
+            if (type === "completion") {
+              res(message.completion);
+            } else if (type === "error") {
+              rej(new Error(message.error));
+            } else {
+              rej(new Error("Protocol error"));
+            }
+          });
 
-      childProcess.on("message", (message: IPMessage) => {
-        settled = true;
-        const { type } = message;
-        if (type === "completion") {
-          res(message.completion);
-        } else if (type === "error") {
-          rej(new Error(message.error));
-        } else {
-          rej(new Error("Protocol error"));
-        }
-      });
+          childProcess.on("error", (err) => {
+            rej(err);
+          });
 
-      childProcess.on("error", (err) => {
-        settled = true;
-        rej(err);
-      });
+          childProcess.on("exit", (code) => {
+            rej(new Error(`Process has exited prematurely with code ${code}`));
+          });
 
-      childProcess.on("exit", (code) => {
-        if (!settled) {
-          rej(new Error(`Process has exited prematurely with code ${code}`));
-        }
-      });
-
-      childProcess.send({ type: "request", args } satisfies IPRequestMessage);
-    });
-  } finally {
-    await new Promise((resolve) => {
-      childProcess.on("exit", resolve);
-
-      childProcess.kill();
-    });
-  }
-};
+          childProcess.send({
+            type: "request",
+            args,
+          } satisfies IPRequestMessage);
+        });
+      } finally {
+        await controller.kill();
+      }
+    }
+  );
 
 export const ipRegister = (
   callback: (...args: any[]) => Promise<any>

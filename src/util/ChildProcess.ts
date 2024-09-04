@@ -1,36 +1,51 @@
+import { addTerminator } from "./gracefulTermination";
 import { ChildProcess } from "child_process";
-import { killOnSignal } from "./gracefulTermination";
+
+interface UseChildProcessController {
+  kill(signal?: NodeJS.Signals): Promise<void>;
+}
 
 export const useChildProcess = async <T>(
   childProcess: ChildProcess,
-  use: (childProcess: ChildProcess) => Promise<T>
+  use: (
+    childProcess: ChildProcess,
+    controller: UseChildProcessController
+  ) => Promise<T>
 ): Promise<T> => {
-  const killer = killOnSignal(childProcess);
+  await new Promise((res, rej) => {
+    childProcess.on("spawn", res);
 
-  let alive = false;
+    childProcess.on("error", rej);
+  });
+
+  let alive = true;
+  const didExit = () => {
+    if (alive) {
+      alive = false;
+      terminator.cancel();
+    }
+  };
+  const kill = async (signal?: NodeJS.Signals): Promise<void> => {
+    if (alive) {
+      await new Promise<void>((resolve) => {
+        childProcess.on("exit", () => {
+          didExit();
+          resolve();
+        });
+
+        childProcess.kill(signal);
+      });
+    }
+  };
+  const terminator = addTerminator(() => kill("SIGKILL"));
 
   childProcess.on("exit", () => {
-    alive = false;
+    didExit();
   });
 
   try {
-    await new Promise((res, rej) => {
-      childProcess.on("spawn", res);
-
-      childProcess.on("error", rej);
-    });
-    alive = true;
-
-    return await use(childProcess);
+    return await use(childProcess, { kill });
   } finally {
-    if (alive) {
-      await new Promise((resolve) => {
-        childProcess.on("exit", resolve);
-      });
-
-      childProcess.kill("SIGKILL");
-    }
-
-    killer.cancel();
+    await kill("SIGKILL");
   }
 };

@@ -1,5 +1,3 @@
-import { ChildProcess } from "child_process";
-
 export type Terminator = () => Promise<void>;
 
 export interface TerminatorController {
@@ -18,25 +16,12 @@ export const addTerminator = (terminator: Terminator): TerminatorController => {
   };
 };
 
-export const killOnSignal = (
-  childProcess: ChildProcess
-): TerminatorController => {
-  return addTerminator(
-    () =>
-      new Promise((resolve) => {
-        childProcess.on("exit", resolve);
-
-        childProcess.kill("SIGKILL");
-      })
-  );
-};
-
-const handler = async () => {
+process.on("exit", async () => {
   await Promise.all([...terminators].map((terminator) => terminator()));
-
-  process.exit(0);
-};
+});
 
 for (const signal of ["SIGTERM", "SIGINT"]) {
-  process.on(signal, handler);
+  process.on(signal, () => {
+    process.exit(0);
+  });
 }

@@ -45,48 +45,33 @@ export const useWebPageReplay = async <T>(
       ],
       { cwd: wprgoPath }
     ),
-    async (childProcess) => {
+    async (childProcess, controller) => {
       if (debugMode) {
         childProcess.stderr!.pipe(process.stderr);
       } else {
         childProcess.stderr!.resume();
       }
 
-      let settled = false;
-
       try {
         await waitUntilUsed(httpPort, 500, 30_000);
 
         return await new Promise((res, rej) => {
           childProcess.on("error", (err) => {
-            settled = true;
             rej(err);
           });
 
           childProcess.on("exit", (code) => {
-            if (!settled) {
-              rej(
-                new Error(`Process has exited prematurely with code ${code}`)
-              );
-            }
+            rej(new Error(`Process has exited prematurely with code ${code}`));
           });
 
           use({
             hostname: localhost,
             httpPort,
             httpsPort,
-          })
-            .then(res, rej)
-            .finally(() => {
-              settled = true;
-            });
+          }).then(res, rej);
         });
       } finally {
-        await new Promise((resolve) => {
-          childProcess.on("exit", resolve);
-
-          childProcess.kill("SIGINT");
-        });
+        await controller.kill("SIGINT");
       }
     }
   );

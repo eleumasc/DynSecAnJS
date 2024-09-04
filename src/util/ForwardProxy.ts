@@ -1,6 +1,5 @@
-import { Server, Socket, connect } from "net";
-
 import assert from "assert";
+import { connect, Server, Socket } from "net";
 import { getTcpPort } from "./getTcpPort";
 import { localhost } from "../env";
 import { promisify } from "util";
@@ -87,7 +86,9 @@ export const useForwardProxy = async <T>(
     }
   });
 
-  server.listen(proxyPort, proxyHostname);
+  await new Promise<void>((resolve) => {
+    server.listen(proxyPort, proxyHostname, undefined, resolve);
+  });
 
   try {
     return await use({

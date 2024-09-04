@@ -1,5 +1,5 @@
 import { Args } from "../archive/Args";
-import { BrowserName } from "../collection/BrowserName";
+import { BrowserOrToolName, isToolName } from "../collection/ToolName";
 import { CollectArchive, CollectLogfile } from "../archive/CollectArchive";
 import { CollectSiteArgs, collectSiteFilename } from "../workers/collectSite";
 import { ipExec } from "../util/interprocess";
@@ -7,11 +7,6 @@ import { PreanalyzeArchive } from "../archive/PreanalyzeArchive";
 import { RecordArchive } from "../archive/RecordArchive";
 import { retryOnce } from "../util/retryOnce";
 import { useMonitorBundle } from "../collection/MonitorBundle";
-import {
-  BrowserOrToolName,
-  isToolName,
-  ToolName,
-} from "../collection/ToolName";
 import {
   ChildInitCommandController,
   initCommand,
@@ -92,4 +87,6 @@ export const cmdCollect = async (args: CollectArgs) => {
       );
     }
   );
+
+  process.exit(0);
 };

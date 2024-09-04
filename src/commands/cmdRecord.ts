@@ -56,4 +56,6 @@ export const cmdRecord = async (args: RecordArgs) => {
       });
     }
   );
+
+  process.exit(0);
 };
