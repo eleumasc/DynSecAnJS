@@ -133,7 +133,7 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
 
     let transformedWPRArchive = originalWPRArchive;
 
-    if (transpiled) {
+    if (transpileTransform) {
       const transpileTransformResult = await transpileTransform(
         transformedWPRArchive,
         preanalyzeReport
@@ -150,7 +150,7 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
 
     if (toolTransform) {
       const toolTransformResult = await toolTransform(
-        originalWPRArchive,
+        transformedWPRArchive,
         preanalyzeReport
       );
       if (toolTransformResult.status === "success") {
