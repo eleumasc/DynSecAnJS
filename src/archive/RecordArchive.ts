@@ -6,9 +6,9 @@ export interface RecordLogfile extends Logfile, HasSitesState {
   type: "RecordLogfile";
 }
 
-export interface RecordSiteDetail {
+export interface RecordReport {
   accessUrl: string;
   scriptUrls: string[];
 }
 
-export class RecordArchive extends Archive<RecordLogfile, RecordSiteDetail> {}
+export class RecordArchive extends Archive<RecordLogfile, RecordReport> {}

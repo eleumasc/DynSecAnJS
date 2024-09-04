@@ -1,26 +1,22 @@
-// @ts-ignore
-import EnvifyCustomPlugin from "@browserify/envify/custom";
 import browserify from "browserify";
+import EnvifyCustomPlugin from "./EnvifyCustomPlugin";
 import path from "path";
 import { promisify } from "util";
+import { ToolName } from "./ToolName";
 import { useTempDirectory } from "../util/TempDirectory";
 import { writeFileSync } from "fs";
 
 const monitorDir = path.resolve("monitor");
 
 export interface MonitorEnv {
-  ifaToolName?: string;
+  toolName?: ToolName;
 }
 
-export type MonitorState =
-  | {
-      loadingCompleted: false;
-    }
-  | {
-      loadingCompleted: true;
-      uncaughtErrors: string[];
-      flows?: any;
-    };
+export interface MonitorState {
+  loadingCompleted: boolean;
+  uncaughtErrors: string[];
+  rawFlows: any;
+}
 
 export const useMonitorBundle = <T>(
   env: MonitorEnv,
@@ -30,7 +26,7 @@ export const useMonitorBundle = <T>(
     const bundle = await promisify<Buffer>((callback) =>
       browserify({ basedir: monitorDir })
         .add("./index.js")
-        .transform(EnvifyCustomPlugin(env))
+        .transform(EnvifyCustomPlugin({ ENV: env }))
         .bundle(callback)
     )();
 

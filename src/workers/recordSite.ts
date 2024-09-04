@@ -14,7 +14,7 @@ import { ForwardProxy } from "../util/ForwardProxy";
 import { headless } from "../env";
 import { ipRegister } from "../util/interprocess";
 import { isSuccess, toCompletion } from "../util/Completion";
-import { RecordArchive, RecordSiteDetail } from "../archive/RecordArchive";
+import { RecordArchive, RecordReport } from "../archive/RecordArchive";
 import { retryOnceCompletion } from "../util/retryOnce";
 import { SiteResult } from "../archive/Archive";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
@@ -42,7 +42,7 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
         },
       });
 
-  const navigate = async (page: Page): Promise<RecordSiteDetail> => {
+  const navigate = async (page: Page): Promise<RecordReport> => {
     interface ScriptRequestLoadingQueueEntry {
       request: Request;
       deferredComplete: Deferred<void>;
@@ -107,7 +107,7 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
     })
   );
 
-  archive.writeSiteResult(site, result satisfies SiteResult<RecordSiteDetail>);
+  archive.writeSiteResult(site, result satisfies SiteResult<RecordReport>);
 };
 
 ipRegister(recordSite);

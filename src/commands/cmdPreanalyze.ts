@@ -2,23 +2,23 @@ import { Args } from "../archive/Args";
 import { RecordArchive } from "../archive/RecordArchive";
 import { threadExec } from "../util/thread";
 import {
-  AnalyzeSyntaxSiteArgs,
-  analyzeSyntaxSiteFilename,
-} from "../workers/analyzeSyntaxSite";
+  PreanalyzeSiteArgs,
+  preanalyzeSiteFilename,
+} from "../workers/preanalyzeSite";
 import {
   initCommand,
   ChildInitCommandController,
 } from "../archive/initCommand";
 import {
-  AnalyzeSyntaxArchive,
-  AnalyzeSyntaxLogfile,
-} from "../archive/AnalyzeSyntaxArchive";
+  PreanalyzeArchive,
+  PreanalyzeLogfile,
+} from "../archive/PreanalyzeArchive";
 import {
   ArchiveProcessSitesController,
   processSites,
 } from "../util/processSites";
 
-export type AnalyzeSyntaxArgs = Args<
+export type PreanalyzeArgs = Args<
   {
     recordArchivePath: string;
   },
@@ -27,24 +27,21 @@ export type AnalyzeSyntaxArgs = Args<
   }
 >;
 
-export const cmdAnalyzeSyntax = async (args: AnalyzeSyntaxArgs) => {
+export const cmdPreanalyze = async (args: PreanalyzeArgs) => {
   const {
     archive,
     processArgs: { concurrencyLimit },
     resolveArchivePath,
   } = initCommand(
     args,
-    AnalyzeSyntaxArchive,
+    PreanalyzeArchive,
     new ChildInitCommandController(
       RecordArchive,
       (requireArgs) => requireArgs.recordArchivePath,
-      () => "AnalyzeSyntax",
-      (
-        _requireArgs,
-        { parentArchiveName, sitesState }
-      ): AnalyzeSyntaxLogfile => {
+      () => "Preanalyze",
+      (_requireArgs, { parentArchiveName, sitesState }): PreanalyzeLogfile => {
         return {
-          type: "AnalyzeSyntaxLogfile",
+          type: "PreanalyzeLogfile",
           recordArchiveName: parentArchiveName,
           sitesState,
         };
@@ -61,12 +58,12 @@ export const cmdAnalyzeSyntax = async (args: AnalyzeSyntaxArgs) => {
     concurrencyLimit,
     async (site) => {
       const { archivePath } = archive;
-      await threadExec(analyzeSyntaxSiteFilename, [
+      await threadExec(preanalyzeSiteFilename, [
         {
           site,
           archivePath,
           recordArchivePath: recordArchive.archivePath,
-        } satisfies AnalyzeSyntaxSiteArgs,
+        } satisfies PreanalyzeSiteArgs,
       ]);
     }
   );

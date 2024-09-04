@@ -1,22 +1,20 @@
-import WPRArchive from "../wprarchive/WPRArchive";
 import path from "path";
+import WPRArchive from "../wprarchive/WPRArchive";
 import { useTempDirectory } from "../util/TempDirectory";
 
 export const useTransformedWPRArchive = async <T>(
-  originalPath: string,
-  transformCallback: ((wprArchive: WPRArchive) => Promise<WPRArchive>) | null,
-  use: (transformedPath: string) => Promise<T>
+  originalWPRArchivePath: string,
+  originalWPRArchive: WPRArchive,
+  transformedWPRArchive: WPRArchive,
+  use: (wprArchivePath: string) => Promise<T>
 ): Promise<T> => {
-  if (!transformCallback) {
-    return await use(originalPath);
+  if (transformedWPRArchive === originalWPRArchive) {
+    return await use(originalWPRArchivePath);
   }
-
-  const originalArchive = WPRArchive.fromFile(originalPath);
-  const transformedArchive = await transformCallback(originalArchive);
 
   return await useTempDirectory(async (tempPath) => {
     const transformedPath = path.join(tempPath, "archive.wprgo");
-    transformedArchive.toFile(transformedPath);
+    transformedWPRArchive.toFile(transformedPath);
 
     return await use(transformedPath);
   });

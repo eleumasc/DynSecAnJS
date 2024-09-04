@@ -1,4 +1,5 @@
 import * as parse5 from "parse5";
+import _ from "lodash";
 import assert from "assert";
 import { Document, Element, Node } from "parse5/dist/tree-adapters/default";
 import {
@@ -23,11 +24,38 @@ export default class HtmlDocument {
     readonly baseUrl: string | undefined,
     readonly nonce: string | undefined,
     readonly rawImportMap: string | undefined,
-    readonly scriptList: HtmlScript[]
+    protected scriptArray: HtmlScript[]
   ) {}
+
+  get scripts(): HtmlScript[] {
+    return [...this.scriptArray];
+  }
+
+  get activeScripts(): HtmlScript[] {
+    return this.scriptArray.filter(
+      (script) => !(script instanceof ElementHtmlScript && script.isNoModule)
+    );
+  }
 
   serialize() {
     return parse5.serialize(this.documentNode);
+  }
+
+  removeElementHtmlScript(htmlScript: ElementHtmlScript): void {
+    assert(this.scriptArray.includes(htmlScript));
+
+    const scriptNode = htmlScript.element;
+    const parentNode = scriptNode.parentNode;
+    assert(parentNode);
+    parentNode.childNodes = _.reject(
+      parentNode.childNodes,
+      (node) => node === scriptNode
+    );
+
+    this.scriptArray = _.reject(
+      this.scriptArray,
+      (otherHtmlScript) => otherHtmlScript === htmlScript
+    );
   }
 
   createInitHtmlScript(): ElementHtmlScript {
@@ -40,7 +68,7 @@ export default class HtmlDocument {
     }
 
     const htmlScript = new ElementHtmlScript(element);
-    this.scriptList.push(htmlScript);
+    this.scriptArray = [...this.scriptArray, htmlScript];
     return htmlScript;
   }
 
@@ -50,7 +78,7 @@ export default class HtmlDocument {
     let baseUrl: string | undefined;
     let nonce: string | undefined;
     let rawImportMap: string | undefined;
-    const scriptList: HtmlScript[] = [];
+    const scriptArray: HtmlScript[] = [];
 
     traverse(documentNode);
 
@@ -61,7 +89,7 @@ export default class HtmlDocument {
       baseUrl,
       nonce,
       rawImportMap,
-      scriptList
+      scriptArray
     );
 
     function traverse(node: Node): void {
@@ -81,7 +109,7 @@ export default class HtmlDocument {
           ) {
             nonce = nonce ?? getAttribute(node, "nonce");
             const htmlScript = new ElementHtmlScript(node);
-            scriptList.push(htmlScript);
+            scriptArray.push(htmlScript);
           } else if (type === "importmap") {
             rawImportMap =
               rawImportMap ?? new ElementHtmlScript(node).inlineSource;
@@ -90,7 +118,7 @@ export default class HtmlDocument {
 
         for (const attr of node.attrs) {
           if (htmlEventAttributes.includes(attr.name)) {
-            scriptList.push(new AttributeHtmlScript(attr));
+            scriptArray.push(new AttributeHtmlScript(attr));
           }
         }
       }

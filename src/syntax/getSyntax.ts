@@ -1,20 +1,24 @@
-import { AttributeHtmlScript, ElementHtmlScript } from "../htmlutil/HTMLScript";
-import { ModuleDetail, Syntax, SyntaxDetail, SyntaxScript } from "./Syntax";
-
-import DataURL from "../util/DataURL";
-import HtmlDocument from "../htmlutil/HTMLDocument";
-import { ImportMap } from "../util/import-map";
-import WPRArchive from "../wprarchive/WPRArchive";
 import _ from "lodash";
 import acorn from "acorn";
 import assert from "assert";
+import DataURL from "../util/DataURL";
+import HtmlDocument from "../htmlutil/HTMLDocument";
+import walk from "acorn-walk";
+import WPRArchive from "../wprarchive/WPRArchive";
+import { AttributeHtmlScript, ElementHtmlScript } from "../htmlutil/HTMLScript";
 import { dropHash } from "../util/url";
 import { getDiffEvidences } from "./getDiffEvidences";
+import { ImportMap } from "../util/import-map";
 import { isJavaScriptMimeType } from "../util/mimeType";
 import { isOk } from "../wprarchive/ArchivedResponse";
 import { maxESVersion } from "./ESVersion";
 import { md5 } from "../util/hash";
-import walk from "acorn-walk";
+import {
+  ModuleDetail,
+  Syntax,
+  SyntaxDetail,
+  SyntaxScript
+  } from "./Syntax";
 
 export const getSyntax = (
   wprArchive: WPRArchive,
@@ -29,6 +33,7 @@ export const getSyntax = (
   );
 
   const htmlDocument = HtmlDocument.parse(mainResponse.body.toString());
+  const htmlScripts = htmlDocument.activeScripts;
 
   const documentUrl = (
     htmlDocument.baseUrl !== undefined
@@ -74,10 +79,6 @@ export const getSyntax = (
     }
     return result;
   };
-
-  const htmlScripts = htmlDocument.scriptList.filter(
-    (script) => !(script instanceof ElementHtmlScript && script.isNoModule)
-  );
 
   const scriptUrlMap: Record<string, string> = Object.fromEntries(
     htmlScripts

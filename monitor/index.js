@@ -2,16 +2,24 @@ var $ = require("./lib/builtin");
 var ArraySet = require("./lib/ArraySet");
 var collectFlows = require("./collectFlows");
 
+var env = require("./env");
+
 function setupMonitor() {
   var Apply = $.Apply;
 
-  var state = { loadingCompleted: false };
-  $.addEventListener($.global, "load", function () {
-    state = {
-      loadingCompleted: true,
+  var stateSnapshot = null;
+  function takeStateSnapshot() {
+    return (stateSnapshot = stateSnapshot || {
+      loadingCompleted: loadingCompleted,
       uncaughtErrors: uncaughtErrors.values(),
-      flows: collectFlows(),
-    };
+      rawFlows: collectFlows(),
+    });
+  }
+
+  var loadingCompleted = false;
+  $.addEventListener($.global, "load", function () {
+    loadingCompleted = true;
+    takeStateSnapshot();
   });
 
   var uncaughtErrors = new ArraySet();
@@ -21,7 +29,7 @@ function setupMonitor() {
   });
 
   return function () {
-    return state;
+    return takeStateSnapshot();
   };
 }
 

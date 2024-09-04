@@ -1,26 +1,36 @@
-import { ignoreJSON } from "./ignoreJSON";
-import { jestPath } from "../env";
 import path from "path";
-import { spawnStdio } from "./spawnStdio";
+import { Completion } from "../util/Completion";
+import { execLanguageBasedTool } from "./execLanguageBasedTool";
+import { inlineExternalScripts } from "../collection/inlineExternalScripts";
+import { jestPath } from "../env";
+import {
+  composeWPRArchiveTransformers,
+  transformWPRArchive,
+  WPRArchiveTransformer,
+} from "../collection/WPRArchiveTransformer";
 
-export const transformWithJEST = () => {
-  throw new Error("Not implemented");
+export const transformWithJEST = (): WPRArchiveTransformer =>
+  composeWPRArchiveTransformers(
+    inlineExternalScripts(true),
+    transformWPRArchive(
+      (body) => jest(body, "html"),
+      (body) => jest(body, "js")
+    )
+  );
 
-  // return async (content, { contentType }) => {
-  //   switch (contentType) {
-  //     case "html":
-  //       return await jest(content, "html");
-  //     case "javascript":
-  //       return content;
-  //   }
-  // };
-};
-
-export const jest = (code: string, extension: "html" | "js"): Promise<string> =>
-  ignoreJSON(code, async (code) => {
-    return await spawnStdio(
+export const jest = (
+  source: string,
+  extension: "html" | "js"
+): Promise<Completion<string>> => {
+  return execLanguageBasedTool(
+    source,
+    extension,
+    (originalPath, modifiedPath) => [
       path.join(jestPath, "jest"),
-      ["--browser", `--${extension}`],
-      code
-    );
-  });
+      "--browser",
+      `--${extension}`,
+      `--input=${originalPath}`,
+      `--output=${modifiedPath}`,
+    ]
+  );
+};

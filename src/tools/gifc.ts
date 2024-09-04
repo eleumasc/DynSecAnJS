@@ -1,14 +1,16 @@
-import { gifcPath } from "../env";
-import { ignoreJSON } from "./ignoreJSON";
 import path from "path";
-import { spawnStdio } from "./spawnStdio";
+import { Completion, isSuccess, Success } from "../util/Completion";
+import { execLanguageBasedTool } from "./execLanguageBasedTool";
+import { gifcPath } from "../env";
+import { readFileSync } from "fs";
+import { WPRArchiveTransformer } from "../collection/WPRArchiveTransformer";
 
-export const transformWithGIFC = () => {
+export const transformWithGIFC = (): WPRArchiveTransformer => {
   throw new Error("Not implemented");
 
-  // const setupCode = readFileSync(
-  //   path.join(gifcPath, "build", "setup.js")
-  // ).toString();
+  const setupCode = readFileSync(
+    path.join(gifcPath, "build", "setup.js")
+  ).toString();
 
   // return async (content, { contentType }) => {
   //   switch (contentType) {
@@ -31,12 +33,13 @@ export const transformWithGIFC = () => {
   // };
 };
 
-export const gifc = (code: string): Promise<string> =>
-  ignoreJSON(code, async (code) => {
-    const result = await spawnStdio(
-      "node",
-      [path.join(gifcPath, "transform.js")],
-      code
-    );
-    return `{\n${result}\n}`;
-  });
+// export const gifc = async (source: string): Promise<Completion<string>> => {
+//   const completion = await execLanguageBasedTool(source, undefined, () => [
+//     "node",
+//     path.join(gifcPath, "transform.js"),
+//   ]);
+
+//   return isSuccess(completion)
+//     ? Success(`{\n${completion.value}\n}`)
+//     : completion;
+// };

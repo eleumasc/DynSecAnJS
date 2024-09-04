@@ -6,24 +6,22 @@ import { RecordArchive } from "../archive/RecordArchive";
 import { SiteResult } from "../archive/Archive";
 import { threadRegister } from "../util/thread";
 import {
-  AnalyzeSyntaxArchive,
-  AnalyzeSyntaxSiteDetail,
-} from "../archive/AnalyzeSyntaxArchive";
+  PreanalyzeArchive,
+  PreanalyzeReport,
+} from "../archive/PreanalyzeArchive";
 
-export interface AnalyzeSyntaxSiteArgs {
+export interface PreanalyzeSiteArgs {
   site: string;
   archivePath: string;
   recordArchivePath: string;
 }
 
-export const analyzeSyntaxSiteFilename = __filename;
+export const preanalyzeSiteFilename = __filename;
 
-const analyzeSyntaxSite = async (
-  args: AnalyzeSyntaxSiteArgs
-): Promise<void> => {
+const preanalyzeSite = async (args: PreanalyzeSiteArgs): Promise<void> => {
   const { site, archivePath, recordArchivePath } = args;
 
-  const archive = AnalyzeSyntaxArchive.open(archivePath, true);
+  const archive = PreanalyzeArchive.open(archivePath, true);
 
   const recordArchive = RecordArchive.open(recordArchivePath);
   const recordSiteResult = recordArchive.readSiteResult(site);
@@ -41,10 +39,7 @@ const analyzeSyntaxSite = async (
     return getSyntax(wprArchive, accessUrl, knownExternalScriptUrls);
   });
 
-  archive.writeSiteResult(
-    site,
-    result satisfies SiteResult<AnalyzeSyntaxSiteDetail>
-  );
+  archive.writeSiteResult(site, result satisfies SiteResult<PreanalyzeReport>);
 };
 
-threadRegister(analyzeSyntaxSite);
+threadRegister(preanalyzeSite);

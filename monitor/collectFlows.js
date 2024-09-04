@@ -10,14 +10,14 @@ function collectFlowsFromProjectFoxhound() {
 }
 
 function selectExport() {
-  switch (env.ifaToolName) {
+  switch (env.toolName) {
     case "JalangiTT":
       return collectFlowsFromJalangiTT;
     case "ProjectFoxhound":
       return collectFlowsFromProjectFoxhound;
     default:
       return function () {
-        return void 0;
+        return null;
       };
   }
 }

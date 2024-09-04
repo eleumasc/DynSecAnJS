@@ -22,11 +22,13 @@ export interface IPErrorMessage extends BaseIPMessage {
 
 export type IPMessage = IPRequestMessage | IPCompletionMessage | IPErrorMessage;
 
+export const defaultTimeout = 10 * 60 * 1000; // 10 minutes
+
 export const ipExec = async (
   filename: string,
   args: any[]
 ): Promise<Completion<any>> => {
-  const childProcess = fork(filename);
+  const childProcess = fork(filename, { timeout: defaultTimeout });
 
   try {
     return await new Promise<any>((res, rej) => {

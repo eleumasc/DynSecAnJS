@@ -2,6 +2,7 @@ import { debugMode, localhost, wprgoPath } from "../env";
 import { ForwardProxy, useForwardProxy } from "../util/ForwardProxy";
 import { getTcpPort, waitUntilUsed } from "../util/getTcpPort";
 import { spawn } from "child_process";
+import { useChildProcess } from "../util/ChildProcess";
 
 export type WebPageReplayOperation = "record" | "replay";
 
@@ -27,63 +28,68 @@ export const useWebPageReplay = async <T>(
 
   const [httpPort, httpsPort] = await Promise.all([getTcpPort(), getTcpPort()]);
 
-  const childProcess = spawn(
-    "./wpr",
-    [
-      operation,
-      `--http_port=${httpPort}`,
-      `--https_port=${httpsPort}`,
-      `--inject_scripts=${(injectDeterministic ?? true
-        ? ["deterministic.js"]
-        : []
-      )
-        .concat(injectScripts ?? [])
-        .join(",")}`,
-      archivePath,
-    ],
-    { cwd: wprgoPath }
-  );
+  return await useChildProcess(
+    spawn(
+      "./wpr",
+      [
+        operation,
+        `--http_port=${httpPort}`,
+        `--https_port=${httpsPort}`,
+        `--inject_scripts=${(injectDeterministic ?? true
+          ? ["deterministic.js"]
+          : []
+        )
+          .concat(injectScripts ?? [])
+          .join(",")}`,
+        archivePath,
+      ],
+      { cwd: wprgoPath }
+    ),
+    async (childProcess) => {
+      if (debugMode) {
+        childProcess.stderr!.pipe(process.stderr);
+      } else {
+        childProcess.stderr!.resume();
+      }
 
-  if (debugMode) {
-    childProcess.stderr!.pipe(process.stderr);
-  } else {
-    childProcess.stderr!.resume();
-  }
+      let settled = false;
 
-  let settled = false;
+      try {
+        await waitUntilUsed(httpPort, 500, 30_000);
 
-  try {
-    await waitUntilUsed(httpPort, 500, 30_000);
+        return await new Promise((res, rej) => {
+          childProcess.on("error", (err) => {
+            settled = true;
+            rej(err);
+          });
 
-    return await new Promise((res, rej) => {
-      childProcess.on("error", (err) => {
-        settled = true;
-        rej(err);
-      });
+          childProcess.on("exit", (code) => {
+            if (!settled) {
+              rej(
+                new Error(`Process has exited prematurely with code ${code}`)
+              );
+            }
+          });
 
-      childProcess.on("exit", (code) => {
-        if (!settled) {
-          rej(new Error(`Process has exited prematurely with code ${code}`));
-        }
-      });
-
-      use({
-        hostname: localhost,
-        httpPort,
-        httpsPort,
-      })
-        .then(res, rej)
-        .finally(() => {
-          settled = true;
+          use({
+            hostname: localhost,
+            httpPort,
+            httpsPort,
+          })
+            .then(res, rej)
+            .finally(() => {
+              settled = true;
+            });
         });
-    });
-  } finally {
-    await new Promise((resolve) => {
-      childProcess.on("exit", resolve);
+      } finally {
+        await new Promise((resolve) => {
+          childProcess.on("exit", resolve);
 
-      childProcess.kill("SIGINT");
-    });
-  }
+          childProcess.kill("SIGINT");
+        });
+      }
+    }
+  );
 };
 
 export const useForwardedWebPageReplay = <T>(

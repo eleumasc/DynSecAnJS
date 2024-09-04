@@ -1,10 +1,11 @@
 import assert from "assert";
-import { cmdAnalyzeSyntax } from "./commands/cmdAnalyzeSyntax";
-import { cmdCollectBrowser } from "./commands/cmdCollectBrowser";
-import { cmdRecord } from "./commands/cmdRecord";
-import { isBrowserName } from "./collection/BrowserName";
 import path from "path";
 import yargs from "yargs/yargs";
+import { cmdCollect } from "./commands/cmdCollect";
+import { cmdPreanalyze } from "./commands/cmdPreanalyze";
+import { cmdRecord } from "./commands/cmdRecord";
+import { isBrowserName } from "./collection/BrowserName";
+import { isToolName } from "./collection/ToolName";
 
 const workspacePath = path.resolve("workspace");
 
@@ -65,7 +66,7 @@ yargs(process.argv.slice(2))
     }
   )
   .command(
-    "analyzeSyntax <recordArchivePath>",
+    "preanalyze <recordArchivePath>",
     "",
     (yargs) => {
       return yargs
@@ -79,7 +80,7 @@ yargs(process.argv.slice(2))
         });
     },
     ({ recordArchivePath, concurrencyLimit }) => {
-      cmdAnalyzeSyntax({
+      cmdPreanalyze({
         type: "normal",
         requireArgs: {
           recordArchivePath,
@@ -91,15 +92,15 @@ yargs(process.argv.slice(2))
     }
   )
   .command(
-    "collectBrowser <browserName> <analyzeSyntaxArchivePath>",
+    "collect <browserOrToolName> <preanalyzeArchivePath>",
     "",
     (yargs) => {
       return yargs
-        .positional("browserName", {
+        .positional("browserOrToolName", {
           type: "string",
           demandOption: true,
         })
-        .positional("analyzeSyntaxArchivePath", {
+        .positional("preanalyzeArchivePath", {
           type: "string",
           demandOption: true,
         })
@@ -108,16 +109,16 @@ yargs(process.argv.slice(2))
           default: 1,
         });
     },
-    ({ browserName, analyzeSyntaxArchivePath, concurrencyLimit }) => {
+    ({ browserOrToolName, preanalyzeArchivePath, concurrencyLimit }) => {
       assert(
-        isBrowserName(browserName),
-        `Invalid browser name: ${browserName}`
+        isBrowserName(browserOrToolName) || isToolName(browserOrToolName),
+        `Invalid browser or tool name: ${browserOrToolName}`
       );
-      cmdCollectBrowser({
+      cmdCollect({
         type: "normal",
         requireArgs: {
-          browserName,
-          analyzeSyntaxArchivePath,
+          browserOrToolName,
+          preanalyzeArchivePath,
         },
         processArgs: {
           concurrencyLimit,
@@ -126,7 +127,7 @@ yargs(process.argv.slice(2))
     }
   )
   .command(
-    "collectBrowser:resume <archivePath>",
+    "collect:resume <archivePath>",
     "",
     (yargs) => {
       return yargs
@@ -140,7 +141,7 @@ yargs(process.argv.slice(2))
         });
     },
     ({ archivePath, concurrencyLimit }) => {
-      cmdCollectBrowser({
+      cmdCollect({
         type: "resume",
         archivePath,
         processArgs: {
