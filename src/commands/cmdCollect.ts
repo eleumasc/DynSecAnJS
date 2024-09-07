@@ -3,6 +3,7 @@ import { BrowserOrToolName, isToolName } from "../collection/ToolName";
 import { CollectArchive, CollectLogfile } from "../archive/CollectArchive";
 import { CollectSiteArgs, collectSiteFilename } from "../workers/collectSite";
 import { ipExec } from "../util/interprocess";
+import { isFailure } from "../util/Completion";
 import { PreanalyzeArchive } from "../archive/PreanalyzeArchive";
 import { RecordArchive } from "../archive/RecordArchive";
 import { retryOnce } from "../util/retryOnce";
@@ -72,7 +73,7 @@ export const cmdCollect = async (args: CollectArgs) => {
         async (site) => {
           const { archivePath } = archive;
           await retryOnce(async () => {
-            await ipExec(collectSiteFilename, [
+            const completion = await ipExec(collectSiteFilename, [
               {
                 site,
                 browserOrToolName,
@@ -82,6 +83,9 @@ export const cmdCollect = async (args: CollectArgs) => {
                 bundlePath,
               } satisfies CollectSiteArgs,
             ]);
+            if (isFailure(completion)) {
+              console.error(completion.error);
+            }
           });
         }
       );

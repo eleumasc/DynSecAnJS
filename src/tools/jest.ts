@@ -4,6 +4,7 @@ import { execTool } from "./execTool";
 import { inlineExternalScripts } from "../collection/htmlmanip/inlineExternalScripts";
 import { jestPath } from "../env";
 import { manipulateHTML } from "../collection/htmlmanip/manipulateHTML";
+import { transformInlineScripts } from "../collection/htmlmanip/transformInlineScripts";
 import {
   transformWPRArchive,
   WPRArchiveTransformer,
@@ -15,21 +16,21 @@ export const transformWithJEST = (): WPRArchiveTransformer =>
       manipulateHTML(
         body,
         composeHTMLManipulators(
-          inlineExternalScripts(originalWPRArchive, preanalyzeReport, true)
+          inlineExternalScripts(originalWPRArchive, preanalyzeReport, true),
+          transformInlineScripts((body) => jest(body, "js"))
         )
-      ).then((body) => jest(body, "html")),
+      ),
     (body) => Promise.resolve(body)
   );
 
 export const jest = (
   source: string,
   extension: "html" | "js"
-): Promise<string> => {
-  return execTool(source, extension, (originalPath, modifiedPath) => [
+): Promise<string> =>
+  execTool(source, extension, (originalPath, modifiedPath) => [
     path.join(jestPath, "jest"),
     "--browser",
     `--${extension}`,
     `--input=${originalPath}`,
     `--output=${modifiedPath}`,
   ]);
-};

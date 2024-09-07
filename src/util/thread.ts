@@ -1,6 +1,6 @@
 import assert from "assert";
 import { Agent } from "port_agent";
-import { Completion } from "./Completion";
+import { Completion, toCompletion } from "./Completion";
 import { isMainThread, parentPort, Worker } from "worker_threads";
 
 export const threadExec = async (
@@ -11,7 +11,7 @@ export const threadExec = async (
   const agent = new Agent(worker);
 
   try {
-    return await agent.call("callback", ...args);
+    return await toCompletion(() => agent.call("callback", ...args));
   } finally {
     await worker.terminate();
   }

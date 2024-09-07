@@ -17,6 +17,7 @@ import { retryOnce } from "../util/retryOnce";
 import { SiteResult } from "../archive/Archive";
 import { timeBomb } from "../util/timeout";
 import { transformWithJalangi } from "../tools/jalangi";
+import { transformWithJEST } from "../tools/jest";
 import { transpile } from "../collection/transpile";
 import { unixTime } from "../util/time";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
@@ -116,6 +117,8 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
     if (toolName === undefined) return null;
 
     switch (toolName) {
+      case "JEST":
+        return transformWithJEST();
       case "JalangiTT":
         return transformWithJalangi(
           path.resolve(jalangiPath, "src", "js", "runtime", "JalangiTT.js")
