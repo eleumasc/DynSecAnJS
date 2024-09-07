@@ -6,7 +6,7 @@ import { spawn } from "child_process";
 import { useChildProcess } from "../util/ChildProcess";
 import { useTempDirectory } from "../util/TempDirectory";
 
-export const execLanguageBasedTool = (
+export const execTool = (
   source: string,
   extension: string | undefined,
   getCmdParams: (

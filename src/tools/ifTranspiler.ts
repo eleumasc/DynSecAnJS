@@ -1,138 +1,133 @@
 import path from "path";
+import { addInitScript } from "../collection/htmlmanip/addInitScript";
+import { composeHTMLManipulators } from "../collection/htmlmanip/HTMLManipulator";
+import { execTool } from "./execTool";
 import { ifTranspilerPath } from "../env";
-import { WPRArchiveTransformer } from "../collection/WPRArchiveTransformer";
+import { inlineExternalScripts } from "../collection/htmlmanip/inlineExternalScripts";
+import { manipulateHTML } from "../collection/htmlmanip/manipulateHTML";
+import { transformInlineScripts } from "../collection/htmlmanip/transformInlineScripts";
+import {
+  transformWPRArchive,
+  WPRArchiveTransformer,
+} from "../collection/WPRArchiveTransformer";
 
-export const transformWithIFTranspiler = (): WPRArchiveTransformer => {
-  throw new Error("Not implemented");
+export const transformWithIFTranspiler = (): WPRArchiveTransformer =>
+  transformWPRArchive(
+    (body, _, originalWPRArchive, preanalyzeReport) =>
+      manipulateHTML(
+        body,
+        composeHTMLManipulators(
+          inlineExternalScripts(originalWPRArchive, preanalyzeReport, true),
+          transformInlineScripts(() => ifTranspiler(body)),
+          addInitScript(setupCode)
+        )
+      ),
+    (body) => Promise.resolve(body)
+  );
 
-  // return async (content, { contentType }) => {
-  //   switch (contentType) {
-  //     case "html":
-  //       return await transformHtml(
-  //         content,
-  //         composeHtmlTransformers([
-  //           transformInlineScripts(async (code, isEventHandler) => {
-  //             if (isEventHandler) {
-  //               return code;
-  //             }
-  //             return await ifTranspiler(code);
-  //           }),
-  //           injectScripts([createJavascriptDataUrl(setupCode)]),
-  //         ])
-  //       );
-  //     case "javascript":
-  //       return await ifTranspiler(content);
-  //   }
-  // };
-};
+export const ifTranspiler = (source: string): Promise<string> =>
+  execTool(source, "js", (originalPath, modifiedPath) => [
+    "node",
+    path.join(ifTranspilerPath, "if-transpiler.js"),
+    "--inline",
+    "-o",
+    modifiedPath,
+    originalPath,
+  ]);
 
-// export const ifTranspiler = async (code: string): Promise<string> => {
-//   let result = await spawnStdio(
-//     "node",
-//     [path.join(ifTranspilerPath, "if-transpiler.js"), "--inline"],
-//     code
-//   );
+const setupCode = `
+var $Γ = { global: { scope: null, Σ: 0 } };
+var _$tmp, $tmp, $rf;
 
-//   while (result.startsWith("Warning: ")) {
-//     result = result.substring(result.indexOf("\n") + 1);
-//   }
+$Γ["global"]["window"] = $Γ["global"].$this = $Γ["global"];
 
-//   return result;
-// };
+var $Λ = [{ l: 0, id: "global" }];
+var $Δ = [];
+function $pc() {
+  return $Λ[$Λ.length - 1];
+}
+function $lub() {
+  var args = Array.prototype.slice.call(arguments, 0);
+  return args.sort(function (a, b) {
+    return b - a;
+  })[0];
+}
 
-// const setupCode = `
-// var $Γ = { global: { scope: null, Σ: 0 } };
-// var _$tmp, $tmp, $rf;
+function $scope($$cs, $var, isLHS) {
+  do {
+    if ($$cs[$var] !== undefined) return $$cs;
+  } while (($$cs = $$cs.scope));
 
-// $Γ["global"]["window"] = $Γ["global"].$this = $Γ["global"];
+  if (isLHS) {
+    $Γ["global"][$var] = 0;
+    return $Γ["global"];
+  } else {
+    if ($var == "global") return $Γ;
 
-// var $Λ = [{ l: 0, id: "global" }];
-// var $Δ = [];
-// function $pc() {
-//   return $Λ[$Λ.length - 1];
-// }
-// function $lub() {
-//   var args = Array.prototype.slice.call(arguments, 0);
-//   return args.sort(function (a, b) {
-//     return b - a;
-//   })[0];
-// }
+    throw new Error("Can't find variable " + $var + " in scope chain ");
+  }
+}
 
-// function $scope($$cs, $var, isLHS) {
-//   do {
-//     if ($$cs[$var] !== undefined) return $$cs;
-//   } while (($$cs = $$cs.scope));
+function $prop(obj, prop, $$cs) {
+  var $ro, $t;
+  $ro = $t = $scope($$cs, obj, false)[obj];
+  do {
+    if ($ro[prop] !== undefined) return $ro[prop];
+  } while (($ro = $ro["__$proto__"]));
 
-//   if (isLHS) {
-//     $Γ["global"][$var] = 0;
-//     return $Γ["global"];
-//   } else {
-//     if ($var == "global") return $Γ;
+  return $t.Σ ? $t.Σ : $t;
+}
 
-//     throw new Error("Can't find variable " + $var + " in scope chain ");
-//   }
-// }
+function $comp(lblObj, lvl) {
+  var i = $Λ.length - 1;
+  while (i > 1 && $Λ[i].id !== lblObj.lbl) {
+    i--;
+    $Λ[i].l = $Λ[i].l > lvl ? $Λ[i].l : lvl;
+  }
+  i--;
+  $Λ[i].l = $Λ[i].l > lvl ? $Λ[i].l : lvl;
+}
 
-// function $prop(obj, prop, $$cs) {
-//   var $ro, $t;
-//   $ro = $t = $scope($$cs, obj, false)[obj];
-//   do {
-//     if ($ro[prop] !== undefined) return $ro[prop];
-//   } while (($ro = $ro["__$proto__"]));
+function $upgrade(varArray, lvl, $$cs) {
+  var variable;
+  for (var e in varArray) {
+    var i = varArray[e].indexOf(".");
+    try {
+      if (i == -1) {
+        variable = $scope($$cs, varArray[e], false)[varArray[e]];
+        variable instanceof Object
+          ? (variable.Σ = variable.Σ >= lvl ? variable.Σ : lvl)
+          : ($scope($$cs, varArray[e], false)[varArray[e]] =
+              variable >= lvl ? variable : lvl);
+      } else {
+        var obj = varArray[e].split(".")[0],
+          prop = varArray[e].split(".")[1];
+        variable = $prop(obj, prop, $$cs);
+        variable instanceof Object
+          ? (variable.Σ = variable.Σ >= lvl ? variable.Σ : lvl)
+          : ($scope($$cs, obj, false)[obj][prop] =
+              variable >= lvl ? variable : lvl);
+      }
+    } catch (e) {}
+  }
+}
 
-//   return $t.Σ ? $t.Σ : $t;
-// }
+function sec_lvl(obj, prop, getValue, $$cs) {
+  var result;
 
-// function $comp(lblObj, lvl) {
-//   var i = $Λ.length - 1;
-//   while (i > 1 && $Λ[i].id !== lblObj.lbl) {
-//     i--;
-//     $Λ[i].l = $Λ[i].l > lvl ? $Λ[i].l : lvl;
-//   }
-//   i--;
-//   $Λ[i].l = $Λ[i].l > lvl ? $Λ[i].l : lvl;
-// }
-
-// function $upgrade(varArray, lvl, $$cs) {
-//   var variable;
-//   for (var e in varArray) {
-//     var i = varArray[e].indexOf(".");
-//     try {
-//       if (i == -1) {
-//         variable = $scope($$cs, varArray[e], false)[varArray[e]];
-//         variable instanceof Object
-//           ? (variable.Σ = variable.Σ >= lvl ? variable.Σ : lvl)
-//           : ($scope($$cs, varArray[e], false)[varArray[e]] =
-//               variable >= lvl ? variable : lvl);
-//       } else {
-//         var obj = varArray[e].split(".")[0],
-//           prop = varArray[e].split(".")[1];
-//         variable = $prop(obj, prop, $$cs);
-//         variable instanceof Object
-//           ? (variable.Σ = variable.Σ >= lvl ? variable.Σ : lvl)
-//           : ($scope($$cs, obj, false)[obj][prop] =
-//               variable >= lvl ? variable : lvl);
-//       }
-//     } catch (e) {}
-//   }
-// }
-
-// function sec_lvl(obj, prop, getValue, $$cs) {
-//   var result;
-
-//   if (obj === "this") {
-//     obj = prop;
-//     prop = null;
-//   }
-//   if (prop !== null) {
-//     result = $prop(obj, "" + prop, $$cs);
-//   } else {
-//     result = $scope($$cs, obj, false)[obj];
-//   }
-//   if (getValue) {
-//     return result instanceof Object ? result.Σ : result;
-//   } else {
-//     return result;
-//   }
-// }
-// `;
+  if (obj === "this") {
+    obj = prop;
+    prop = null;
+  }
+  if (prop !== null) {
+    result = $prop(obj, "" + prop, $$cs);
+  } else {
+    result = $scope($$cs, obj, false)[obj];
+  }
+  if (getValue) {
+    return result instanceof Object ? result.Σ : result;
+  } else {
+    return result;
+  }
+}
+`;

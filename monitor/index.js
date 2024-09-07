@@ -2,24 +2,30 @@ var $ = require("./lib/builtin");
 var ArraySet = require("./lib/ArraySet");
 var collectFlows = require("./collectFlows");
 
-var env = require("./env");
-
 function setupMonitor() {
   var Apply = $.Apply;
 
   var stateSnapshot = null;
-  function takeStateSnapshot() {
+  function getStateSnapshot() {
     return (stateSnapshot = stateSnapshot || {
       loadingCompleted: loadingCompleted,
       uncaughtErrors: uncaughtErrors.values(),
-      rawFlows: collectFlows(),
+      rawFlows: getRawFlows(),
     });
+  }
+
+  function getRawFlows() {
+    try {
+      return collectFlows();
+    } catch (_) {
+      return null;
+    }
   }
 
   var loadingCompleted = false;
   $.addEventListener($.global, "load", function () {
     loadingCompleted = true;
-    takeStateSnapshot();
+    getStateSnapshot();
   });
 
   var uncaughtErrors = new ArraySet();
@@ -29,7 +35,7 @@ function setupMonitor() {
   });
 
   return function () {
-    return takeStateSnapshot();
+    return getStateSnapshot();
   };
 }
 

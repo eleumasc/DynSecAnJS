@@ -1,5 +1,5 @@
 import path from "path";
-import { execLanguageBasedTool } from "./execLanguageBasedTool";
+import { execTool } from "./execTool";
 import { jalangiPath } from "../env";
 import {
   transformWPRArchive,
@@ -19,7 +19,7 @@ export const jalangi = (
   source: string,
   extension: "html" | "js"
 ): Promise<string> =>
-  execLanguageBasedTool(
+  execTool(
     source,
     extension,
     (originalPath, modifiedPath, cwd) => [
