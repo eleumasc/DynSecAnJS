@@ -32,16 +32,6 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
   const { site, archivePath } = args;
   const archive = RecordArchive.open(archivePath, true);
 
-  const browserFactory = (forwardProxy: ForwardProxy) => (): Promise<Browser> =>
-    addExtra(chromium)
-      .use(StealthPlugin())
-      .launch({
-        headless,
-        proxy: {
-          server: `${forwardProxy.hostname}:${forwardProxy.port}`,
-        },
-      });
-
   const navigate = async (page: Page): Promise<RecordReport> => {
     interface ScriptRequestLoadingQueueEntry {
       request: Request;
@@ -83,6 +73,16 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
       scriptUrls: scriptRequestLoadingQueue.map((entry) => entry.request.url()),
     };
   };
+
+  const browserFactory = (forwardProxy: ForwardProxy) => (): Promise<Browser> =>
+    addExtra(chromium)
+      .use(StealthPlugin())
+      .launch({
+        headless,
+        proxy: {
+          server: `${forwardProxy.hostname}:${forwardProxy.port}`,
+        },
+      });
 
   const result = await retryOnceCompletion(() =>
     useTempDirectory(async (tempPath) => {

@@ -21,18 +21,14 @@ export const transpile =
       source: string,
       isEventHandler: boolean = false
     ): Promise<string> => {
-      try {
-        return transformSync(source, {
-          parserOpts: {
-            sourceType: "script",
-            allowReturnOutsideFunction: isEventHandler,
-          },
-          presets: ["@babel/preset-env"],
-          plugins: ["@babel/plugin-transform-modules-commonjs"],
-        })!.code!;
-      } catch {
-        return "";
-      }
+      return transformSync(source, {
+        parserOpts: {
+          sourceType: "script",
+          allowReturnOutsideFunction: isEventHandler,
+        },
+        presets: ["@babel/preset-env"],
+        plugins: ["@babel/plugin-transform-modules-commonjs"],
+      })!.code!;
     };
 
     const generateRequire = (moduleName: string) =>

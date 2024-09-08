@@ -1,16 +1,15 @@
 import _ from "lodash";
 import assert from "assert";
 import path from "path";
+import TranspileError from "../collection/TranspileError";
 import WPRArchive from "../wprarchive/WPRArchive";
-import { Browser, Page } from "playwright";
 import { ESVersion, lessOrEqualToESVersion } from "../syntax/ESVersion";
 import { Failure, isSuccess, toCompletion } from "../util/Completion";
-import { ForwardProxy } from "../util/ForwardProxy";
-import { getBrowserLauncher } from "../collection/getBrowserLauncher";
-import { headless, jalangiPath } from "../env";
 import { ipRegister } from "../util/interprocess";
 import { isBrowserName } from "../collection/BrowserName";
+import { jalangiPath } from "../env";
 import { MonitorState } from "../collection/MonitorBundle";
+import { Page } from "playwright";
 import { PreanalyzeArchive } from "../archive/PreanalyzeArchive";
 import { RecordArchive } from "../archive/RecordArchive";
 import { retryOnce } from "../util/retryOnce";
@@ -20,8 +19,8 @@ import { transformWithJalangi } from "../tools/jalangi";
 import { transformWithJEST } from "../tools/jest";
 import { transpile } from "../collection/transpile";
 import { unixTime } from "../util/time";
+import { useBrowserOrToolPage } from "../collection/BrowserOrToolPage";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
-import { usePlaywrightPage } from "../collection/PlaywrightPage";
 import { useTransformedWPRArchive } from "../collection/TransformedWPRArchive";
 import { WPRArchiveTransformer } from "../collection/WPRArchiveTransformer";
 import {
@@ -76,14 +75,6 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
     value: { accessUrl },
   } = recordSiteResult;
 
-  const browserFactory = (forwardProxy: ForwardProxy) => (): Promise<Browser> =>
-    getBrowserLauncher(browserName).launch({
-      headless,
-      proxy: {
-        server: `${forwardProxy.hostname}:${forwardProxy.port}`,
-      },
-    });
-
   const navigate = async (page: Page): Promise<RunDetail> => {
     const startTime = unixTime();
     try {
@@ -123,6 +114,8 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
         return transformWithJalangi(
           path.resolve(jalangiPath, "src", "js", "runtime", "JalangiTT.js")
         );
+      case "ProjectFoxhound":
+        return null;
       default:
         throw new Error(`Unsupported tool for transform: ${toolName}`);
     }
@@ -144,9 +137,8 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
       if (transpileTransformResult.status === "success") {
         transformedWPRArchive = transpileTransformResult.transformedWPRArchive;
       } else {
-        throw new Error(
-          "transpileTransform failure:\n" +
-            transpileTransformResult.transformErrors.join("\n")
+        throw new TranspileError(
+          JSON.stringify(transpileTransformResult.transformErrors)
         );
       }
     }
@@ -184,7 +176,11 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
                   injectScripts: [bundlePath],
                 },
                 (forwardProxy) =>
-                  usePlaywrightPage(browserFactory(forwardProxy), navigate)
+                  useBrowserOrToolPage(
+                    browserOrToolName,
+                    forwardProxy,
+                    navigate
+                  )
               )
             );
 
