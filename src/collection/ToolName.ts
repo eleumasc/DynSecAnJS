@@ -4,6 +4,7 @@ export type ToolName =
   | "JEST"
   | "IFTranspiler"
   | "GIFC"
+  | "LinvailTaint"
   | "JalangiTT"
   | "ProjectFoxhound";
 
@@ -14,6 +15,7 @@ export const isToolName = (value: any): value is ToolName => {
     case "JEST":
     case "IFTranspiler":
     case "GIFC":
+    case "LinvailTaint":
     case "JalangiTT":
     case "ProjectFoxhound":
       return true;
@@ -27,6 +29,7 @@ export const getBrowserNameByToolName = (toolName: ToolName): BrowserName => {
     case "JEST":
     case "IFTranspiler":
     case "GIFC":
+    case "LinvailTaint":
     case "JalangiTT":
       return "Chromium-ES5";
     case "ProjectFoxhound":

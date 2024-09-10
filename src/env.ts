@@ -1,7 +1,6 @@
-import "dotenv/config";
-
 import assert from "assert";
 import path from "path";
+import "dotenv/config";
 
 const get = (key: string): string => {
   const value = process.env[key] as string | undefined;
@@ -37,6 +36,7 @@ export const jestPath = path.join(toolsPath, "jest");
 export const ifTranspilerPath = path.join(toolsPath, "if-transpiler");
 export const jalangiPath = path.join(toolsPath, "jalangi2");
 export const gifcPath = path.join(toolsPath, "gifc");
+export const linvailTaintPath = path.join(toolsPath, "linvail-taint");
 export const geckoDriverPath = toolsPath;
 export const projectFoxhoundPath = path.join(toolsPath, "foxhound");
 export const firefoxPath = path.join(toolsPath, "firefox");

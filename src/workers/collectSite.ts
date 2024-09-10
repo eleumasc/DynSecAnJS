@@ -17,6 +17,7 @@ import { SiteResult } from "../archive/Archive";
 import { timeBomb } from "../util/timeout";
 import { transformWithJalangi } from "../tools/jalangi";
 import { transformWithJEST } from "../tools/jest";
+import { transformWithLinvailTaint } from "../tools/linvailTaint";
 import { transpile } from "../collection/transpile";
 import { unixTime } from "../util/time";
 import { useBrowserOrToolPage } from "../collection/BrowserOrToolPage";
@@ -114,6 +115,8 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
         return transformWithJalangi(
           path.resolve(jalangiPath, "src", "js", "runtime", "JalangiTT.js")
         );
+      case "LinvailTaint":
+        return transformWithLinvailTaint();
       case "ProjectFoxhound":
         return null;
       default:
