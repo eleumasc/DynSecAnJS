@@ -1,10 +1,6 @@
-// @ts-nocheck
-
-import { ExecutionDetail } from "../lib/ExecutionDetail";
-
 export const isToolAnalysisOk = (
   toolName: string,
-  execution: ExecutionDetail
+  execution: any /* ExecutionDetail */
 ): boolean => {
   switch (toolName) {
     case "ChromiumTaintTracking":
@@ -13,7 +9,7 @@ export const isToolAnalysisOk = (
       return true;
     }
     case "JEST":
-    case "IFTranspiler":
+    case "IF-Transpiler":
     case "GIFC":
     case "Linvail":
     case "Jalangi":

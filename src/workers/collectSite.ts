@@ -15,6 +15,7 @@ import { RecordArchive } from "../archive/RecordArchive";
 import { retryOnce } from "../util/retryOnce";
 import { SiteResult } from "../archive/Archive";
 import { timeBomb } from "../util/timeout";
+import { transformWithIFTranspiler } from "../tools/ifTranspiler";
 import { transformWithJalangi } from "../tools/jalangi";
 import { transformWithJEST } from "../tools/jest";
 import { transformWithLinvailTaint } from "../tools/linvailTaint";
@@ -111,12 +112,14 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
     switch (toolName) {
       case "JEST":
         return transformWithJEST();
+      case "IF-Transpiler":
+        return transformWithIFTranspiler();
+      case "LinvailTaint":
+        return transformWithLinvailTaint();
       case "JalangiTT":
         return transformWithJalangi(
           path.resolve(jalangiPath, "src", "js", "runtime", "JalangiTT.js")
         );
-      case "LinvailTaint":
-        return transformWithLinvailTaint();
       case "ProjectFoxhound":
         return null;
       default:

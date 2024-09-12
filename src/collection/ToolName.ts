@@ -2,7 +2,7 @@ import { BrowserName } from "./BrowserName";
 
 export type ToolName =
   | "JEST"
-  | "IFTranspiler"
+  | "IF-Transpiler"
   | "GIFC"
   | "LinvailTaint"
   | "JalangiTT"
@@ -13,7 +13,7 @@ export type BrowserOrToolName = BrowserName | ToolName;
 export const isToolName = (value: any): value is ToolName => {
   switch (value as ToolName) {
     case "JEST":
-    case "IFTranspiler":
+    case "IF-Transpiler":
     case "GIFC":
     case "LinvailTaint":
     case "JalangiTT":
@@ -27,7 +27,7 @@ export const isToolName = (value: any): value is ToolName => {
 export const getBrowserNameByToolName = (toolName: ToolName): BrowserName => {
   switch (toolName) {
     case "JEST":
-    case "IFTranspiler":
+    case "IF-Transpiler":
     case "GIFC":
     case "LinvailTaint":
     case "JalangiTT":

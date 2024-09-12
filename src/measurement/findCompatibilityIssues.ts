@@ -1,7 +1,3 @@
-// @ts-nocheck
-
-import { TransformErrorDetail } from "../lib/ExecutionDetail";
-
 export enum CompatibilityIssue {
   CrashError = "CrashError",
   BabelError = "BabelError",
@@ -10,7 +6,7 @@ export enum CompatibilityIssue {
 }
 
 export const findCompatibilityIssues = (
-  transformErrors: TransformErrorDetail[] | null,
+  transformErrors: any[] /* TransformErrorDetail[] */ | null,
   toolName: string
 ): Set<string> => {
   if (
@@ -76,7 +72,7 @@ const getCompatibilityIssuePatterns = (
           /TypeError: terminated/,
         ],
       };
-    case "IFTranspiler":
+    case "IF-Transpiler":
       return {
         parseErrorPatterns: [/at parseProgram/],
         analysisErrorPatterns: [/at Visitor.visit/, /at Controller.enter/],

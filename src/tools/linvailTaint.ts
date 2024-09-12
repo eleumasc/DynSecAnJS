@@ -12,7 +12,7 @@ import {
 } from "../collection/WPRArchiveTransformer";
 
 export const transformWithLinvailTaint = (): WPRArchiveTransformer => {
-  const setupPreamble = readFileSync(
+  const setup = readFileSync(
     path.join(linvailTaintPath, "generated", "setup.js")
   ).toString();
 
@@ -20,13 +20,15 @@ export const transformWithLinvailTaint = (): WPRArchiveTransformer => {
     path.join(linvailTaintPath, "generated", "policy.instrumented.js")
   ).toString();
 
+  const preamble = `${setup}\n${instrumentedPolicy}`;
+
   return transformWPRArchive(
     (body) =>
       manipulateHTML(
         body,
         composeHTMLManipulators(
           transformInlineScripts((body) => linvailTaint(body)),
-          addInitScript(`${setupPreamble}\n${instrumentedPolicy}`)
+          addInitScript(preamble)
         )
       ),
     (body) => linvailTaint(body)
