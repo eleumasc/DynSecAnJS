@@ -12,7 +12,7 @@ export const isSyntacticallyCompatible = (
 
   switch (browserName) {
     case "Chromium-ES5":
-      return !lessOrEqualToESVersion(siteESVersion, ESVersion.ES5);
+      return lessOrEqualToESVersion(siteESVersion, ESVersion.ES5);
     case "Firefox":
       return true;
   }
