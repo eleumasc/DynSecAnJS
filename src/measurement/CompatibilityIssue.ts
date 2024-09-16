@@ -1,49 +1,37 @@
+import { ToolName } from "../collection/ToolName";
+
 export enum CompatibilityIssue {
   CrashError = "CrashError",
-  BabelError = "BabelError",
+  TranspileError = "TranspileError",
   ParseError = "ParseError",
   AnalysisError = "AnalysisError",
+  UnknownError = "UnknownError",
 }
 
-export const findCompatibilityIssues = (
-  transformErrors: any[] /* TransformErrorDetail[] */ | null,
-  toolName: string
-): Set<string> => {
-  if (
-    transformErrors === null ||
-    transformErrors.some((detail) => detail.message.includes("Memory exceeded"))
-  ) {
-    return new Set([CompatibilityIssue.CrashError]);
-  }
-
-  if (transformErrors.some((detail) => detail.transformName === "Babel")) {
-    return new Set([CompatibilityIssue.BabelError]);
-  }
-
-  const toolErrorMessages = transformErrors
-    .filter((detail) => detail.transformName === "Tool")
-    .map((detail) => detail.message);
-
+export const findParseOrAnalysisError = (
+  toolName: ToolName,
+  transformErrors: string[]
+): CompatibilityIssue | null => {
   const { parseErrorPatterns, analysisErrorPatterns } =
     getCompatibilityIssuePatterns(toolName);
 
   if (
-    toolErrorMessages.some((message) =>
+    transformErrors.some((message) =>
       parseErrorPatterns.some((pattern) => pattern.test(message))
     )
   ) {
-    return new Set([CompatibilityIssue.ParseError]);
+    return CompatibilityIssue.ParseError;
   }
 
   if (
-    toolErrorMessages.some((message) =>
+    transformErrors.some((message) =>
       analysisErrorPatterns.some((pattern) => pattern.test(message))
     )
   ) {
-    return new Set([CompatibilityIssue.AnalysisError]);
+    return CompatibilityIssue.AnalysisError;
   }
 
-  return new Set(toolErrorMessages);
+  return null;
 };
 
 interface CompatibilityIssuePatterns {
@@ -52,7 +40,7 @@ interface CompatibilityIssuePatterns {
 }
 
 const getCompatibilityIssuePatterns = (
-  toolName: string
+  toolName: ToolName
 ): CompatibilityIssuePatterns => {
   switch (toolName) {
     case "ProjectFoxhound":
@@ -74,16 +62,27 @@ const getCompatibilityIssuePatterns = (
       };
     case "IF-Transpiler":
       return {
-        parseErrorPatterns: [/at parseProgram/],
-        analysisErrorPatterns: [/at Visitor.visit/, /at Controller.enter/],
+        parseErrorPatterns: [
+          /SyntaxError/,
+          /Unexpected token/,
+          /unexpected end of file/,
+          /at parseProgram/,
+        ],
+        analysisErrorPatterns: [
+          /AssertionError/,
+          /RangeError/,
+          /TypeError/,
+          /Unsupported Node Type/,
+          /Parent Node of/,
+          /at Visitor.visit/,
+          /at Controller.enter/,
+        ],
       };
-    case "GIFC":
-    case "Linvail":
+    case "LinvailTaint":
       return {
         parseErrorPatterns: [/SyntaxError/],
-        analysisErrorPatterns: [/TypeError/],
+        analysisErrorPatterns: [/TypeError/, />> undefined/],
       };
-    case "Jalangi":
     case "JalangiTT":
       return {
         parseErrorPatterns: [/SyntaxError/],

@@ -3,10 +3,10 @@ import assert from "assert";
 import path from "path";
 import TranspileError from "../collection/TranspileError";
 import WPRArchive from "../wprarchive/WPRArchive";
-import { ESVersion, lessOrEqualToESVersion } from "../syntax/ESVersion";
+import { BrowserOrToolName, isToolName } from "../collection/ToolName";
 import { Failure, isSuccess, toCompletion } from "../util/Completion";
 import { ipRegister } from "../util/interprocess";
-import { isBrowserName } from "../collection/BrowserName";
+import { isSyntacticallyCompatible } from "../collection/isSyntacticallyCompatible";
 import { jalangiPath } from "../env";
 import { MonitorState } from "../collection/MonitorBundle";
 import { Page } from "playwright";
@@ -25,11 +25,6 @@ import { useBrowserOrToolPage } from "../collection/BrowserOrToolPage";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
 import { useTransformedWPRArchive } from "../collection/TransformedWPRArchive";
 import { WPRArchiveTransformer } from "../collection/WPRArchiveTransformer";
-import {
-  BrowserOrToolName,
-  getBrowserNameByToolName,
-  isToolName,
-} from "../collection/ToolName";
 import {
   CollectArchive,
   CollectReport,
@@ -56,9 +51,6 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
     recordArchivePath,
     bundlePath,
   } = args;
-  const browserName = isBrowserName(browserOrToolName)
-    ? browserOrToolName
-    : getBrowserNameByToolName(browserOrToolName);
   const toolName = isToolName(browserOrToolName)
     ? browserOrToolName
     : undefined;
@@ -91,19 +83,13 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
     return { monitorState, executionTime };
   };
 
-  const transpileTransform: WPRArchiveTransformer | null = (() => {
-    switch (browserName) {
-      case "Chromium-ES5":
-        return lessOrEqualToESVersion(
-          preanalyzeReport.minimumESVersion,
-          ESVersion.ES5
-        )
-          ? null
-          : transpile();
-      case "Firefox":
-        return null;
-    }
-  })();
+  const transpileTransform: WPRArchiveTransformer | null =
+    !isSyntacticallyCompatible(
+      browserOrToolName,
+      preanalyzeReport.minimumESVersion
+    )
+      ? transpile()
+      : null;
   const transpiled = transpileTransform !== null;
 
   const toolTransform: WPRArchiveTransformer | null = (() => {

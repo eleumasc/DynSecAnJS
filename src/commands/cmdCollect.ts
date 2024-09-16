@@ -15,7 +15,7 @@ import {
 import {
   ArchiveProcessSitesController,
   processSites,
-} from "../util/processSites";
+} from "../archive/processSites";
 
 export type CollectArgs = Args<
   {

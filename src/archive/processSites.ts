@@ -1,15 +1,13 @@
+import _ from "lodash";
+import Archive from "./Archive";
+import { isSuccess, toCompletion } from "../util/Completion";
+import { Logfile } from "./Logfile";
+import { queue } from "async";
 import {
-  HasSitesState,
   SitesState,
   getProcessedSitesInSitesState,
   getSitesInSitesState,
-} from "../archive/SitesState";
-import { isSuccess, toCompletion } from "./Completion";
-
-import Archive from "../archive/Archive";
-import { Logfile } from "../archive/Logfile";
-import _ from "lodash";
-import { queue } from "async";
+} from "./SitesState";
 
 export interface ProcessSitesController {
   getInitialSitesState(): SitesState;
@@ -52,9 +50,8 @@ export const processSites = async (
   log("DONE");
 };
 
-export class ArchiveProcessSitesController<
-  TLogfile extends Logfile & HasSitesState
-> implements ProcessSitesController
+export class ArchiveProcessSitesController<TLogfile extends Logfile>
+  implements ProcessSitesController
 {
   constructor(readonly archive: Archive<TLogfile, unknown>) {}
 

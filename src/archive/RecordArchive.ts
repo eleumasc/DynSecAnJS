@@ -1,8 +1,7 @@
 import Archive from "./Archive";
-import { HasSitesState } from "./SitesState";
 import { Logfile } from "./Logfile";
 
-export interface RecordLogfile extends Logfile, HasSitesState {
+export interface RecordLogfile extends Logfile {
   type: "RecordLogfile";
 }
 

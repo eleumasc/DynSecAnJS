@@ -2,6 +2,7 @@ import assert from "assert";
 import path from "path";
 import yargs from "yargs/yargs";
 import { cmdCollect } from "./commands/cmdCollect";
+import { cmdMeasure } from "./commands/cmdMeasure";
 import { cmdPreanalyze } from "./commands/cmdPreanalyze";
 import { cmdRecord } from "./commands/cmdRecord";
 import { isBrowserName } from "./collection/BrowserName";
@@ -147,6 +148,30 @@ yargs(process.argv.slice(2))
         processArgs: {
           concurrencyLimit,
         },
+      });
+    }
+  )
+  .command(
+    "measure <preanalyzeArchivePath>",
+    "",
+    (yargs) => {
+      return yargs
+        .positional("preanalyzeArchivePath", {
+          type: "string",
+          demandOption: true,
+        })
+        .option("collect", {
+          type: "array",
+        });
+    },
+    ({ preanalyzeArchivePath, collect: collectArchivePaths }) => {
+      cmdMeasure({
+        type: "normal",
+        requireArgs: {
+          preanalyzeArchivePath,
+          collectArchivePaths: collectArchivePaths?.map(String) ?? [],
+        },
+        processArgs: {},
       });
     }
   )

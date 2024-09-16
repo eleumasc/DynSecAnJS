@@ -1,17 +1,15 @@
 import Archive, { ArchiveConstructor } from "./Archive";
+import assert from "assert";
+import path from "path";
+import { Args } from "./Args";
+import { isSuccess } from "../util/Completion";
+import { Logfile } from "./Logfile";
+import { unixTime } from "../util/time";
 import {
-  HasSitesState,
   SitesState,
   createSitesState,
   getProcessedSitesInSitesState,
 } from "./SitesState";
-
-import { Args } from "./Args";
-import { Logfile } from "./Logfile";
-import assert from "assert";
-import { isSuccess } from "../util/Completion";
-import path from "path";
-import { unixTime } from "../util/time";
 
 export interface InitCommandController<TLogfile extends Logfile, TRequireArgs> {
   getPrefix(requireArgs: TRequireArgs): string;
@@ -88,7 +86,7 @@ const createResolveArchivePathCallback = (
 
 export class ChildInitCommandController<
   TLogfile extends Logfile,
-  TParentLogfile extends Logfile & HasSitesState,
+  TParentLogfile extends Logfile,
   TParentSiteData,
   TRequireArgs
 > implements InitCommandController<TLogfile, TRequireArgs>

@@ -11,7 +11,7 @@ import { retryOnce } from "../util/retryOnce";
 import {
   ArchiveProcessSitesController,
   processSites,
-} from "../util/processSites";
+} from "../archive/processSites";
 
 export type RecordArgs = Args<
   {

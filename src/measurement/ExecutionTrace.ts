@@ -1,46 +1,36 @@
-// @ts-nocheck
-
-import { equalSets, isSubsetOf, subtractSets } from "../core/Set";
-
-import { ExecutionDetail } from "../lib/ExecutionDetail";
+import _ from "lodash";
 
 export interface ExecutionTrace {
   uncaughtErrors: Set<string>;
 }
 
-export const createExecutionTrace = (
-  execution: ExecutionDetail
-): ExecutionTrace => {
-  const { uncaughtErrors } = execution;
-  return {
-    uncaughtErrors: new Set(uncaughtErrors),
-  };
-};
-
-export const equalExecutionTraces = (
+export const isEqualExecutionTrace = (
   x: ExecutionTrace,
   y: ExecutionTrace
 ): boolean => {
-  return equalSets(x.uncaughtErrors, y.uncaughtErrors);
+  return _.isEqual(x.uncaughtErrors, y.uncaughtErrors);
 };
 
-export const subtractExecutionTraces = (
+export const differenceExecutionTrace = (
   x: ExecutionTrace,
   y: ExecutionTrace
 ): ExecutionTrace => {
   return {
-    uncaughtErrors: subtractSets(x.uncaughtErrors, y.uncaughtErrors),
+    uncaughtErrors: new Set(
+      _.difference([...x.uncaughtErrors], [...y.uncaughtErrors])
+    ),
   };
 };
 
 export const findPredominantExecutionTrace = (
-  executionTraces: ExecutionTrace[],
-  threshold: number
+  executionTraces: ExecutionTrace[]
 ): ExecutionTrace | null => {
+  const threshold = (executionTraces.length >> 1) + 1;
+
   const eqClasses: ExecutionTrace[][] = [];
   for (const executionTrace of executionTraces) {
     const eqClass = eqClasses.find((eqClass) =>
-      equalExecutionTraces(eqClass[0], executionTrace)
+      isEqualExecutionTrace(eqClass[0], executionTrace)
     );
     if (eqClass) {
       eqClass.push(executionTrace);
@@ -49,17 +39,4 @@ export const findPredominantExecutionTrace = (
     }
   }
   return eqClasses.find((eqClass) => eqClass.length >= threshold)?.[0] ?? null;
-};
-
-export const brokenExecutionTraces = (
-  orig: ExecutionTrace,
-  tool: ExecutionTrace
-): Set<string> => {
-  const brokenSet = new Set<string>();
-
-  if (!isSubsetOf(tool.uncaughtErrors, orig.uncaughtErrors)) {
-    brokenSet.add("uncaughtErrors");
-  }
-
-  return brokenSet;
 };

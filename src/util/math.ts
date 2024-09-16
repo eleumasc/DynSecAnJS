@@ -1,9 +1,7 @@
-export const sum = (xs: number[]): number => {
-  return xs.reduce((s, x) => s + x, 0);
-};
+import _ from "lodash";
 
 export const avg = (xs: number[]): number => {
-  return sum(xs) / xs.length;
+  return _.sum(xs) / xs.length;
 };
 
 export const stdev = (xs: number[]): number => {

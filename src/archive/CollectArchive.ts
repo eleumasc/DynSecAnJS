@@ -1,11 +1,10 @@
 import Archive from "./Archive";
 import { BrowserOrToolName } from "../collection/ToolName";
 import { Completion } from "../util/Completion";
-import { HasSitesState } from "./SitesState";
 import { Logfile } from "./Logfile";
 import { MonitorState } from "../collection/MonitorBundle";
 
-export interface CollectLogfile extends Logfile, HasSitesState {
+export interface CollectLogfile extends Logfile {
   type: "CollectLogfile";
   browserOrToolName: BrowserOrToolName;
   preanalyzeArchiveName: string;

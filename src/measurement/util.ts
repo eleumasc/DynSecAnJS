@@ -1,46 +1,21 @@
-import { incrementMapEntry } from "../core/Map";
+import _ from "lodash";
 
-export const count = <T>(
-  population: T[],
-  filterFn?: (element: T) => boolean
-): number => {
-  return filterFn
-    ? population.filter((element) => filterFn(element)).length
-    : population.length;
-};
-
-export interface CountMatchedKeysResult {
-  matchedKeysCount: Map<string, number>;
-  unmatchedKeys: Set<string>;
-}
-
-export const countMatchedKeys = (
-  keySets: Set<string>[],
-  matchingKeys: Set<string>
-): CountMatchedKeysResult => {
-  const matchedKeysCount = new Map<string, number>(
-    [...matchingKeys].map((key) => [key, 0])
-  );
-  const unmatchedKeys = new Set<string>();
-
-  for (const keySet of keySets) {
-    for (const key of keySet) {
-      if (matchingKeys.has(key)) {
-        incrementMapEntry(matchedKeysCount, key);
-      } else {
-        unmatchedKeys.add(key);
-      }
+export const computeRanking = <T>(
+  elements: T[],
+  keysFn: (element: T) => string[]
+): [string, number][] => {
+  const map = new Map<string, number>();
+  for (const element of elements) {
+    for (const key of keysFn(element)) {
+      map.set(key, (map.get(key) ?? 0) + 1);
     }
   }
-
-  return { matchedKeysCount, unmatchedKeys };
+  return _.sortBy([...map], ([_, popularity]) => popularity).reverse();
 };
 
-export const takeInfo = <T, U>(
-  population: T[],
-  mapFn: (element: T) => U | null
-): U[] => {
-  return population
-    .map((element) => mapFn(element))
-    .filter((element): element is U => element !== null);
+export const count = <T>(
+  elements: T[],
+  filterFn: (element: T) => boolean
+): number => {
+  return elements.filter((element) => filterFn(element)).length;
 };
