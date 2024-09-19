@@ -11,9 +11,11 @@ import {
 
 export const useBrowserOrToolPage = async <T>(
   browserOrToolName: BrowserOrToolName,
-  forwardProxy: ForwardProxy,
+  options: { forwardProxy?: ForwardProxy },
   use: (page: Page) => Promise<T>
 ): Promise<T> => {
+  const { forwardProxy } = options;
+
   const browserName = isToolName(browserOrToolName)
     ? getBrowserNameByToolName(browserOrToolName)
     : browserOrToolName;
@@ -27,23 +29,27 @@ export const useBrowserOrToolPage = async <T>(
     }
   })();
 
-  const defaultOpts = {
+  const defaultLaunchOptions = {
     headless,
-    proxy: {
-      server: `${forwardProxy.hostname}:${forwardProxy.port}`,
-    },
+    ...(forwardProxy
+      ? {
+          proxy: {
+            server: `${forwardProxy.hostname}:${forwardProxy.port}`,
+          },
+        }
+      : {}),
   };
 
   const browserFactory = (() => {
     if (browserOrToolName === "ProjectFoxhound") {
       return () =>
         browserLauncher.launch({
-          ...defaultOpts,
+          ...defaultLaunchOptions,
           executablePath: path.join(projectFoxhoundPath, "foxhound"),
         });
     }
 
-    return () => browserLauncher.launch(defaultOpts);
+    return () => browserLauncher.launch(defaultLaunchOptions);
   })();
 
   return await usePlaywrightPage(browserFactory, async (page) => {

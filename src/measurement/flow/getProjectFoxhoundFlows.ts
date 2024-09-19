@@ -1,31 +1,34 @@
-import { Flow } from "./Flow";
+import { QuasiFlow } from "./Flow";
 
-export const getProjectFoxhoundFlows = (rawFlows: any): Flow[] => {
-  return (rawFlows as TaintReport[]).flatMap((taintReport): Flow[] => {
-    const { sink: sinkOperation, str, taint } = taintReport;
+export const getProjectFoxhoundFlows = (rawFlows: any): QuasiFlow[] => {
+  return (rawFlows as TaintReport[]).flatMap((taintReport): QuasiFlow[] => {
+    const { sink: sinkType, taint } = taintReport;
 
-    if (!isNetworkSinkType(sinkOperation)) {
+    if (!isNetworkSinkType(sinkType)) {
       return [];
     }
 
-    const sink: Flow["sink"] = { type: "network", targetUrl: str };
+    const sink: QuasiFlow["sink"] = {
+      type: "network",
+      targetUrl: getTargetUrl(taintReport),
+    };
 
     return taint
-      .flatMap((taintElement): Flow["source"][] => {
+      .flatMap((taintElement): QuasiFlow["source"][] => {
         const { flow } = taintElement;
         const sourceFlowElement = flow[flow.length - 1];
-        const { operation: sourceOperation, arguments: sourceArguments } =
+        const { operation: sourceType, arguments: sourceArguments } =
           sourceFlowElement;
-        if (sourceOperation === "document.cookie") {
+        if (sourceType === "document.cookie") {
           return [{ type: "cookie" }];
-        } else if (sourceOperation === "localStorage.getItem") {
+        } else if (sourceType === "localStorage.getItem") {
           return [{ type: "localStorage", key: sourceArguments[0] }];
         } else {
           return [];
         }
       })
-      .map((source): Flow => {
-        return { source, sink };
+      .map((source): QuasiFlow => {
+        return { source, sink, isExplicit: true };
       });
   });
 };
@@ -54,5 +57,22 @@ const isNetworkSinkType = (type: string): boolean => {
       return true;
     default:
       return false;
+  }
+};
+
+const getTargetUrl = (taintReport: TaintReport): string => {
+  const { sink: sinkType, str, taint } = taintReport;
+  const sinkFlowElement = taint[0].flow[1];
+  const { arguments: sinkArguments } = sinkFlowElement;
+
+  switch (sinkType) {
+    case "XMLHttpRequest.open(url)":
+    case "fetch.url":
+      return str;
+    case "XMLHttpRequest.send":
+    case "fetch.body":
+      return sinkArguments[0];
+    default:
+      throw new Error(`Unknown NetworkSinkType: ${sinkType}`); // This should never happen
   }
 };

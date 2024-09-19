@@ -170,7 +170,7 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
                 (forwardProxy) =>
                   useBrowserOrToolPage(
                     browserOrToolName,
-                    forwardProxy,
+                    { forwardProxy },
                     navigate
                   )
               )

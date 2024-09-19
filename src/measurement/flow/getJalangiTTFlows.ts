@@ -1,27 +1,27 @@
-import { Flow } from "./Flow";
+import { QuasiFlow } from "./Flow";
 import {
   expandTrackingResult,
   isCookieSourceLabel,
   isStorageSourceLabel,
 } from "./yuantijs-core";
 
-export const getJalangiTTFlows = (rawFlows: any): Flow[] => {
+export const getJalangiTTFlows = (rawFlows: any): QuasiFlow[] => {
   const trackingResult = expandTrackingResult(rawFlows);
 
-  return trackingResult.flowCollection.flatMap((rawFlow): Flow[] => {
+  return trackingResult.flowCollection.flatMap((rawFlow): QuasiFlow[] => {
     const { taint, sinkLabel } = rawFlow;
 
     if (!isNetworkSinkType(sinkLabel.type)) {
       return [];
     }
 
-    const sink: Flow["sink"] = {
+    const sink: QuasiFlow["sink"] = {
       type: "network",
       targetUrl: sinkLabel.info.url,
     };
 
     return taint
-      .flatMap((label): Flow["source"][] => {
+      .flatMap((label): QuasiFlow["source"][] => {
         if (isCookieSourceLabel(label)) {
           return [{ type: "cookie" }];
         } else if (
@@ -33,8 +33,8 @@ export const getJalangiTTFlows = (rawFlows: any): Flow[] => {
           return [];
         }
       })
-      .map((source): Flow => {
-        return { source, sink };
+      .map((source): QuasiFlow => {
+        return { source, sink, isExplicit: true };
       });
   });
 };
