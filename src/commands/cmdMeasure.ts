@@ -265,7 +265,8 @@ const getToolSiteReport = (
   }
 
   if (isFailure(toolSiteResult)) {
-    if (toolSiteResult.error.startsWith("TranspileError:")) {
+    const { error } = toolSiteResult;
+    if (typeof error === "object" && error.type === "TranspileError") {
       return {
         ...compatibilityBase,
         eventuallyCompatible: false,
