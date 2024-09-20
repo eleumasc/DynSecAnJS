@@ -1,13 +1,11 @@
 import json
 import matplotlib.pyplot as plt
-from data import compatibility_data
+from data import syntax_report
 
-plt.rcParams.update({"font.size": 10})
+plt.rcParams.update({"font.size": 12})
 
-data = compatibility_data
-
-keys = list(data.keys())
-values = list(data.values())
+keys = [tool_data[0] for tool_data in syntax_report]
+values = [tool_data[1] for tool_data in syntax_report]
 
 total = sum(values)
 percentages = [(value / total) * 100 for value in values]

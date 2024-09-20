@@ -1,20 +1,20 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from misc import custom_colors
-from data import transparency_data
+from data import tool_reports
 
-plt.rcParams.update({"font.size": 11})
+plt.rcParams.update({"font.size": 12})
 
-data = {
-    tool: tool_data.get("compatibilityIssues", {})
-    for tool, tool_data in transparency_data.items()
+issues = {
+    tool_data["toolName"]: tool_data.get("compatibilityIssues", {})
+    for tool_data in tool_reports
 }
-issues = [sum(tool_data.values()) for tool_data in data.values()]
+total_issues = [sum(tool_issues.values()) for tool_issues in issues.values()]
 
 # Mapping data keys to labels
 labels = {
     "CrashError": "Crashes",
-    "BabelError": "Transpilation errors",
+    "TranspileError": "Transpilation errors",
     "ParseError": "Parse errors",
     "AnalysisError": "Analysis errors",
 }
@@ -24,17 +24,20 @@ legend_labels = list(labels.values())
 colors = custom_colors
 
 # Plotting histogram
-x = np.arange(len(data))
+x = np.arange(len(issues))
 
 fig, ax = plt.subplots(figsize=(12, 8))
 
 bar_width = 0.2  # Width of each bar
-bar_positions = np.arange(len(data))  # Positions for each group of bars
+bar_positions = np.arange(len(issues))  # Positions for each group of bars
 
 rects = []
 
 for i, (error_type, _) in enumerate(labels.items()):
-    heights = [tool_data[error_type] for tool_data in data.values()]
+    heights = [
+        tool_data[error_type] if error_type in tool_data else 0
+        for tool_data in issues.values()
+    ]
     rect_group = ax.bar(
         x + i * bar_width, heights, width=bar_width, label=error_type, color=colors[i]
     )
@@ -45,7 +48,7 @@ for i, rect_group in enumerate(rects):
     for j, rect in enumerate(rect_group):
         height = rect.get_height()
         ax.annotate(
-            f"{height}\n({height / issues[j] * 100:.0f}%)",
+            f"{height}\n({height / total_issues[j] * 100:.0f}%)",
             xy=(rect.get_x() + rect.get_width() / 2, height),
             xytext=(0, 3),
             textcoords="offset points",
@@ -56,7 +59,7 @@ ax.set_xlabel("Tool")
 ax.set_ylabel("Number of websites")
 ax.set_title("Eventual compatibility issues")
 ax.set_xticks(x + 2 * bar_width)
-ax.set_xticklabels(data.keys(), rotation=45, ha="right")
+ax.set_xticklabels(issues.keys(), rotation=45, ha="right")
 
 # Adding legend
 ax.legend(legend_labels)

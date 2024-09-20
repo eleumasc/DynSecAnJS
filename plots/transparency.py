@@ -1,14 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from misc import custom_colors
-from data import transparency_data
+from data import tool_reports
 
-plt.rcParams.update({"font.size": 11})
+plt.rcParams.update({"font.size": 12})
 
-data = transparency_data
-accessible_values = [
-    tool_data["accessible"] for tool_data in transparency_data.values()
-]
+accessible_values = [tool_data["all"] for tool_data in tool_reports]
 
 # Mapping data keys to labels
 labels = {
@@ -18,34 +15,43 @@ labels = {
 }
 
 # Plotting pie charts
-fig, axs = plt.subplots(2, 3, figsize=(15, 10))
+fig, axs = plt.subplots(3, 2, figsize=(15, 10))
 axs = axs.flatten()
 
 # Prepare legend
 legend_labels = list(labels.values())
-colors = [custom_colors[0], custom_colors[3], "lightgray"]
+colors = ["lightskyblue", "red", "lightgray"]
 
-for i, (tool, raw_tool_data) in enumerate(data.items()):
-    tool_data = {
-        "transparent": raw_tool_data["transparent"],
-        "nonTransparent": raw_tool_data["nonTransparent"],
+for i, tool_data in enumerate(tool_reports):
+    tool_transparency_data = {
+        "transparent": tool_data["transparent"],
+        "nonTransparent": tool_data["nonTransparent"],
         "notApplicable": accessible_values[i]
-        - raw_tool_data["transparent"]
-        - raw_tool_data["nonTransparent"],
+        - tool_data["transparent"]
+        - tool_data["nonTransparent"],
     }
-    sizes = [value for value in tool_data.values()]
-    axs[i].pie(
+    sizes = [value for value in tool_transparency_data.values()]
+    w, l, p = axs[i].pie(
         sizes,
         labels=None,
         startangle=150,
         colors=colors,
         autopct=lambda p: "{:.0f} ({:.0f}%)".format(p * sum(sizes) / 100, p),
     )
-    axs[i].axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle
-    axs[i].set_title(tool, pad=-50)
+    for j, autotext in enumerate(p):
+        if j == 0:  # Align first label to the bottom
+            autotext.set_va("bottom")
+        elif j == 1:  # Align second label to the top
+            autotext.set_va("top")
+        elif j == 2:  # Align third label to the top
+            autotext.set_va("top")
 
-# Adding legend
-fig.legend(legend_labels, loc="lower center", ncol=2)
+    axs[i].axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle
+    axs[i].set_title(tool_data["toolName"], pad=-50)
+
+axs[-1].axis("off")
+
+fig.legend(legend_labels, loc="lower right")
 
 # Adding common title
 fig.suptitle("Transparency analysis")
