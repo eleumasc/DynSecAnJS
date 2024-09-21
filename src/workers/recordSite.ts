@@ -68,10 +68,7 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
       await entry.deferredComplete.promise;
     }
 
-    return {
-      accessUrl,
-      scriptUrls: scriptRequestLoadingQueue.map((entry) => entry.request.url()),
-    };
+    return { accessUrl };
   };
 
   const browserFactory = (forwardProxy: ForwardProxy) => (): Promise<Browser> =>

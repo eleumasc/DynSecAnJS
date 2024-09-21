@@ -161,7 +161,7 @@ export const transpile =
 
     return transformWPRArchive(
       async (body) => transpileHtml(body),
-      async (body, request) =>
+      async (body, { request }) =>
         transpileExternalScript(request.url.toString(), body)
     )(originalWPRArchive, preanalyzeReport);
   };

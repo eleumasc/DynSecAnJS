@@ -28,15 +28,13 @@ const preanalyzeSite = async (args: PreanalyzeSiteArgs): Promise<void> => {
 
   const result = await toCompletion(async () => {
     assert(isSuccess(recordSiteResult));
-    const {
-      value: { accessUrl, scriptUrls: knownExternalScriptUrls },
-    } = recordSiteResult;
+    const { value: recordReport } = recordSiteResult;
 
     const wprArchive = WPRArchive.fromFile(
       recordArchive.getFilePath(`${site}-archive.wprgo`)
     );
 
-    return getSyntax(wprArchive, accessUrl, knownExternalScriptUrls);
+    return getSyntax(wprArchive, recordReport);
   });
 
   archive.writeSiteResult(site, result satisfies SiteResult<PreanalyzeReport>);

@@ -19,26 +19,30 @@ import {
   SyntaxDetail,
   SyntaxScript
   } from "./Syntax";
+import { RecordReport } from "../archive/RecordArchive";
+
+let nextId = 1;
+const createId = () => nextId++;
 
 export const getSyntax = (
   wprArchive: WPRArchive,
-  accessUrl: string,
-  knownExternalScriptUrls: string[]
+  recordReport: RecordReport
 ): Syntax => {
-  const { url: mainUrl, response: mainResponse } =
-    wprArchive.getRequest(accessUrl);
+  const { url: navUrl, response: navResponse } = wprArchive.getRequest(
+    recordReport.accessUrl
+  );
   assert(
-    isOk(mainResponse),
-    `Navigation request resolved to response with status code ${mainResponse.statusCode}`
+    isOk(navResponse),
+    `Navigation request resolved to response with status code ${navResponse.statusCode}`
   );
 
-  const htmlDocument = HTMLDocument.parse(mainResponse.body.toString());
+  const htmlDocument = HTMLDocument.parse(navResponse.body.toString());
   const htmlScripts = htmlDocument.activeScripts;
 
   const documentUrl = (
     htmlDocument.baseUrl !== undefined
-      ? new URL(htmlDocument.baseUrl, mainUrl)
-      : mainUrl
+      ? new URL(htmlDocument.baseUrl, navUrl)
+      : navUrl
   ).toString();
 
   const importMap =
@@ -93,7 +97,7 @@ export const getSyntax = (
       })
   );
 
-  let scripts = processAnalyzerQueue(
+  const scripts = processAnalyzerQueue(
     htmlScripts.map((htmlScript): ScriptSyntaxAnalyzer => {
       if (htmlScript instanceof ElementHTMLScript) {
         const { isExternal, isModule } = htmlScript;
@@ -112,21 +116,8 @@ export const getSyntax = (
     })
   );
 
-  const residualScriptUrls = _.difference(
-    knownExternalScriptUrls.map((url) => dropHash(url)),
-    [...externalScriptUrls]
-  );
-
-  scripts = scripts.concat(
-    processAnalyzerQueue(
-      residualScriptUrls.map((scriptUrl) =>
-        analyzeExternalScript(scriptUrl, undefined)
-      )
-    )
-  );
-
   return {
-    mainUrl: mainUrl.toString(),
+    navUrl: navUrl.toString(),
     minimumESVersion: maxESVersion(
       scripts.map((script) => script.minimumESVersion)
     ),
@@ -186,6 +177,7 @@ const analyzeExternalScript =
         }
       })();
       return {
+        id: createId(),
         type: "external",
         url,
         ...getSyntaxDetail(program),
@@ -203,6 +195,7 @@ const analyzeInlineScript =
 
     const program = parseJavascript(source, isModule);
     return {
+      id: createId(),
       type: "inline",
       hash: md5(source),
       ...getSyntaxDetail(program),
@@ -216,6 +209,7 @@ const analyzeEventHandler =
   () => {
     const program = parseJavascript(source, undefined, true);
     return {
+      id: createId(),
       type: "inline",
       hash: md5(source),
       ...getSyntaxDetail(program),
@@ -240,11 +234,24 @@ const getSyntaxDetail = (program: acorn.Program): SyntaxDetail => {
   const features = _.uniq(
     getDiffEvidences(program).map(({ feature }) => feature)
   );
+  const astNodesCount = (() => {
+    const state = { count: 0 };
+    walk.full(
+      program,
+      (_, state) => {
+        state.count += 1;
+      },
+      undefined,
+      state
+    );
+    return state.count;
+  })();
   return {
-    features: features.map((feature) => feature.toString()),
     minimumESVersion: maxESVersion(
       features.map((feature) => feature.esVersion)
     ),
+    features: features.map((feature) => feature.toString()),
+    astNodesCount,
   };
 };
 

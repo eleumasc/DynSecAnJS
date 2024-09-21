@@ -4,8 +4,8 @@ import path from "path";
 import TranspileError from "../collection/TranspileError";
 import WPRArchive from "../wprarchive/WPRArchive";
 import { BrowserOrToolName, isToolName } from "../collection/ToolName";
-import { Failure, isSuccess, toCompletion } from "../util/Completion";
 import { ipRegister } from "../util/interprocess";
+import { isSuccess, toCompletion } from "../util/Completion";
 import { isSyntacticallyCompatible } from "../collection/isSyntacticallyCompatible";
 import { jalangiPath } from "../env";
 import { MonitorState } from "../collection/MonitorBundle";
@@ -24,7 +24,10 @@ import { unixTime } from "../util/time";
 import { useBrowserOrToolPage } from "../collection/BrowserOrToolPage";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
 import { useTransformedWPRArchive } from "../collection/TransformedWPRArchive";
-import { WPRArchiveTransformer } from "../collection/WPRArchiveTransformer";
+import {
+  ScriptTransformErrorLog,
+  WPRArchiveTransformer,
+} from "../collection/WPRArchiveTransformer";
 import {
   CollectArchive,
   CollectReport,
@@ -122,33 +125,22 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
     let transformedWPRArchive = originalWPRArchive;
 
     if (transpileTransform) {
-      const transpileTransformResult = await transpileTransform(
-        transformedWPRArchive,
-        preanalyzeReport
-      );
-      if (transpileTransformResult.status === "success") {
-        transformedWPRArchive = transpileTransformResult.transformedWPRArchive;
-      } else {
-        throw new TranspileError(
-          JSON.stringify(transpileTransformResult.transformErrors)
-        );
+      const { newWPRArchive, scriptTransformErrorLogs: scriptTransformLogs } =
+        await transpileTransform(transformedWPRArchive, preanalyzeReport);
+      if (scriptTransformLogs.length > 0) {
+        throw new TranspileError(JSON.stringify(scriptTransformLogs));
       }
+      transformedWPRArchive = newWPRArchive;
     }
 
+    let scriptTransformLogs: ScriptTransformErrorLog[] = [];
     if (toolTransform) {
-      const toolTransformResult = await toolTransform(
-        transformedWPRArchive,
-        preanalyzeReport
-      );
-      if (toolTransformResult.status === "success") {
-        transformedWPRArchive = toolTransformResult.transformedWPRArchive;
-      } else {
-        return {
-          transpiled,
-          transformErrors: toolTransformResult.transformErrors,
-          runsCompletion: Failure("transformErrors is non-empty"),
-        };
-      }
+      const {
+        newWPRArchive,
+        scriptTransformErrorLogs: toolScriptTransformLogs,
+      } = await toolTransform(transformedWPRArchive, preanalyzeReport);
+      transformedWPRArchive = newWPRArchive;
+      scriptTransformLogs = toolScriptTransformLogs;
     }
 
     const runsCompletion = await useTransformedWPRArchive(
@@ -185,7 +177,7 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
 
     return {
       transpiled,
-      transformErrors: [],
+      scriptTransformLogs,
       runsCompletion,
     };
   });

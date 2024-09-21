@@ -10,8 +10,10 @@ export const transformWithJalangi = (
   analysisPath: string
 ): WPRArchiveTransformer =>
   transformWPRArchive(
-    (body) => jalangi(analysisPath, body, "html"),
-    (body) => jalangi(analysisPath, body, "js")
+    (body, { wrapScriptTransform }) =>
+      wrapScriptTransform((body) => jalangi(analysisPath, body, "html"))(body),
+    (body, { wrapScriptTransform }) =>
+      wrapScriptTransform((body) => jalangi(analysisPath, body, "js"))(body)
   );
 
 export const jalangi = (
@@ -19,21 +21,17 @@ export const jalangi = (
   source: string,
   extension: "html" | "js"
 ): Promise<string> =>
-  execTool(
-    source,
-    extension,
-    (originalPath, modifiedPath, cwd) => [
-      "node",
-      path.join(jalangiPath, "src", "js", "commands", "esnstrument_cli.js"),
-      "--analysis",
-      path.resolve(analysisPath),
-      "--inlineIID",
-      "--inlineSource",
-      "--noResultsGUI",
-      "--outDir",
-      cwd,
-      "--out",
-      modifiedPath,
-      originalPath,
-    ]
-  );
+  execTool(source, extension, (originalPath, modifiedPath, cwd) => [
+    "node",
+    path.join(jalangiPath, "src", "js", "commands", "esnstrument_cli.js"),
+    "--analysis",
+    path.resolve(analysisPath),
+    "--inlineIID",
+    "--inlineSource",
+    "--noResultsGUI",
+    "--outDir",
+    cwd,
+    "--out",
+    modifiedPath,
+    originalPath,
+  ]);

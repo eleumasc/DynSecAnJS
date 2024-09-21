@@ -7,7 +7,6 @@ export interface RecordLogfile extends Logfile {
 
 export interface RecordReport {
   accessUrl: string;
-  scriptUrls: string[];
 }
 
 export class RecordArchive extends Archive<RecordLogfile, RecordReport> {}

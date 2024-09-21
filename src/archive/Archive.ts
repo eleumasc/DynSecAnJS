@@ -1,3 +1,7 @@
+import assert from "assert";
+import path from "path";
+import { Completion } from "../util/Completion";
+import { Logfile } from "./Logfile";
 import {
   copyFileSync,
   existsSync,
@@ -7,10 +11,6 @@ import {
   writeFileSync,
 } from "fs";
 
-import { Completion } from "../util/Completion";
-import { Logfile } from "./Logfile";
-import assert from "assert";
-import path from "path";
 
 export type SiteResult<TSiteData> = Completion<TSiteData>;
 
@@ -67,7 +67,7 @@ export default class Archive<TLogfile extends Logfile, TSiteData = unknown> {
     assert(this.canWrite);
 
     const dstPath = Archive.getSiteDataPath(this.archivePath, site);
-    writeFileSync(dstPath, JSON.stringify(result));
+    writeFileSync(dstPath, JSON.stringify(result), { flush: true });
   }
 
   getFilePath(name: string): string {

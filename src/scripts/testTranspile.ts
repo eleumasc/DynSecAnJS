@@ -20,11 +20,8 @@ async function main() {
 
   const transformResult = await transpile()(wprArchive, preanalyzeReport);
 
-  if (transformResult.status === "success") {
-    transformResult.transformedWPRArchive.toFile(outputPath);
-  } else {
-    console.log(transformResult.transformErrors);
-  }
+  transformResult.newWPRArchive.toFile(outputPath);
+  console.log(transformResult.scriptTransformErrorLogs);
 }
 
 main();

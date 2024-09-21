@@ -1,17 +1,41 @@
-import { ESVersion } from "./ESVersion";
 import SyntaxFeature from "./SyntaxFeature";
+import { ESVersion } from "./ESVersion";
 
 export interface Syntax {
-  mainUrl: string;
+  navUrl: string;
   minimumESVersion: ESVersion;
   scriptUrlMap: Record<string, string>;
   scripts: SyntaxScript[];
   errors: string[];
 }
 
+export type SyntaxScript = (
+  | {
+      type: "external";
+      url: string;
+    }
+  | ({
+      type: "inline";
+      hash: string;
+    } & (
+      | {
+          isEventHandler: false;
+        }
+      | {
+          isEventHandler: true;
+          isModule: false;
+        }
+    ))
+) &
+  SyntaxDetail &
+  ModuleDetail & {
+    id: number;
+  };
+
 export type SyntaxDetail = {
   minimumESVersion: ESVersion;
   features: string[];
+  astNodesCount: number;
 };
 
 export type ModuleDetail =
@@ -22,27 +46,3 @@ export type ModuleDetail =
       isModule: true;
       importUrlMap: Record<string, string>;
     };
-
-export type BaseSyntaxScript = {
-  type: string;
-} & SyntaxDetail &
-  ModuleDetail;
-
-export type ExternalSyntaxScript = BaseSyntaxScript & {
-  type: "external";
-  url: string;
-};
-
-export type InlineSyntaxScript = BaseSyntaxScript & {
-  type: "inline";
-  hash: string;
-} & (
-    | {
-        isEventHandler: false;
-      }
-    | ({
-        isEventHandler: true;
-      } & { isModule: false })
-  );
-
-export type SyntaxScript = ExternalSyntaxScript | InlineSyntaxScript;

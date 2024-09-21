@@ -283,10 +283,13 @@ const getToolSiteReport = (
 
   const toolReport = toolSiteResult.value;
 
-  if (toolReport.transformErrors.length > 0) {
+  const transformErrors = toolReport.scriptTransformLogs.flatMap(
+    (logRecord) => logRecord.error.message
+  );
+  if (transformErrors.length > 0) {
     const compatibilityIssue = findParseOrAnalysisError(
       toolName,
-      toolReport.transformErrors
+      transformErrors
     );
     if (compatibilityIssue) {
       return {
@@ -299,7 +302,7 @@ const getToolSiteReport = (
         ...compatibilityBase,
         eventuallyCompatible: false,
         compatibilityIssue: CompatibilityIssue.UnknownError,
-        unclassifiedTransformErrors: toolReport.transformErrors,
+        unclassifiedTransformErrors: transformErrors,
       };
     }
   }

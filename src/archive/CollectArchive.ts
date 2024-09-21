@@ -3,6 +3,7 @@ import { BrowserOrToolName } from "../collection/ToolName";
 import { Completion } from "../util/Completion";
 import { Logfile } from "./Logfile";
 import { MonitorState } from "../collection/MonitorBundle";
+import { ScriptTransformErrorLog } from "../collection/WPRArchiveTransformer";
 
 export interface CollectLogfile extends Logfile {
   type: "CollectLogfile";
@@ -12,7 +13,7 @@ export interface CollectLogfile extends Logfile {
 
 export interface CollectReport {
   transpiled: boolean;
-  transformErrors: string[];
+  scriptTransformLogs: ScriptTransformErrorLog[];
   runsCompletion: Completion<RunDetail[]>;
 }
 

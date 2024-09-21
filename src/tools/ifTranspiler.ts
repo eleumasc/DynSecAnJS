@@ -18,12 +18,14 @@ export const transformWithIFTranspiler = (): WPRArchiveTransformer => {
   ).toString();
 
   return transformWPRArchive(
-    (body, _, originalWPRArchive, preanalyzeReport) =>
+    (body, { oldWPRArchive, syntax, wrapScriptTransform }) =>
       manipulateHTML(
         body,
         composeHTMLManipulators(
-          inlineExternalScripts(originalWPRArchive, preanalyzeReport, true),
-          transformInlineScripts((body) => ifTranspiler(body)),
+          inlineExternalScripts(oldWPRArchive, syntax, true),
+          transformInlineScripts(
+            wrapScriptTransform((body) => ifTranspiler(body), syntax.scripts)
+          ),
           addInitScript(preamble)
         )
       ),

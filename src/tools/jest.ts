@@ -12,12 +12,14 @@ import {
 
 export const transformWithJEST = (): WPRArchiveTransformer =>
   transformWPRArchive(
-    (body, _, originalWPRArchive, preanalyzeReport) =>
+    (body, { oldWPRArchive, syntax, wrapScriptTransform }) =>
       manipulateHTML(
         body,
         composeHTMLManipulators(
-          inlineExternalScripts(originalWPRArchive, preanalyzeReport, true),
-          transformInlineScripts((body) => jest(body, "js"))
+          inlineExternalScripts(oldWPRArchive, syntax, true),
+          transformInlineScripts(
+            wrapScriptTransform((body) => jest(body, "js"), syntax.scripts)
+          )
         )
       ),
     (body) => Promise.resolve(body)
