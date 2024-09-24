@@ -23,18 +23,15 @@ export const transformWithLinvailTaint = (): WPRArchiveTransformer => {
   const preamble = `${setup}\n${instrumentedPolicy}`;
 
   return transformWPRArchive(
-    (body, { wrapScriptTransform }) =>
+    (body) =>
       manipulateHTML(
         body,
         composeHTMLManipulators(
-          transformInlineScripts(
-            wrapScriptTransform((body) => linvailTaint(body))
-          ),
+          transformInlineScripts((body) => linvailTaint(body)),
           addInitScript(preamble)
         )
       ),
-    (body, { wrapScriptTransform }) =>
-      wrapScriptTransform((body) => linvailTaint(body))(body)
+    (body) => linvailTaint(body)
   );
 };
 

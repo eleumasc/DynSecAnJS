@@ -1,5 +1,5 @@
 import { delay } from "../util/timeout";
-import { getToolQuasiFlows, uniqFlow } from "../measurement/flow/Flow";
+import { getToolFlows, uniqFlow } from "../measurement/flow/Flow";
 import { useBrowserOrToolPage } from "../collection/BrowserOrToolPage";
 
 async function main() {
@@ -15,7 +15,7 @@ async function main() {
     }
   );
 
-  const flows = uniqFlow(getToolQuasiFlows("ProjectFoxhound", rawFlows));
+  const flows = uniqFlow(getToolFlows(site, "ProjectFoxhound", rawFlows));
   console.log(flows);
 }
 

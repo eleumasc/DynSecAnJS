@@ -10,10 +10,8 @@ export const transformWithJalangi = (
   analysisPath: string
 ): WPRArchiveTransformer =>
   transformWPRArchive(
-    (body, { wrapScriptTransform }) =>
-      wrapScriptTransform((body) => jalangi(analysisPath, body, "html"))(body),
-    (body, { wrapScriptTransform }) =>
-      wrapScriptTransform((body) => jalangi(analysisPath, body, "js"))(body)
+    (body) => jalangi(analysisPath, body, "html"),
+    (body) => jalangi(analysisPath, body, "js")
   );
 
 export const jalangi = (

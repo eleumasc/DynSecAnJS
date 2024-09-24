@@ -1,20 +1,20 @@
-import { QuasiFlow } from "./Flow";
+import { FlowWithoutSite } from "./Flow";
 
-export const getProjectFoxhoundFlows = (rawFlows: any): QuasiFlow[] => {
-  return (rawFlows as TaintReport[]).flatMap((taintReport): QuasiFlow[] => {
+export const getProjectFoxhoundFlows = (rawFlows: any): FlowWithoutSite[] => {
+  return (rawFlows as TaintReport[]).flatMap((taintReport): FlowWithoutSite[] => {
     const { sink: sinkType, taint } = taintReport;
 
     if (!isNetworkSinkType(sinkType)) {
       return [];
     }
 
-    const sink: QuasiFlow["sink"] = {
+    const sink: FlowWithoutSite["sink"] = {
       type: "network",
       targetUrl: getTargetUrl(taintReport),
     };
 
     return taint
-      .flatMap((taintElement): QuasiFlow["source"][] => {
+      .flatMap((taintElement): FlowWithoutSite["source"][] => {
         const { flow } = taintElement;
         const sourceFlowElement = flow[flow.length - 1];
         const { operation: sourceType, arguments: sourceArguments } =
@@ -27,7 +27,7 @@ export const getProjectFoxhoundFlows = (rawFlows: any): QuasiFlow[] => {
           return [];
         }
       })
-      .map((source): QuasiFlow => {
+      .map((source): FlowWithoutSite => {
         return { source, sink, isExplicit: true };
       });
   });

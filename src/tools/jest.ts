@@ -2,6 +2,7 @@ import path from "path";
 import { composeHTMLManipulators } from "../collection/htmlmanip/HTMLManipulator";
 import { execTool } from "./execTool";
 import { inlineExternalScripts } from "../collection/htmlmanip/inlineExternalScripts";
+import { interceptInlineScripts } from "../collection/htmlmanip/interceptInlineScripts";
 import { jestPath } from "../env";
 import { manipulateHTML } from "../collection/htmlmanip/manipulateHTML";
 import { transformInlineScripts } from "../collection/htmlmanip/transformInlineScripts";
@@ -12,17 +13,22 @@ import {
 
 export const transformWithJEST = (): WPRArchiveTransformer =>
   transformWPRArchive(
-    (body, { oldWPRArchive, syntax, wrapScriptTransform }) =>
+    (
+      body,
+      { oldWPRArchive, syntax, checkScriptTransform, tryScriptTransform }
+    ) =>
       manipulateHTML(
         body,
         composeHTMLManipulators(
+          interceptInlineScripts(
+            checkScriptTransform((body) => jest(body, "js"))
+          ),
           inlineExternalScripts(oldWPRArchive, syntax, true),
-          transformInlineScripts(
-            wrapScriptTransform((body) => jest(body, "js"), syntax.scripts)
-          )
+          transformInlineScripts(tryScriptTransform((body) => jest(body, "js")))
         )
       ),
-    (body) => Promise.resolve(body)
+    (body, { checkScriptTransform }) =>
+      checkScriptTransform((body) => jest(body, "js"))(body)
   );
 
 export const jest = (

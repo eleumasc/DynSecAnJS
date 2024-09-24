@@ -28,11 +28,13 @@ export interface ResponseBodyTransformerContext {
   request: ArchivedRequest;
   oldWPRArchive: WPRArchive;
   syntax: Syntax;
-  wrapScriptTransform: (
-    callback: (body: string) => Promise<string>,
-    scripts?: SyntaxScript[]
-  ) => (script: string) => Promise<string>;
+  checkScriptTransform: ResponseBodyTransformerHelper;
+  tryScriptTransform: ResponseBodyTransformerHelper;
 }
+
+export type ResponseBodyTransformerHelper = (
+  callback: (body: string) => Promise<string>
+) => (body: string) => Promise<string>;
 
 export const transformWPRArchive =
   (
@@ -45,16 +47,14 @@ export const transformWPRArchive =
     let newWPRArchive = oldWPRArchive;
 
     const scriptTransformErrorLogs: ScriptTransformErrorLog[] = [];
-    const createWrapScriptTransform =
+    const wrapTransformer =
       (
-        defaultScripts: SyntaxScript[]
-      ): ResponseBodyTransformerContext["wrapScriptTransform"] =>
-      (callback, scripts) =>
-      async (body) => {
-        const scriptIds = (scripts ?? defaultScripts).map(
-          (script) => script.id
-        );
-        const completion = await toCompletion(() => callback(body));
+        transformer: ResponseBodyTransformer,
+        scripts: SyntaxScript[]
+      ): ResponseBodyTransformer =>
+      async (body, context) => {
+        const scriptIds = scripts.map((script) => script.id);
+        const completion = await toCompletion(() => transformer(body, context));
         if (isSuccess(completion)) {
           return completion.value;
         } else {
@@ -66,18 +66,34 @@ export const transformWPRArchive =
         }
       };
 
+    const checkScriptTransform: ResponseBodyTransformerHelper =
+      (callback) => async (body) => {
+        await callback(body);
+        return body;
+      };
+    const tryScriptTransform: ResponseBodyTransformerHelper =
+      (callback) => async (body) => {
+        try {
+          return await callback(body);
+        } catch {
+          return body;
+        }
+      };
+    const contextBase = {
+      oldWPRArchive,
+      syntax,
+      checkScriptTransform,
+      tryScriptTransform,
+    };
+
     const navRequest = oldWPRArchive.getRequest(navUrl);
     newWPRArchive = await editResponseBody(
       newWPRArchive,
-      transformDocumentResponseBody,
-      {
-        request: navRequest,
-        oldWPRArchive,
-        syntax,
-        wrapScriptTransform: createWrapScriptTransform(
-          syntax.scripts.filter((script) => script.type === "inline")
-        ),
-      }
+      wrapTransformer(
+        transformDocumentResponseBody,
+        syntax.scripts.filter((script) => script.type === "inline")
+      ),
+      { ...contextBase, request: navRequest }
     );
 
     const editedScriptRequests = new Set<ArchivedRequest>();
@@ -93,20 +109,12 @@ export const transformWPRArchive =
 
       newWPRArchive = await editResponseBody(
         newWPRArchive,
-        transformScriptResponseBody,
-        {
-          request: scriptRequest,
-          oldWPRArchive,
-          syntax,
-          wrapScriptTransform: createWrapScriptTransform([script]),
-        }
+        wrapTransformer(transformScriptResponseBody, [script]),
+        { ...contextBase, request: scriptRequest }
       );
     }
 
-    return {
-      newWPRArchive,
-      scriptTransformErrorLogs: scriptTransformErrorLogs,
-    };
+    return { newWPRArchive, scriptTransformErrorLogs };
   };
 
 const editResponseBody = async (
@@ -114,10 +122,8 @@ const editResponseBody = async (
   transformResponseBody: ResponseBodyTransformer,
   context: ResponseBodyTransformerContext
 ): Promise<WPRArchive> => {
-  const { request, wrapScriptTransform } = context;
+  const { request } = context;
   const originalBody = request.response.body.toString();
-  const transformedBody = await wrapScriptTransform((body) =>
-    transformResponseBody(body, context)
-  )(originalBody);
+  const transformedBody = await transformResponseBody(originalBody, context);
   return wprArchive.editResponseBody(request, Buffer.from(transformedBody));
 };

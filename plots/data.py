@@ -1,145 +1,16 @@
-syntax_report = [
-    ["ES2020", 1071],
-    ["ES2022", 871],
-    ["ES2015", 494],
-    ["ES5", 388],
-    ["ES2019", 209],
-    ["ES2017", 202],
-    ["ES2018", 200],
-    ["ES2021", 93],
-    ["ES2016", 26],
-]
+import argparse
+import json
+import os
+
+_parser = argparse.ArgumentParser()
+_parser.add_argument("archivePath", type=str, help="The path to the measure archive")
+
+_args = _parser.parse_args()
+
+with open(os.path.join(_args.archivePath, "logfile.json"), "r") as file:
+    logfile = json.load(file)
 
 
-tool_reports = [
-    {
-        "toolName": "JEST",
-        "all": 3554,
-        "syntacticallyCompatible": 388,
-        "compatible": 55,
-        "eventuallyCompatible": 90,
-        "unknownCompatible": 0,
-        "unknownEventuallyCompatible": 0,
-        "compatibilityIssues": {
-            "ParseError": 2380,
-            "AnalysisError": 989,
-            "CrashError": 42,
-            "TranspileError": 53,
-        },
-        "transparencyAnalyzable": 80,
-        "nonTransparent": 64,
-        "transparent": 16,
-        "transparencyIssues": {
-            "TypeError": 25,
-            "ReferenceError": 3,
-            "OtherError": 34,
-            "SyntaxError": 2,
-        },
-        "flows": 0,
-        "goodnessFlows": 0,
-        "goodnessSites": 0,
-        "falseTrivials": 0,
-        "overhead": 2.0186492596195924,
-    },
-    {
-        "toolName": "IF-Transpiler",
-        "all": 3554,
-        "syntacticallyCompatible": 388,
-        "compatible": 48,
-        "eventuallyCompatible": 69,
-        "unknownCompatible": 0,
-        "unknownEventuallyCompatible": 0,
-        "compatibilityIssues": {
-            "AnalysisError": 2689,
-            "CrashError": 525,
-            "ParseError": 218,
-            "TranspileError": 53,
-        },
-        "transparencyAnalyzable": 61,
-        "nonTransparent": 29,
-        "transparent": 32,
-        "transparencyIssues": {"SyntaxError": 11, "TypeError": 12, "OtherError": 6},
-        "flows": 0,
-        "goodnessFlows": 0,
-        "goodnessSites": 0,
-        "falseTrivials": 1,
-        "overhead": 2.140692555502321,
-    },
-    {
-        "toolName": "LinvailTaint",
-        "all": 3554,
-        "syntacticallyCompatible": 388,
-        "compatible": 63,
-        "eventuallyCompatible": 98,
-        "unknownCompatible": 0,
-        "unknownEventuallyCompatible": 0,
-        "compatibilityIssues": {
-            "AnalysisError": 3359,
-            "ParseError": 34,
-            "TranspileError": 53,
-            "CrashError": 10,
-        },
-        "transparencyAnalyzable": 93,
-        "nonTransparent": 53,
-        "transparent": 40,
-        "transparencyIssues": {"TypeError": 43, "OtherError": 10, "ReferenceError": 8},
-        "flows": 0,
-        "goodnessFlows": 0,
-        "goodnessSites": 0,
-        "falseTrivials": 0,
-        "overhead": 69.13642280048283,
-    },
-    {
-        "toolName": "JalangiTT",
-        "all": 3554,
-        "syntacticallyCompatible": 388,
-        "compatible": 358,
-        "eventuallyCompatible": 3021,
-        "unknownCompatible": 0,
-        "unknownEventuallyCompatible": 0,
-        "compatibilityIssues": {
-            "CrashError": 391,
-            "ParseError": 88,
-            "TranspileError": 53,
-            "UnknownError": 1,
-        },
-        "transparencyAnalyzable": 3005,
-        "nonTransparent": 1338,
-        "transparent": 1667,
-        "transparencyIssues": {
-            "TypeError": 778,
-            "ReferenceError": 473,
-            "OtherError": 333,
-            "SyntaxError": 261,
-        },
-        "flows": 867,
-        "goodnessFlows": 0.41884057971014493,
-        "goodnessSites": 0.2727272727272727,
-        "falseTrivials": 229,
-        "overhead": 15.99081410061815,
-    },
-    {
-        "toolName": "ProjectFoxhound",
-        "all": 3554,
-        "syntacticallyCompatible": 3554,
-        "compatible": 3287,
-        "eventuallyCompatible": 3287,
-        "unknownCompatible": 3,
-        "unknownEventuallyCompatible": 3,
-        "compatibilityIssues": {"CrashError": 264},
-        "transparencyAnalyzable": 3282,
-        "nonTransparent": 111,
-        "transparent": 3171,
-        "transparencyIssues": {
-            "OtherError": 17,
-            "TypeError": 80,
-            "ReferenceError": 8,
-            "SyntaxError": 4,
-        },
-        "flows": 1279,
-        "goodnessFlows": 0.6178743961352657,
-        "goodnessSites": 0.856341189674523,
-        "falseTrivials": 103,
-        "overhead": 2.907798261895235,
-    },
-]
+syntax_report = logfile["syntaxReport"]
+
+tool_reports = logfile["toolReport"]

@@ -4,6 +4,7 @@ import { composeHTMLManipulators } from "../collection/htmlmanip/HTMLManipulator
 import { execTool } from "./execTool";
 import { ifTranspilerPath } from "../env";
 import { inlineExternalScripts } from "../collection/htmlmanip/inlineExternalScripts";
+import { interceptInlineScripts } from "../collection/htmlmanip/interceptInlineScripts";
 import { manipulateHTML } from "../collection/htmlmanip/manipulateHTML";
 import { readFileSync } from "fs";
 import { transformInlineScripts } from "../collection/htmlmanip/transformInlineScripts";
@@ -18,18 +19,25 @@ export const transformWithIFTranspiler = (): WPRArchiveTransformer => {
   ).toString();
 
   return transformWPRArchive(
-    (body, { oldWPRArchive, syntax, wrapScriptTransform }) =>
+    (
+      body,
+      { oldWPRArchive, syntax, checkScriptTransform, tryScriptTransform }
+    ) =>
       manipulateHTML(
         body,
         composeHTMLManipulators(
+          interceptInlineScripts(
+            checkScriptTransform((body) => ifTranspiler(body))
+          ),
           inlineExternalScripts(oldWPRArchive, syntax, true),
           transformInlineScripts(
-            wrapScriptTransform((body) => ifTranspiler(body), syntax.scripts)
+            tryScriptTransform((body) => ifTranspiler(body))
           ),
           addInitScript(preamble)
         )
       ),
-    (body) => Promise.resolve(body)
+    (body, { checkScriptTransform }) =>
+      checkScriptTransform((body) => ifTranspiler(body))(body)
   );
 };
 

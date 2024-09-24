@@ -1,26 +1,26 @@
 import _ from "lodash";
-import assert from "assert";
 import { getJalangiTTFlows } from "./getJalangiTTFlows";
 import { getProjectFoxhoundFlows } from "./getProjectFoxhoundFlows";
 import { ToolName } from "../../collection/ToolName";
 
-export interface QuasiFlow {
+export interface FlowWithoutSite {
   source: { type: "cookie" } | { type: "localStorage"; key: string };
   sink: { type: "network"; targetUrl: string };
   isExplicit: boolean;
 }
 
-export interface Flow extends QuasiFlow {
+export interface Flow extends FlowWithoutSite {
   site: string;
 }
 
-export const getToolQuasiFlows = (
+export const getToolFlows = (
+  site: string,
   toolName: ToolName,
   rawFlows: any
-): QuasiFlow[] => {
+): Flow[] => {
   if (!rawFlows) return [];
 
-  let flows: QuasiFlow[];
+  let flows: FlowWithoutSite[];
   switch (toolName) {
     case "IF-Transpiler":
     case "LinvailTaint":
@@ -36,17 +36,19 @@ export const getToolQuasiFlows = (
       throw new Error(`Unsupported tool: ${toolName}`);
   }
 
-  return flows.map(simplifyFlow);
+  return flows
+    .map(simplifyFlow)
+    .map((flowWithoutSite) => ({ ...flowWithoutSite, site }));
 };
 
-export const getEmptyFlows = (rawFlows: any): QuasiFlow[] => {
-  assert(Array.isArray(rawFlows) && rawFlows.length === 0);
+export const getEmptyFlows = (rawFlows: any): FlowWithoutSite[] => {
+  // assert(Array.isArray(rawFlows) && rawFlows.length === 0);
   return [];
 };
 
-export const uniqFlow = (flows: QuasiFlow[]) => _.uniqWith(flows, _.isEqual);
+export const uniqFlow = (flows: Flow[]) => _.uniqWith(flows, _.isEqual);
 
-export const simplifyFlow = (flow: QuasiFlow): QuasiFlow => {
+export const simplifyFlow = (flow: FlowWithoutSite): FlowWithoutSite => {
   const simplifyTargetUrl = (url: string): string => {
     if (url.startsWith("//")) url = `https:${url}`;
     try {

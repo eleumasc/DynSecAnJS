@@ -4,19 +4,13 @@ import { Args } from "../archive/Args";
 import { avg, stdev } from "../util/math";
 import { classifyJSErrors, JSError } from "../measurement/TransparencyIssue";
 import { computeRanking, count } from "../measurement/util";
+import { Flow, getToolFlows, uniqFlow } from "../measurement/flow/Flow";
 import { isFailure } from "../util/Completion";
 import { isSyntacticallyCompatible } from "../collection/isSyntacticallyCompatible";
 import { MeasureArchive, MeasureLogfile } from "../archive/MeasureArchive";
 import { PreanalyzeArchive } from "../archive/PreanalyzeArchive";
 import { SiteResult } from "../archive/Archive";
 import { Syntax } from "../syntax/Syntax";
-import { writeFileSync } from "fs";
-import {
-  QuasiFlow,
-  getToolQuasiFlows,
-  Flow,
-  uniqFlow,
-} from "../measurement/flow/Flow";
 import {
   CollectArchive,
   CollectReport,
@@ -76,18 +70,19 @@ export const cmdMeasure = (args: MeasureArgs) => {
       CollectArchive.open(resolveArchivePath(collectArchiveName))
   );
 
-  const siteSyntaxEntries = Object.entries(
-    preanalyzeArchive.logfile.sitesState
-  ).flatMap(([site, isProcessed]) => {
-    if (!isProcessed) {
-      return [];
-    }
-    const siteResult = preanalyzeArchive.readSiteResult(site);
-    if (isFailure(siteResult)) {
-      return [];
-    }
-    return { site, syntax: siteResult.value };
-  });
+  const siteSyntaxEntries = Object.entries(preanalyzeArchive.logfile.sitesState)
+    // .filter(([_, isProcessed]) => isProcessed) // TEST-500
+    // .slice(0, 500) // TEST-500
+    .flatMap(([site, isProcessed]) => {
+      if (!isProcessed) {
+        return [];
+      }
+      const siteResult = preanalyzeArchive.readSiteResult(site);
+      if (isFailure(siteResult)) {
+        return [];
+      }
+      return { site, syntax: siteResult.value };
+    });
 
   const toolBrowserCollectArchivePairs =
     pairToolBrowserCollectArchives(collectArchives);
@@ -198,21 +193,12 @@ const getToolSiteReportMatrix = (
 type ToolSiteReport = {
   site: string;
   syntacticallyCompatible: boolean;
-} & (
-  | {
-      eventuallyCompatible: false;
-      compatibilityIssue: CompatibilityIssue;
-      unclassifiedTransformErrors?: string[];
-    }
-  | ({ flows: QuasiFlow[] } & (
-      | {
-          eventuallyCompatible: null;
-        }
-      | ({
-          eventuallyCompatible: true;
-        } & ToolSiteReportTransparencyPart)
-    ))
-);
+  eventuallyCompatibleTotal: number;
+  eventuallyCompatibleCount: number | null;
+  compatibilityIssue?: CompatibilityIssue;
+  unclassifiedTransformErrors?: string[];
+  flows: Flow[];
+} & ToolSiteReportTransparencyPart;
 
 type ToolSiteReportTransparencyPart =
   | {
@@ -248,18 +234,24 @@ const getToolSiteReport = (
 ): ToolSiteReport => {
   // Compatibility & Coverage
 
-  const compatibilityBase = {
+  const eventuallyCompatibleTotal = _.sum(
+    _.map(syntax.scripts, "astNodesCount")
+  );
+  const badCompatibilityBase = {
     site,
     syntacticallyCompatible: isSyntacticallyCompatible(
       toolName,
       syntax.minimumESVersion
     ),
+    eventuallyCompatibleTotal,
+    eventuallyCompatibleCount: 0,
+    flows: [],
+    transparencyAnalyzable: false as false,
   };
 
   if (!toolSiteResult) {
     return {
-      ...compatibilityBase,
-      eventuallyCompatible: false,
+      ...badCompatibilityBase,
       compatibilityIssue: CompatibilityIssue.CrashError,
     };
   }
@@ -268,21 +260,46 @@ const getToolSiteReport = (
     const { error } = toolSiteResult;
     if (typeof error === "object" && error.type === "TranspileError") {
       return {
-        ...compatibilityBase,
-        eventuallyCompatible: false,
+        ...badCompatibilityBase,
         compatibilityIssue: CompatibilityIssue.TranspileError,
       };
     } else {
       return {
-        ...compatibilityBase,
-        eventuallyCompatible: false,
+        ...badCompatibilityBase,
         compatibilityIssue: CompatibilityIssue.CrashError,
       };
     }
   }
 
-  const toolReport = toolSiteResult.value;
+  const { value: toolReport } = toolSiteResult;
 
+  if (isFailure(toolReport.runsCompletion)) {
+    return {
+      ...badCompatibilityBase,
+      compatibilityIssue: CompatibilityIssue.CrashError,
+    };
+  }
+
+  const errorScriptIds = _.uniq(
+    toolReport.scriptTransformLogs.flatMap((logRecord) => logRecord.scriptIds)
+  );
+  const nonErrorScripts = _.differenceWith(
+    syntax.scripts,
+    errorScriptIds,
+    (script, id) => script.id === id
+  );
+  const nonErrorAstNodesCount = _.sum(_.map(nonErrorScripts, "astNodesCount"));
+  const eventuallyCompatibleCount = nonErrorAstNodesCount;
+
+  const { value: toolRunDetails } = toolReport.runsCompletion;
+
+  const flows = uniqFlow(
+    toolRunDetails.flatMap((runDetail) =>
+      getToolFlows(site, toolName, runDetail.monitorState.rawFlows)
+    )
+  );
+
+  let transformErrorsDetail = null;
   const transformErrors = toolReport.scriptTransformLogs.flatMap(
     (logRecord) => logRecord.error.message
   );
@@ -292,62 +309,47 @@ const getToolSiteReport = (
       transformErrors
     );
     if (compatibilityIssue) {
-      return {
-        ...compatibilityBase,
-        eventuallyCompatible: false,
-        compatibilityIssue: compatibilityIssue,
+      transformErrorsDetail = {
+        compatibilityIssue,
       };
     } else {
-      return {
-        ...compatibilityBase,
-        eventuallyCompatible: false,
+      transformErrorsDetail = {
         compatibilityIssue: CompatibilityIssue.UnknownError,
         unclassifiedTransformErrors: transformErrors,
       };
     }
   }
 
-  if (isFailure(toolReport.runsCompletion)) {
-    return {
-      ...compatibilityBase,
-      eventuallyCompatible: false,
-      compatibilityIssue: CompatibilityIssue.CrashError,
-    };
-  }
-
-  const { value: toolRunDetails } = toolReport.runsCompletion;
-
-  const coverageBase = {
-    ...compatibilityBase,
-    flows: uniqFlow(
-      toolRunDetails
-        .flatMap((runDetail) =>
-          getToolQuasiFlows(toolName, runDetail.monitorState.rawFlows)
-        )
-        .map((quasiFlow): Flow => ({ ...quasiFlow, site }))
-    ),
+  const compatibilityBase = {
+    ...badCompatibilityBase,
+    eventuallyCompatibleCount,
+    flows,
+    ...transformErrorsDetail,
   };
 
   if (
     !toolRunDetails.some((runDetail) => runDetail.monitorState.loadingCompleted)
   ) {
     return {
-      ...coverageBase,
-      eventuallyCompatible: null,
+      ...compatibilityBase,
+      eventuallyCompatibleCount: null,
     };
   }
 
   // Transparency
 
   const transparencyBase = {
-    ...coverageBase,
-    eventuallyCompatible: true as true,
+    ...compatibilityBase,
   };
+
+  // TEST-TRANSPARENCY-THRESHOLD
+  // if (eventuallyCompatibleCount / eventuallyCompatibleTotal < 1) {
+  //   return { ...transparencyBase };
+  // }
 
   if (!browserSiteResult || isFailure(browserSiteResult)) {
     return {
       ...transparencyBase,
-      transparencyAnalyzable: false,
     };
   }
 
@@ -356,7 +358,6 @@ const getToolSiteReport = (
   if (isFailure(browserReport.runsCompletion)) {
     return {
       ...transparencyBase,
-      transparencyAnalyzable: false,
     };
   }
 
@@ -379,7 +380,6 @@ const getToolSiteReport = (
   if (!toolExecutionTrace || !browserExecutionTrace) {
     return {
       ...transparencyBase,
-      transparencyAnalyzable: false,
       executionTraceNotFound: true,
     };
   }
@@ -429,12 +429,9 @@ const getToolSiteReport = (
 };
 
 const getToolReport = (toolSiteReportMatrix: ToolSiteReportMatrix) => {
-  const getFlows = (r: ToolSiteReport) =>
-    r.eventuallyCompatible !== false ? r.flows : [];
-
   const totalFlows = uniqFlow(
     toolSiteReportMatrix.flatMap(({ toolSiteReports: rs }) =>
-      rs.flatMap((r) => getFlows(r))
+      rs.flatMap((r) => r.flows)
     )
   );
   // writeFileSync("totalFlows.json", JSON.stringify(totalFlows));
@@ -444,76 +441,70 @@ const getToolReport = (toolSiteReportMatrix: ToolSiteReportMatrix) => {
       (
         r
       ): r is typeof r & {
-        eventuallyCompatible: true;
         transparencyAnalyzable: true;
-      } => r.eventuallyCompatible === true && r.transparencyAnalyzable
+      } => r.transparencyAnalyzable
     );
+    const rsKnown = rs.filter((r) => r.eventuallyCompatibleCount !== null);
 
-    const localFlows = rs.flatMap((r) => getFlows(r));
+    const scoreEventualCompatibility = (
+      intersectSyntactical: boolean = false
+    ): number => {
+      return (
+        _.sum(
+          _.map(
+            intersectSyntactical
+              ? rsKnown.filter((r) => r.syntacticallyCompatible)
+              : rsKnown,
+            (r) => r.eventuallyCompatibleCount as number
+          )
+        ) / _.sum(_.map(rsKnown, (r) => r.eventuallyCompatibleTotal))
+      );
+    };
+
+    const localFlows = rs.flatMap((r) => r.flows);
 
     return {
       toolName,
       all: rs.length,
-      syntacticallyCompatible: count(rs, (r) => r.syntacticallyCompatible),
-      compatible: count(
-        rs,
-        (r) => r.syntacticallyCompatible && r.eventuallyCompatible === true
-      ),
-      eventuallyCompatible: count(rs, (r) => r.eventuallyCompatible === true),
+      syntacticallyCompatibleScore:
+        count(rs, (r) => r.syntacticallyCompatible) / rs.length,
+      compatibleScore: scoreEventualCompatibility(true),
+      eventuallyCompatibleScore: scoreEventualCompatibility(),
       unknownCompatible: count(
         rs,
-        (r) => r.syntacticallyCompatible && r.eventuallyCompatible === null
+        (r) => r.syntacticallyCompatible && r.eventuallyCompatibleCount === null
       ),
       unknownEventuallyCompatible: count(
         rs,
-        (r) => r.eventuallyCompatible === null
+        (r) => r.eventuallyCompatibleCount === null
       ),
       compatibilityIssues: _.countBy(
         rs.filter(
-          (r): r is typeof r & { eventuallyCompatible: false } =>
-            r.eventuallyCompatible === false
+          (r): r is typeof r & { compatibilityIssue: CompatibilityIssue } =>
+            Boolean(r.compatibilityIssue)
         ),
         (r) => r.compatibilityIssue
       ),
       unclassifiedTransformErrors: _.uniq(
-        rs.flatMap((r) =>
-          r.eventuallyCompatible === false
-            ? r.unclassifiedTransformErrors ?? []
-            : []
-        )
+        rs.flatMap((r) => r.unclassifiedTransformErrors ?? [])
       ),
       transparencyAnalyzable: rsTransparencyAnalyzable.length,
       nonTransparent: count(rsTransparencyAnalyzable, (r) => !r.transparent),
       transparent: count(rsTransparencyAnalyzable, (r) => r.transparent),
-      _transparentSites: rsTransparencyAnalyzable
-        .filter((r) => r.transparent)
-        .map((r) => r.site),
+      // _transparentSites: rsTransparencyAnalyzable
+      //   .filter((r) => r.transparent)
+      //   .map((r) => r.site),
       transparencyIssues: _.countBy(
         rsTransparencyAnalyzable
           .filter((r): r is typeof r & { transparent: false } => !r.transparent)
           .flatMap((r) => r.jsErrors)
       ),
       flows: localFlows.length,
-      _flows: localFlows,
-      goodnessFlows: localFlows.length / totalFlows.length,
-      goodnessSites:
+      // _flows: localFlows,
+      coverageFlows: localFlows.length / totalFlows.length,
+      coverageSites:
         _.uniq(_.map(localFlows, "site")).length /
         _.uniq(_.map(totalFlows, "site")).length,
-      falseTrivials: _.sum(
-        rs
-          .map(
-            (r, i) =>
-              r.eventuallyCompatible === true &&
-              r.transparencyAnalyzable &&
-              r.transparent &&
-              r.flows.length === 0 &&
-              toolSiteReportMatrix.some(({ toolSiteReports: rs1 }) => {
-                const r1 = rs1[i];
-                return r1.eventuallyCompatible !== false && r1.flows.length > 0;
-              })
-          )
-          .map(Number)
-      ), // falseTrivials = 0 is good for tools with goodnessFlows = 0
       overhead: avg(
         rsTransparencyAnalyzable
           .filter((r): r is typeof r & { transparent: true } => r.transparent)
