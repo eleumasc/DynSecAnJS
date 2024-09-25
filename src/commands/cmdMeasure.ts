@@ -10,7 +10,7 @@ import { isSyntacticallyCompatible } from "../collection/isSyntacticallyCompatib
 import { MeasureArchive, MeasureLogfile } from "../archive/MeasureArchive";
 import { PreanalyzeArchive } from "../archive/PreanalyzeArchive";
 import { SiteResult } from "../archive/Archive";
-import { Syntax } from "../syntax/Syntax";
+import { Syntax, SyntaxScript } from "../syntax/Syntax";
 import {
   CollectArchive,
   CollectReport,
@@ -102,7 +102,20 @@ export const cmdMeasure = (args: MeasureArgs) => {
   const toolReport = getToolReport(toolSiteReportMatrix);
   console.log(toolReport);
 
-  archive.logfile = { ...archive.logfile, syntaxReport, toolReport };
+  // Library ranking
+
+  const libraryRanking = getLibraryRanking(
+    siteSyntaxEntries,
+    toolSiteReportMatrix
+  );
+  console.log(libraryRanking);
+
+  archive.logfile = {
+    ...archive.logfile,
+    syntaxReport,
+    toolReport,
+    libraryRanking,
+  };
 };
 
 type ToolBrowserCollectArchivePair = {
@@ -196,6 +209,7 @@ type ToolSiteReport = {
   syntacticallyCompatible: boolean;
   eventuallyCompatibleTotal: number;
   eventuallyCompatibleCount: number | null;
+  errorScripts: SyntaxScript[] | null;
   compatibilityIssue?: CompatibilityIssue;
   unclassifiedTransformErrors?: string[];
   flows: Flow[];
@@ -244,6 +258,7 @@ const getToolSiteReport = (
     ),
     eventuallyCompatibleTotal,
     eventuallyCompatibleCount: 0,
+    errorScripts: [],
     flows: [],
     transparencyAnalyzable: false as false,
   };
@@ -282,12 +297,12 @@ const getToolSiteReport = (
   const errorScriptIds = _.uniq(
     toolReport.scriptTransformLogs.flatMap((logRecord) => logRecord.scriptIds)
   );
-  const nonErrorScripts = _.differenceWith(
-    syntax.scripts,
-    errorScriptIds,
-    (script, id) => script.id === id
-  );
-  const eventuallyCompatibleCount = nonErrorScripts.length;
+  const errorScripts = errorScriptIds.map((scriptId) => {
+    const script = syntax.scripts.find((script) => script.id === scriptId);
+    assert(script);
+    return script;
+  });
+  const eventuallyCompatibleCount = syntax.scripts.length - errorScripts.length;
 
   const { value: toolRunDetails } = toolReport.runsCompletion;
 
@@ -321,6 +336,7 @@ const getToolSiteReport = (
   const compatibilityBase = {
     ...badCompatibilityBase,
     eventuallyCompatibleCount,
+    errorScripts,
     flows,
     ...transformErrorsDetail,
   };
@@ -331,6 +347,7 @@ const getToolSiteReport = (
     return {
       ...compatibilityBase,
       eventuallyCompatibleCount: null,
+      errorScripts: null,
     };
   }
 
@@ -514,4 +531,58 @@ const getToolReport = (toolSiteReportMatrix: ToolSiteReportMatrix) => {
       ),
     };
   });
+};
+
+const getLibraryRanking = (
+  siteSyntaxEntries: SiteSyntaxEntry[],
+  toolSiteReportMatrix: ToolSiteReportMatrix
+) => {
+  interface Cluster {
+    key: string;
+    scripts: SyntaxScript[];
+  }
+
+  const isScriptExternal = (
+    script: SyntaxScript
+  ): script is typeof script & { type: "external" } =>
+    script.type === "external";
+
+  const clusterMap = new Map<string, SyntaxScript[]>();
+  for (const { syntax } of siteSyntaxEntries) {
+    const externalScripts = syntax.scripts.filter(isScriptExternal);
+    for (const script of externalScripts) {
+      const { url: scriptUrl } = script;
+      clusterMap.set(scriptUrl, [...(clusterMap.get(scriptUrl) ?? []), script]);
+    }
+  }
+  const clusters = [...clusterMap].map(([url, scripts]): Cluster => {
+    return { key: url, scripts };
+  });
+
+  const toolErrorExternalScriptEntries = toolSiteReportMatrix.map(
+    ({ toolName, toolSiteReports: rs }) => {
+      return {
+        toolName,
+        errorExternalScripts: rs
+          .flatMap((r) => r.errorScripts ?? [])
+          .filter(isScriptExternal),
+      };
+    }
+  );
+
+  return _.sortBy(clusters, (cluster) => cluster.scripts.length)
+    .reverse()
+    .map(({ key, scripts }) => {
+      return {
+        library: key,
+        usage: scripts.length,
+        astNodesCountArray: scripts.map((script) => script.astNodesCount),
+        compatibleTools: toolErrorExternalScriptEntries
+          .filter(
+            ({ errorExternalScripts }) =>
+              _.intersection(scripts, errorExternalScripts).length === 0
+          )
+          .map(({ toolName }) => toolName),
+      };
+    });
 };

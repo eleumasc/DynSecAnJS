@@ -7,6 +7,7 @@ export interface MeasureLogfile extends Logfile {
   collectArchiveNames: string[];
   syntaxReport?: any;
   toolReport?: any;
+  libraryRanking?: any;
 }
 
 export class MeasureArchive extends Archive<MeasureLogfile, void> {}
