@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from misc import custom_colors
-from data import tool_reports
+from core import output, tool_reports
 
 plt.rcParams.update({"font.size": 12})
 
@@ -57,4 +57,5 @@ fig.legend(legend_labels, loc="lower right")
 fig.suptitle("Transparency analysis")
 
 plt.tight_layout()
-plt.show()
+
+output(plt)

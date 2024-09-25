@@ -1,6 +1,6 @@
 import json
 import matplotlib.pyplot as plt
-from data import syntax_report
+from core import output, syntax_report
 
 plt.rcParams.update({"font.size": 12})
 
@@ -20,4 +20,5 @@ for i, value in enumerate(values):
     plt.text(i, value + 10, f"{percentages[i]:.0f}%", ha="center")
 
 plt.tight_layout()
-plt.show()
+
+output(plt)
