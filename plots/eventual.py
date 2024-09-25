@@ -24,7 +24,6 @@ fig, ax = plt.subplots(figsize=(12, 8))
 bar_width = 0.3  # Width of each bar
 
 main_rects = []
-unknown_rects = []
 
 # Drawing main bars
 for i, (error_type, label) in enumerate(labels.items()):
@@ -47,7 +46,7 @@ for rect_group, label in zip(main_rects, labels.values()):
     for j, rect in enumerate(rect_group):
         height = rect.get_height()
         ax.annotate(
-            f"({height * 100:.0f}%)",
+            f"{height * 100:.0f}%",
             xy=(rect.get_x() + rect.get_width() / 2, height),
             xytext=(0, 3),
             textcoords="offset points",

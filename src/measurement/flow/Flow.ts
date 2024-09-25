@@ -24,7 +24,7 @@ export const getToolFlows = (
   switch (toolName) {
     case "IF-Transpiler":
     case "LinvailTaint":
-      flows = getEmptyFlows(rawFlows);
+      flows = getEmptyFlows(rawFlows); // TODO: get flows detected by LinvailTaint
       break;
     case "JalangiTT":
       flows = getJalangiTTFlows(rawFlows);
@@ -42,7 +42,7 @@ export const getToolFlows = (
 };
 
 export const getEmptyFlows = (rawFlows: any): FlowWithoutSite[] => {
-  // assert(Array.isArray(rawFlows) && rawFlows.length === 0);
+  // assert(Array.isArray(rawFlows) && rawFlows.length === 0); // TODO: uncomment
   return [];
 };
 

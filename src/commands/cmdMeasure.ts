@@ -71,8 +71,9 @@ export const cmdMeasure = (args: MeasureArgs) => {
   );
 
   const siteSyntaxEntries = Object.entries(preanalyzeArchive.logfile.sitesState)
-    // .filter(([_, isProcessed]) => isProcessed) // TEST-500
-    // .slice(0, 500) // TEST-500
+    // TODO: remove the following two lines after performing analysis on all sites or fixing processedSites
+    .filter(([_, isProcessed]) => isProcessed) // TEST-500
+    .slice(0, 500) // TEST-500
     .flatMap(([site, isProcessed]) => {
       if (!isProcessed) {
         return [];
@@ -234,9 +235,7 @@ const getToolSiteReport = (
 ): ToolSiteReport => {
   // Compatibility & Coverage
 
-  const eventuallyCompatibleTotal = _.sum(
-    _.map(syntax.scripts, "astNodesCount")
-  );
+  const eventuallyCompatibleTotal = syntax.scripts.length;
   const badCompatibilityBase = {
     site,
     syntacticallyCompatible: isSyntacticallyCompatible(
@@ -288,8 +287,7 @@ const getToolSiteReport = (
     errorScriptIds,
     (script, id) => script.id === id
   );
-  const nonErrorAstNodesCount = _.sum(_.map(nonErrorScripts, "astNodesCount"));
-  const eventuallyCompatibleCount = nonErrorAstNodesCount;
+  const eventuallyCompatibleCount = nonErrorScripts.length;
 
   const { value: toolRunDetails } = toolReport.runsCompletion;
 
@@ -342,10 +340,14 @@ const getToolSiteReport = (
     ...compatibilityBase,
   };
 
-  // TEST-TRANSPARENCY-THRESHOLD
-  // if (eventuallyCompatibleCount / eventuallyCompatibleTotal < 1) {
-  //   return { ...transparencyBase };
-  // }
+  // Rationale: if a tool is unable to transform any script of a given website,
+  // the transformed website is exactly like the original one. Since we want to
+  // understand the transparency of analysis in websites that tools can analyze
+  // in some measure, we discard from transparency evaluation those websites
+  // which the tool is completely unable to analyze.
+  if (eventuallyCompatibleCount === 0) {
+    return { ...transparencyBase };
+  }
 
   if (!browserSiteResult || isFailure(browserSiteResult)) {
     return {
