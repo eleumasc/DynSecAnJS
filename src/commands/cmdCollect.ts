@@ -3,17 +3,17 @@ import { BrowserOrToolName, isToolName } from "../collection/ToolName";
 import { CollectArchive, CollectLogfile } from "../archive/CollectArchive";
 import { CollectSiteArgs, collectSiteFilename } from "../workers/collectSite";
 import { ipExec } from "../util/interprocess";
-import { isFailure } from "../util/Completion";
+import { isFailure, toCompletion } from "../util/Completion";
 import { PreanalyzeArchive } from "../archive/PreanalyzeArchive";
 import { RecordArchive } from "../archive/RecordArchive";
-import { retryOnce } from "../util/retryOnce";
 import { useMonitorBundle } from "../collection/MonitorBundle";
 import {
-  ChildInitCommandController,
+  DerivedInitCommandController,
+  deriveSitesState,
   initCommand,
 } from "../archive/initCommand";
 import {
-  ArchiveProcessSitesController,
+  ResumableProcessSitesController,
   processSites,
 } from "../archive/processSites";
 
@@ -35,16 +35,16 @@ export const cmdCollect = async (args: CollectArgs) => {
   } = initCommand(
     args,
     CollectArchive,
-    new ChildInitCommandController(
+    new DerivedInitCommandController(
       PreanalyzeArchive,
       (requireArgs) => requireArgs.preanalyzeArchivePath,
       (requireArgs) => `Collect-${requireArgs.browserOrToolName}`,
-      (requireArgs, { parentArchiveName, sitesState }): CollectLogfile => {
+      (requireArgs, { parentArchive, parentArchiveName }): CollectLogfile => {
         return {
           type: "CollectLogfile",
           browserOrToolName: requireArgs.browserOrToolName,
           preanalyzeArchiveName: parentArchiveName,
-          sitesState,
+          sitesState: deriveSitesState(parentArchive),
         };
       }
     )
@@ -68,12 +68,12 @@ export const cmdCollect = async (args: CollectArgs) => {
     },
     async (bundlePath) => {
       await processSites(
-        new ArchiveProcessSitesController(archive),
+        new ResumableProcessSitesController(archive),
         concurrencyLimit,
         async (site) => {
           const { archivePath } = archive;
-          await retryOnce(async () => {
-            const completion = await ipExec(collectSiteFilename, [
+          const outerCompletion = await toCompletion(async () => {
+            const innerCompletion = await ipExec(collectSiteFilename, [
               {
                 site,
                 browserOrToolName,
@@ -83,10 +83,13 @@ export const cmdCollect = async (args: CollectArgs) => {
                 bundlePath,
               } satisfies CollectSiteArgs,
             ]);
-            if (isFailure(completion)) {
-              console.error(completion.error);
+            if (isFailure(innerCompletion)) {
+              archive.writeSiteResult(site, innerCompletion);
             }
           });
+          if (isFailure(outerCompletion)) {
+            archive.writeSiteResult(site, outerCompletion);
+          }
         }
       );
     }

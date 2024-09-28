@@ -6,6 +6,7 @@ import { isSuccess } from "../util/Completion";
 import { Logfile } from "./Logfile";
 import { unixTime } from "../util/time";
 import {
+  HasSitesState,
   SitesState,
   createSitesState,
   getProcessedSitesInSitesState,
@@ -84,9 +85,9 @@ const createResolveArchivePathCallback = (
   return (archiveName: string) => path.resolve(workingDirectory, archiveName);
 };
 
-export class ChildInitCommandController<
+export class DerivedInitCommandController<
   TLogfile extends Logfile,
-  TParentLogfile extends Logfile,
+  TParentLogfile extends Logfile & HasSitesState,
   TParentSiteData,
   TRequireArgs
 > implements InitCommandController<TLogfile, TRequireArgs>
@@ -100,12 +101,11 @@ export class ChildInitCommandController<
     >,
     readonly getParentArchivePath: (requireArgs: TRequireArgs) => string,
     readonly getArchiveName: (requireArgs: TRequireArgs) => string,
-    readonly createChildLogfile: (
+    readonly createDerivedLogfile: (
       requireArgs: TRequireArgs,
       args: {
         parentArchive: Archive<TParentLogfile>;
         parentArchiveName: string;
-        sitesState: SitesState;
       }
     ) => TLogfile
   ) {}
@@ -126,16 +126,18 @@ export class ChildInitCommandController<
     const parentArchiveName = path.basename(parentArchivePath);
     const parentArchive = this.parentArchiveConstructor.open(parentArchivePath);
 
-    const sitesState = createSitesState(
-      getProcessedSitesInSitesState(parentArchive.logfile.sitesState).filter(
-        (site) => isSuccess(parentArchive.readSiteResult(site))
-      )
-    );
-
-    return this.createChildLogfile.call(null, requireArgs, {
+    return this.createDerivedLogfile.call(null, requireArgs, {
       parentArchive,
       parentArchiveName,
-      sitesState,
     });
   }
 }
+
+export const deriveSitesState = <TLogfile extends Logfile & HasSitesState>(
+  parentArchive: Archive<TLogfile>
+): SitesState =>
+  createSitesState(
+    getProcessedSitesInSitesState(parentArchive.logfile.sitesState).filter(
+      (site) => isSuccess(parentArchive.readSiteResult(site))
+    )
+  );

@@ -13,10 +13,10 @@ import { delay } from "../util/timeout";
 import { ForwardProxy } from "../util/ForwardProxy";
 import { headless } from "../env";
 import { ipRegister } from "../util/interprocess";
-import { isSuccess, toCompletion } from "../util/Completion";
 import { RecordArchive, RecordReport } from "../archive/RecordArchive";
-import { retryOnceCompletion } from "../util/retryOnce";
+import { retryOnce } from "../util/retryOnce";
 import { SiteResult } from "../archive/Archive";
+import { toCompletion } from "../util/Completion";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
 import { usePlaywrightPage } from "../collection/PlaywrightPage";
 import { useTempDirectory } from "../util/TempDirectory";
@@ -68,7 +68,9 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
       await entry.deferredComplete.promise;
     }
 
-    return { accessUrl };
+    const storageState = await page.context().storageState();
+
+    return { accessUrl, storageState };
   };
 
   const browserFactory = (forwardProxy: ForwardProxy) => (): Promise<Browser> =>
@@ -81,27 +83,25 @@ const recordSite = async (args: RecordSiteArgs): Promise<void> => {
         },
       });
 
-  const result = await retryOnceCompletion(() =>
-    useTempDirectory(async (tempPath) => {
-      const wprArchiveTempPath = path.join(tempPath, "archive.wprgo");
+  const result = await toCompletion(() =>
+    retryOnce(() =>
+      useTempDirectory(async (tempPath) => {
+        const wprArchiveTempPath = path.join(tempPath, "archive.wprgo");
 
-      const result = await toCompletion(() =>
-        useForwardedWebPageReplay(
+        const result = await useForwardedWebPageReplay(
           {
             operation: "record",
             archivePath: wprArchiveTempPath,
           },
           (forwardProxy) =>
             usePlaywrightPage(browserFactory(forwardProxy), navigate)
-        )
-      );
+        );
 
-      if (isSuccess(result)) {
         archive.moveFile(`${site}-archive.wprgo`, wprArchiveTempPath);
-      }
 
-      return result;
-    })
+        return result;
+      })
+    )
   );
 
   archive.writeSiteResult(site, result satisfies SiteResult<RecordReport>);

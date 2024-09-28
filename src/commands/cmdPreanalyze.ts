@@ -1,4 +1,5 @@
 import { Args } from "../archive/Args";
+import { isFailure, toCompletion } from "../util/Completion";
 import { RecordArchive } from "../archive/RecordArchive";
 import { threadExec } from "../util/thread";
 import {
@@ -7,14 +8,15 @@ import {
 } from "../workers/preanalyzeSite";
 import {
   initCommand,
-  ChildInitCommandController,
+  DerivedInitCommandController,
+  deriveSitesState,
 } from "../archive/initCommand";
 import {
   PreanalyzeArchive,
   PreanalyzeLogfile,
 } from "../archive/PreanalyzeArchive";
 import {
-  ArchiveProcessSitesController,
+  ResumableProcessSitesController,
   processSites,
 } from "../archive/processSites";
 
@@ -35,15 +37,18 @@ export const cmdPreanalyze = async (args: PreanalyzeArgs) => {
   } = initCommand(
     args,
     PreanalyzeArchive,
-    new ChildInitCommandController(
+    new DerivedInitCommandController(
       RecordArchive,
       (requireArgs) => requireArgs.recordArchivePath,
       () => "Preanalyze",
-      (_requireArgs, { parentArchiveName, sitesState }): PreanalyzeLogfile => {
+      (
+        _requireArgs,
+        { parentArchive, parentArchiveName }
+      ): PreanalyzeLogfile => {
         return {
           type: "PreanalyzeLogfile",
           recordArchiveName: parentArchiveName,
-          sitesState,
+          sitesState: deriveSitesState(parentArchive),
         };
       }
     )
@@ -54,17 +59,25 @@ export const cmdPreanalyze = async (args: PreanalyzeArgs) => {
   );
 
   await processSites(
-    new ArchiveProcessSitesController(archive),
+    new ResumableProcessSitesController(archive),
     concurrencyLimit,
     async (site) => {
       const { archivePath } = archive;
-      await threadExec(preanalyzeSiteFilename, [
-        {
-          site,
-          archivePath,
-          recordArchivePath: recordArchive.archivePath,
-        } satisfies PreanalyzeSiteArgs,
-      ]);
+      const outerCompletion = await toCompletion(async () => {
+        const innerCompletion = await threadExec(preanalyzeSiteFilename, [
+          {
+            site,
+            archivePath,
+            recordArchivePath: recordArchive.archivePath,
+          } satisfies PreanalyzeSiteArgs,
+        ]);
+        if (isFailure(innerCompletion)) {
+          archive.writeSiteResult(site, innerCompletion);
+        }
+      });
+      if (isFailure(outerCompletion)) {
+        archive.writeSiteResult(site, outerCompletion);
+      }
     }
   );
 

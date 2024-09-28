@@ -4,6 +4,7 @@ import { isSuccess, toCompletion } from "../util/Completion";
 import { Logfile } from "./Logfile";
 import { queue } from "async";
 import {
+  HasSitesState,
   SitesState,
   getProcessedSitesInSitesState,
   getSitesInSitesState,
@@ -50,8 +51,9 @@ export const processSites = async (
   log("DONE");
 };
 
-export class ArchiveProcessSitesController<TLogfile extends Logfile>
-  implements ProcessSitesController
+export class ResumableProcessSitesController<
+  TLogfile extends Logfile & HasSitesState
+> implements ProcessSitesController
 {
   constructor(readonly archive: Archive<TLogfile, unknown>) {}
 

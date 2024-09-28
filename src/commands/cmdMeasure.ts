@@ -26,7 +26,7 @@ import {
   findParseOrAnalysisError,
 } from "../measurement/CompatibilityIssue";
 import {
-  ChildInitCommandController,
+  DerivedInitCommandController,
   initCommand,
 } from "../archive/initCommand";
 import {
@@ -47,16 +47,15 @@ export const cmdMeasure = (args: MeasureArgs) => {
   const { archive, resolveArchivePath } = initCommand(
     args,
     MeasureArchive,
-    new ChildInitCommandController(
+    new DerivedInitCommandController(
       PreanalyzeArchive,
       (requireArgs) => requireArgs.preanalyzeArchivePath,
       () => "Measure",
-      (requireArgs, { parentArchiveName, sitesState }): MeasureLogfile => {
+      (requireArgs, { parentArchiveName }): MeasureLogfile => {
         return {
           type: "MeasureLogfile",
           preanalyzeArchiveName: parentArchiveName,
           collectArchiveNames: requireArgs.collectArchivePaths,
-          sitesState,
         };
       }
     )
@@ -71,9 +70,8 @@ export const cmdMeasure = (args: MeasureArgs) => {
   );
 
   const siteSyntaxEntries = Object.entries(preanalyzeArchive.logfile.sitesState)
-    // TODO: remove the following two lines after performing analysis on all sites or fixing processedSites
-    .filter(([_, isProcessed]) => isProcessed) // TEST-500
-    .slice(0, 500) // TEST-500
+    .filter(([_, isProcessed]) => isProcessed) // TODO: isProcessed && every browser and tool tried to analyze this site
+    .slice(0, 500) // TODO: remove
     .flatMap(([site, isProcessed]) => {
       if (!isProcessed) {
         return [];
@@ -244,10 +242,10 @@ const getToolSiteReport = (
   site: string,
   syntax: Syntax,
   toolName: ToolName,
-  toolSiteResult: SiteResult<CollectReport> | null,
-  browserSiteResult: SiteResult<CollectReport> | null
+  toolSiteResult: SiteResult<CollectReport> | null, // TODO: this argument should not be null
+  browserSiteResult: SiteResult<CollectReport> | null // TODO: this argument should not be null
 ): ToolSiteReport => {
-  // Compatibility & Coverage
+  // Compatibility & Security
 
   const eventuallyCompatibleTotal = syntax.scripts.length;
   const badCompatibilityBase = {
@@ -448,13 +446,6 @@ const getToolSiteReport = (
 };
 
 const getToolReport = (toolSiteReportMatrix: ToolSiteReportMatrix) => {
-  const totalFlows = uniqFlow(
-    toolSiteReportMatrix.flatMap(({ toolSiteReports: rs }) =>
-      rs.flatMap((r) => r.flows)
-    )
-  );
-  // writeFileSync("totalFlows.json", JSON.stringify(totalFlows));
-
   return toolSiteReportMatrix.map(({ toolName, toolSiteReports: rs }) => {
     const rsTransparencyAnalyzable = rs.filter(
       (
@@ -510,9 +501,6 @@ const getToolReport = (toolSiteReportMatrix: ToolSiteReportMatrix) => {
       transparencyAnalyzable: rsTransparencyAnalyzable.length,
       nonTransparent: count(rsTransparencyAnalyzable, (r) => !r.transparent),
       transparent: count(rsTransparencyAnalyzable, (r) => r.transparent),
-      // _transparentSites: rsTransparencyAnalyzable
-      //   .filter((r) => r.transparent)
-      //   .map((r) => r.site),
       transparencyIssues: _.countBy(
         rsTransparencyAnalyzable
           .filter((r): r is typeof r & { transparent: false } => !r.transparent)
@@ -520,10 +508,6 @@ const getToolReport = (toolSiteReportMatrix: ToolSiteReportMatrix) => {
       ),
       flows: localFlows.length,
       // _flows: localFlows,
-      coverageFlows: localFlows.length / totalFlows.length,
-      coverageSites:
-        _.uniq(_.map(localFlows, "site")).length /
-        _.uniq(_.map(totalFlows, "site")).length,
       overhead: avg(
         rsTransparencyAnalyzable
           .filter((r): r is typeof r & { transparent: true } => r.transparent)

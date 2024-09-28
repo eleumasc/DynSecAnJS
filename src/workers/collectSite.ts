@@ -149,10 +149,10 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
       transformedWPRArchive,
       async (wprArchivePath) =>
         toCompletion(async () => {
-          const runs: RunDetail[] = [];
+          const runDetails: RunDetail[] = [];
 
           for (let i = 0; i < 5; ++i) {
-            const run = await retryOnce(() =>
+            const runDetail = await retryOnce(() =>
               useForwardedWebPageReplay(
                 {
                   operation: "replay",
@@ -168,10 +168,10 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
               )
             );
 
-            runs.push(run);
+            runDetails.push(runDetail);
           }
 
-          return runs;
+          return runDetails;
         })
     );
 

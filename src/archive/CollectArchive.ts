@@ -1,11 +1,12 @@
 import Archive from "./Archive";
 import { BrowserOrToolName } from "../collection/ToolName";
 import { Completion } from "../util/Completion";
+import { HasSitesState } from "./SitesState";
 import { Logfile } from "./Logfile";
 import { MonitorState } from "../collection/MonitorBundle";
 import { ScriptTransformErrorLog } from "../collection/WPRArchiveTransformer";
 
-export interface CollectLogfile extends Logfile {
+export interface CollectLogfile extends Logfile, HasSitesState {
   type: "CollectLogfile";
   browserOrToolName: BrowserOrToolName;
   preanalyzeArchiveName: string;
