@@ -1,27 +1,27 @@
-import { FlowWithoutSite } from "./Flow";
+import { DetailedFlow } from "./DetailedFlow";
 import {
   expandTrackingResult,
   isCookieSourceLabel,
   isStorageSourceLabel,
 } from "./yuantijs-core";
 
-export const getJalangiTTFlows = (rawFlows: any): FlowWithoutSite[] => {
+export const getJalangiTTFlows = (rawFlows: any): DetailedFlow[] => {
   const trackingResult = expandTrackingResult(rawFlows);
 
-  return trackingResult.flowCollection.flatMap((rawFlow): FlowWithoutSite[] => {
+  return trackingResult.flowCollection.flatMap((rawFlow): DetailedFlow[] => {
     const { taint, sinkLabel } = rawFlow;
 
     if (!isNetworkSinkType(sinkLabel.type)) {
       return [];
     }
 
-    const sink: FlowWithoutSite["sink"] = {
+    const sink: DetailedFlow["sink"] = {
       type: "network",
       targetUrl: sinkLabel.info.url,
     };
 
     return taint
-      .flatMap((label): FlowWithoutSite["source"][] => {
+      .flatMap((label): DetailedFlow["source"][] => {
         if (isCookieSourceLabel(label)) {
           return [{ type: "cookie" }];
         } else if (
@@ -33,7 +33,7 @@ export const getJalangiTTFlows = (rawFlows: any): FlowWithoutSite[] => {
           return [];
         }
       })
-      .map((source): FlowWithoutSite => {
+      .map((source): DetailedFlow => {
         return { source, sink, isExplicit: true };
       });
   });

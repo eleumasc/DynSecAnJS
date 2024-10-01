@@ -1,6 +1,6 @@
 import _ from "lodash";
 
-export const computeRanking = <T>(
+export const computePopularityRanking = <T>(
   elements: T[],
   keysFn: (element: T) => string[]
 ): [string, number][] => {

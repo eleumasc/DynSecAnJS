@@ -1,20 +1,20 @@
-import { FlowWithoutSite } from "./Flow";
+import { DetailedFlow } from "./DetailedFlow";
 
-export const getProjectFoxhoundFlows = (rawFlows: any): FlowWithoutSite[] => {
-  return (rawFlows as TaintReport[]).flatMap((taintReport): FlowWithoutSite[] => {
+export const getProjectFoxhoundFlows = (rawFlows: any): DetailedFlow[] => {
+  return (rawFlows as TaintReport[]).flatMap((taintReport): DetailedFlow[] => {
     const { sink: sinkType, taint } = taintReport;
 
     if (!isNetworkSinkType(sinkType)) {
       return [];
     }
 
-    const sink: FlowWithoutSite["sink"] = {
+    const sink: DetailedFlow["sink"] = {
       type: "network",
       targetUrl: getTargetUrl(taintReport),
     };
 
     return taint
-      .flatMap((taintElement): FlowWithoutSite["source"][] => {
+      .flatMap((taintElement): DetailedFlow["source"][] => {
         const { flow } = taintElement;
         const sourceFlowElement = flow[flow.length - 1];
         const { operation: sourceType, arguments: sourceArguments } =
@@ -27,7 +27,7 @@ export const getProjectFoxhoundFlows = (rawFlows: any): FlowWithoutSite[] => {
           return [];
         }
       })
-      .map((source): FlowWithoutSite => {
+      .map((source): DetailedFlow => {
         return { source, sink, isExplicit: true };
       });
   });
@@ -68,7 +68,7 @@ const getTargetUrl = (taintReport: TaintReport): string => {
   switch (sinkType) {
     case "XMLHttpRequest.open(url)":
     case "fetch.url":
-      return str;
+      return str; // TODO: fix using document.baseURI
     case "XMLHttpRequest.send":
     case "fetch.body":
       return sinkArguments[0];
