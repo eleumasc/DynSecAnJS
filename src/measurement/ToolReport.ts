@@ -35,17 +35,19 @@ export const getToolReport = (
     };
 
     const toolFlows = rs.flatMap((r) => r.flows);
-    const otherFlowsArray = toolSiteReportMatrix
+    const othersFlows = toolSiteReportMatrix
       .map(({ toolSiteReports: rs }) => rs)
       .filter((rsOther) => rsOther !== rs)
-      .map((rsOther) => rsOther.flatMap((r) => r.flows));
-    const sharedAgreementFlows = toolFlows.filter((flow) =>
-      otherFlowsArray.some((otherFlows) =>
-        otherFlows.some((needleFlow) => _.isEqual(needleFlow, flow))
-      )
+      .flatMap((rsOther) => rsOther.flatMap((r) => r.flows));
+    const sharedAgreementFlows = _.intersectionWith(
+      toolFlows,
+      othersFlows,
+      _.isEqual
     );
-    const syntacticalAgreementFlows = toolFlows.filter((flow) =>
-      matchingFlows.some((needleFlow) => _.isEqual(needleFlow, flow))
+    const syntacticalAgreementFlows = _.intersectionWith(
+      toolFlows,
+      matchingFlows,
+      _.isEqual
     );
 
     return {
