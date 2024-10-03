@@ -2,6 +2,7 @@ import { DetailedFlow, getSimplifiedFlows } from "./DetailedFlow";
 import { Flow, uniqFlow } from "./Flow";
 import { getEmptyFlows } from "./EmptyFlows";
 import { getJalangiTTFlows } from "./JalangiTTFlows";
+import { getLinvailTaintFlows } from "./LinvailTaintFlows";
 import { getProjectFoxhoundFlows } from "./ProjectFoxhoundFlows";
 import { ToolName } from "../../collection/ToolName";
 
@@ -23,8 +24,9 @@ const getToolDetailedFlows = (
 ): DetailedFlow[] => {
   switch (toolName) {
     case "IF-Transpiler":
+      return getEmptyFlows(rawFlows);
     case "LinvailTaint":
-      return getEmptyFlows(rawFlows); // TODO: get flows detected by LinvailTaint
+      return getLinvailTaintFlows(rawFlows);
     case "JalangiTT":
       return getJalangiTTFlows(rawFlows);
     case "ProjectFoxhound":

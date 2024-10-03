@@ -1,4 +1,5 @@
 import { Flow } from "./Flow";
+import { propagateMeta } from "../../util/meta";
 
 export interface DetailedFlow {
   source: { type: "cookie" } | { type: "localStorage"; key: string };
@@ -21,14 +22,17 @@ export const simplifyFlow = (
     ...rest
   } = detailedFlow;
 
-  return {
-    ...rest,
-    sink: {
-      type: "network",
-      targetDomain: simplifyTargetUrl(targetUrl),
+  return propagateMeta(
+    {
+      ...rest,
+      sink: {
+        type: "network",
+        targetDomain: simplifyTargetUrl(targetUrl),
+      },
+      site,
     },
-    site,
-  };
+    detailedFlow
+  );
 };
 
 export const getSimplifiedFlows = (

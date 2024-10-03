@@ -37,7 +37,7 @@ const getSiteMatchingFlows = (
     .flatMap((value) =>
       wprArchive.requests
         .map((request) => request.url)
-        .filter((url) => matchValueAndUrl(value, url.toString()))
+        .filter((url) => matchValueAndUrl(value, url))
         .map((url): DetailedFlow => {
           return {
             source: { type: "cookie" },
@@ -52,7 +52,7 @@ const getSiteMatchingFlows = (
     .flatMap((storageItem) =>
       wprArchive.requests
         .map((request) => request.url)
-        .filter((url) => matchValueAndUrl(storageItem.value, url.toString()))
+        .filter((url) => matchValueAndUrl(storageItem.value, url))
         .map((url): DetailedFlow => {
           return {
             source: { type: "localStorage", key: storageItem.name },
@@ -67,13 +67,22 @@ const getSiteMatchingFlows = (
   return uniqFlow(getSimplifiedFlows(detailedFlows, site));
 };
 
-const matchValueAndUrl = (value: string, url: string): boolean => {
+const matchValueAndUrl = (value: string, url: URL): boolean => {
   const THRESHOLD = 8;
   const MAX_LIMIT = 5 * 1024;
+
+  const subValue = stripUnixTimestamps(value);
+  const subUrl = extractUrlPath(url);
+
   return (
-    value.length >= THRESHOLD &&
-    url.length >= THRESHOLD &&
-    value.length <= MAX_LIMIT &&
-    (lcsString(value, url)?.str.length ?? 0) >= THRESHOLD
+    subValue.length >= THRESHOLD &&
+    subUrl.length >= THRESHOLD &&
+    subValue.length <= MAX_LIMIT &&
+    (lcsString(subValue, subUrl)?.str.length ?? 0) >= THRESHOLD
   );
 };
+
+const stripUnixTimestamps = (value: string): string =>
+  value.replace(/1[0-9]{12}/g, "");
+
+const extractUrlPath = (url: URL): string => url.pathname + url.search;

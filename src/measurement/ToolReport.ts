@@ -39,7 +39,7 @@ export const getToolReport = (
       .map(({ toolSiteReports: rs }) => rs)
       .filter((rsOther) => rsOther !== rs)
       .flatMap((rsOther) => rsOther.flatMap((r) => r.flows));
-    const sharedAgreementFlows = _.intersectionWith(
+    const cooperativeAgreementFlows = _.intersectionWith(
       toolFlows,
       othersFlows,
       _.isEqual
@@ -85,10 +85,10 @@ export const getToolReport = (
       ),
       flows: toolFlows.length,
       matchingFlows: matchingFlows.length,
-      sharedAgreementFlows: sharedAgreementFlows.length,
+      cooperativeAgreementFlows: cooperativeAgreementFlows.length,
       syntacticalAgreementFlows: syntacticalAgreementFlows.length,
-      strongAgreementFlows: _.intersection(
-        sharedAgreementFlows,
+      unionAgreementFlows: _.union(
+        cooperativeAgreementFlows,
         syntacticalAgreementFlows
       ).length,
       overhead: avg(
