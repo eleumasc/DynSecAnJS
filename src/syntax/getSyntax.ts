@@ -178,6 +178,7 @@ const analyzeExternalScript =
       })();
       return {
         id: createId(),
+        hash: md5(source),
         type: "external",
         url,
         ...getSyntaxDetail(program),
@@ -196,8 +197,8 @@ const analyzeInlineScript =
     const program = parseJavascript(source, isModule);
     return {
       id: createId(),
-      type: "inline",
       hash: md5(source),
+      type: "inline",
       ...getSyntaxDetail(program),
       ...getModuleDetail(isModule, program, importMap),
       isEventHandler: false,
@@ -210,8 +211,8 @@ const analyzeEventHandler =
     const program = parseJavascript(source, undefined, true);
     return {
       id: createId(),
-      type: "inline",
       hash: md5(source),
+      type: "inline",
       ...getSyntaxDetail(program),
       isModule: false,
       isEventHandler: true,

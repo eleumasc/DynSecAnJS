@@ -16,7 +16,6 @@ export type SyntaxScript = (
     }
   | ({
       type: "inline";
-      hash: string;
     } & (
       | {
           isEventHandler: false;
@@ -30,6 +29,7 @@ export type SyntaxScript = (
   SyntaxDetail &
   ModuleDetail & {
     id: number;
+    hash: string;
   };
 
 export type SyntaxDetail = {
