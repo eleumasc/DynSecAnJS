@@ -108,15 +108,16 @@ export const getToolSiteReport = (
     };
   }
 
-  const getScriptByScriptId = (scriptId: number): SyntaxScript => {
-    const script = scripts.find((script) => script.id === scriptId);
-    assert(script);
-    return script;
+  const tryGetScriptByScriptIds = (scriptIds: number[]): SyntaxScript[] => {
+    return scriptIds.flatMap((scriptId) => {
+      const script = scripts.find((script) => script.id === scriptId);
+      return script ? [script] : [];
+    });
   };
   const errorScriptIds = _.uniq(
     toolReport.scriptTransformLogs.flatMap((logRecord) => logRecord.scriptIds)
   );
-  const errorScripts = errorScriptIds.map(getScriptByScriptId);
+  const errorScripts = tryGetScriptByScriptIds(errorScriptIds);
   const eventuallyCompatibleScripts = _.difference(scripts, errorScripts);
 
   const parseErrorScriptIds: number[] = [];
@@ -136,10 +137,11 @@ export const getToolSiteReport = (
       unclassifiedTransformErrors.push(errorMessage);
     }
   }
-  const parseErrorScripts =
-    _.uniq(parseErrorScriptIds).map(getScriptByScriptId);
-  const analysisErrorScripts = _.uniq(analysisErrorScriptIds).map(
-    getScriptByScriptId
+  const parseErrorScripts = tryGetScriptByScriptIds(
+    _.uniq(parseErrorScriptIds)
+  );
+  const analysisErrorScripts = tryGetScriptByScriptIds(
+    _.uniq(analysisErrorScriptIds)
   );
 
   const { value: toolRunDetails } = toolReport.runsCompletion;

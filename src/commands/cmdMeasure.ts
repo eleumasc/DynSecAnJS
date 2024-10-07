@@ -75,17 +75,22 @@ export const cmdMeasure = (args: MeasureArgs) => {
     )
     .map(({ site, siteResult }): SiteSyntaxEntry => {
       return { site, syntax: siteResult.value };
+    })
+    .map(({ site, syntax }) => {
+      const { scripts } = syntax;
+      return {
+        site,
+        syntax: {
+          ...syntax,
+          scripts: scripts.filter(
+            (script) => !(script.type === "inline" && script.isEventHandler)
+          ),
+        },
+      };
     });
 
   const toolBrowserCollectArchivePairs =
     pairToolBrowserCollectArchives(collectArchives);
-
-  // Syntax measurement
-
-  const syntaxReport = getSyntaxReport(siteSyntaxEntries);
-  console.log(syntaxReport);
-
-  // Tool measurement
 
   const toolSiteReportMatrix = getToolSiteReportMatrix(
     toolBrowserCollectArchivePairs,
@@ -99,6 +104,13 @@ export const cmdMeasure = (args: MeasureArgs) => {
       matchingFlows.map((flow) => ({ ...flow, meta: getMeta(flow) }))
     )
   );
+
+  // Syntax measurement
+
+  const syntaxReport = getSyntaxReport(siteSyntaxEntries, toolSiteReportMatrix);
+  console.log(syntaxReport);
+
+  // Tool measurement
 
   const toolReport = getToolReport(toolSiteReportMatrix, matchingFlows);
   console.log(toolReport);

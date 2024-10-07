@@ -106,6 +106,10 @@ export const getToolReport = (
         rs.flatMap((r) => r.unclassifiedTransformErrors ?? [])
       ),
       transparencyAnalyzable: rsTransparencyAnalyzable.length,
+      executionTraceNotFound: count(
+        rs,
+        (r) => !r.transparencyAnalyzable && r.executionTraceNotFound === true
+      ),
       nonTransparent: count(rsTransparencyAnalyzable, (r) => !r.transparent),
       transparent: count(rsTransparencyAnalyzable, (r) => r.transparent),
       transparencyIssues: _.countBy(

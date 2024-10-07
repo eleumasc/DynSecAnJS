@@ -19,16 +19,15 @@ export const getLibraryRanking = (
     "hash"
   );
 
-  const toolErrorExternalScriptEntries = toolSiteReportMatrix.map(
-    ({ toolName, toolSiteReports: rs }) => {
+  const toolEventuallyCompatibleExternalScriptsEntries =
+    toolSiteReportMatrix.map(({ toolName, toolSiteReports: rs }) => {
       return {
         toolName,
-        errorExternalScripts: rs
-          .flatMap((r) => r.errorScripts ?? [])
+        eventuallyCompatibleExternalScripts: rs
+          .flatMap((r) => r.eventuallyCompatibleScripts ?? [])
           .filter(isScriptExternal),
       };
-    }
-  );
+    });
 
   return _.sortBy(Object.values(scriptGroups), (scripts) => scripts.length)
     .reverse()
@@ -36,10 +35,11 @@ export const getLibraryRanking = (
       return {
         library: scripts[0].url,
         usage: scripts.length,
-        compatibleTools: toolErrorExternalScriptEntries
+        compatibleTools: toolEventuallyCompatibleExternalScriptsEntries
           .filter(
-            ({ errorExternalScripts }) =>
-              _.intersection(scripts, errorExternalScripts).length === 0
+            ({ eventuallyCompatibleExternalScripts }) =>
+              _.intersection(scripts, eventuallyCompatibleExternalScripts)
+                .length > 0
           )
           .map(({ toolName }) => toolName),
       };
