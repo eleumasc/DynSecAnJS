@@ -42,7 +42,10 @@ export const cmdMeasure = (args: MeasureArgs) => {
         return {
           type: "MeasureLogfile",
           preanalyzeArchiveName: parentArchiveName,
-          collectArchiveNames: requireArgs.collectArchivePaths,
+          collectArchiveNames: requireArgs.collectArchivePaths.map(
+            (collectArchivePath) =>
+              path.dirname(path.resolve(collectArchivePath))
+          ),
         };
       }
     )
