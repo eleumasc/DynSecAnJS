@@ -1,7 +1,9 @@
+import path from "path";
 import { Args } from "../archive/Args";
 import { CollectArchive } from "../archive/CollectArchive";
 import { getLibraryRanking } from "../measurement/LibraryRanking";
 import { getMatchingFlows } from "../measurement/flow/MatchingFlows";
+import { getMeta } from "../util/meta";
 import { getSyntaxReport } from "../measurement/SyntaxReport";
 import { getToolReport } from "../measurement/ToolReport";
 import { getToolSiteReportMatrix } from "../measurement/ToolSiteReportMatrix";
@@ -10,6 +12,7 @@ import { MeasureArchive, MeasureLogfile } from "../archive/MeasureArchive";
 import { pairToolBrowserCollectArchives } from "../measurement/ToolBrowserCollectArchivePair";
 import { RecordArchive } from "../archive/RecordArchive";
 import { SiteSyntaxEntry } from "../measurement/SiteSyntaxEntry";
+import { writeFileSync } from "fs";
 import {
   PreanalyzeArchive,
   PreanalyzeReport,
@@ -90,6 +93,12 @@ export const cmdMeasure = (args: MeasureArgs) => {
   );
 
   const matchingFlows = getMatchingFlows(siteSyntaxEntries, recordArchive);
+  writeFileSync(
+    path.join(archive.archivePath, "matchingFlows.json"),
+    JSON.stringify(
+      matchingFlows.map((flow) => ({ ...flow, meta: getMeta(flow) }))
+    )
+  );
 
   const toolReport = getToolReport(toolSiteReportMatrix, matchingFlows);
   console.log(toolReport);

@@ -7,27 +7,17 @@ export const getLibraryRanking = (
   siteSyntaxEntries: SiteSyntaxEntry[],
   toolSiteReportMatrix: ToolSiteReportMatrix
 ) => {
-  interface Cluster {
-    key: string;
-    scripts: SyntaxScript[];
-  }
-
   const isScriptExternal = (
     script: SyntaxScript
   ): script is typeof script & { type: "external" } =>
     script.type === "external";
 
-  const clusterMap = new Map<string, SyntaxScript[]>();
-  for (const { syntax } of siteSyntaxEntries) {
-    const externalScripts = syntax.scripts.filter(isScriptExternal);
-    for (const script of externalScripts) {
-      const { url: scriptUrl } = script;
-      clusterMap.set(scriptUrl, [...(clusterMap.get(scriptUrl) ?? []), script]);
-    }
-  }
-  const clusters = [...clusterMap].map(([url, scripts]): Cluster => {
-    return { key: url, scripts };
-  });
+  const scriptGroups = _.groupBy(
+    siteSyntaxEntries
+      .flatMap(({ syntax }) => syntax.scripts)
+      .filter(isScriptExternal),
+    "hash"
+  );
 
   const toolErrorExternalScriptEntries = toolSiteReportMatrix.map(
     ({ toolName, toolSiteReports: rs }) => {
@@ -40,13 +30,12 @@ export const getLibraryRanking = (
     }
   );
 
-  return _.sortBy(clusters, (cluster) => cluster.scripts.length)
+  return _.sortBy(Object.values(scriptGroups), (scripts) => scripts.length)
     .reverse()
-    .map(({ key, scripts }) => {
+    .map((scripts) => {
       return {
-        library: key,
+        library: scripts[0].url,
         usage: scripts.length,
-        astNodesCountArray: scripts.map((script) => script.astNodesCount),
         compatibleTools: toolErrorExternalScriptEntries
           .filter(
             ({ errorExternalScripts }) =>

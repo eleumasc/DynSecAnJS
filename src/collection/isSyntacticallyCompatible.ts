@@ -4,7 +4,7 @@ import { isBrowserName } from "./BrowserName";
 
 export const isSyntacticallyCompatible = (
   browserOrToolName: BrowserOrToolName,
-  siteESVersion: ESVersion
+  otherESVersion: ESVersion
 ): boolean => {
   const browserName = isBrowserName(browserOrToolName)
     ? browserOrToolName
@@ -12,7 +12,7 @@ export const isSyntacticallyCompatible = (
 
   switch (browserName) {
     case "Chromium-ES5":
-      return lessOrEqualToESVersion(siteESVersion, ESVersion.ES5);
+      return lessOrEqualToESVersion(otherESVersion, ESVersion.ES5);
     case "Firefox":
       return true;
   }

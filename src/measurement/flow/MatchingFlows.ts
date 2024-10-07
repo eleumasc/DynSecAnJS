@@ -6,6 +6,7 @@ import { Flow, uniqFlow } from "./Flow";
 import { isSuccess } from "../../util/Completion";
 import { lcsString } from "../../util/lcsString";
 import { RecordArchive, StorageState } from "../../archive/RecordArchive";
+import { setMeta } from "../../util/meta";
 import { SiteSyntaxEntry } from "../SiteSyntaxEntry";
 
 export const getMatchingFlows = (
@@ -37,13 +38,22 @@ const getSiteMatchingFlows = (
     .flatMap((value) =>
       wprArchive.requests
         .map((request) => request.url)
-        .filter((url) => matchValueAndUrl(value, url))
-        .map((url): DetailedFlow => {
-          return {
-            source: { type: "cookie" },
-            sink: { type: "network", targetUrl: url.toString() },
-            isExplicit: true,
-          };
+        .flatMap((url): DetailedFlow[] => {
+          const match = matchValueAndUrl(value, url);
+          if (match !== undefined) {
+            return [
+              setMeta(
+                {
+                  source: { type: "cookie" },
+                  sink: { type: "network", targetUrl: url.toString() },
+                  isExplicit: true,
+                },
+                { match }
+              ),
+            ];
+          } else {
+            return [];
+          }
         })
     );
 
@@ -52,13 +62,22 @@ const getSiteMatchingFlows = (
     .flatMap((storageItem) =>
       wprArchive.requests
         .map((request) => request.url)
-        .filter((url) => matchValueAndUrl(storageItem.value, url))
-        .map((url): DetailedFlow => {
-          return {
-            source: { type: "localStorage", key: storageItem.name },
-            sink: { type: "network", targetUrl: url.toString() },
-            isExplicit: true,
-          };
+        .flatMap((url): DetailedFlow[] => {
+          const match = matchValueAndUrl(storageItem.value, url);
+          if (match !== undefined) {
+            return [
+              setMeta(
+                {
+                  source: { type: "localStorage", key: storageItem.name },
+                  sink: { type: "network", targetUrl: url.toString() },
+                  isExplicit: true,
+                },
+                { match }
+              ),
+            ];
+          } else {
+            return [];
+          }
         })
     );
 
@@ -67,19 +86,24 @@ const getSiteMatchingFlows = (
   return uniqFlow(getSimplifiedFlows(detailedFlows, site));
 };
 
-const matchValueAndUrl = (value: string, url: URL): boolean => {
+const matchValueAndUrl = (value: string, url: URL): string | undefined => {
   const THRESHOLD = 8;
   const MAX_LIMIT = 5 * 1024;
 
   const subValue = stripUnixTimestamps(value);
   const subUrl = extractUrlPath(url);
 
-  return (
+  if (
     subValue.length >= THRESHOLD &&
     subUrl.length >= THRESHOLD &&
-    subValue.length <= MAX_LIMIT &&
-    (lcsString(subValue, subUrl)?.str.length ?? 0) >= THRESHOLD
-  );
+    subValue.length <= MAX_LIMIT
+  ) {
+    const match = lcsString(subValue, subUrl);
+    if (match && match.str.length >= THRESHOLD) {
+      return match.str;
+    }
+  }
+  return undefined;
 };
 
 const stripUnixTimestamps = (value: string): string =>

@@ -3,6 +3,7 @@ import { avg } from "../util/math";
 import { CompatibilityIssue } from "../measurement/CompatibilityIssue";
 import { count } from "../measurement/util";
 import { Flow } from "../measurement/flow/Flow";
+import { getMeta, setMeta } from "../util/meta";
 import { ToolSiteReportMatrix } from "../measurement/ToolSiteReportMatrix";
 
 export const getToolReport = (
@@ -17,22 +18,52 @@ export const getToolReport = (
         transparencyAnalyzable: true;
       } => r.transparencyAnalyzable
     );
-    const rsKnown = rs.filter((r) => r.eventuallyCompatibleCount !== null);
+    const rsKnown = rs.filter((r) => r.eventuallyCompatibleScripts !== null);
 
-    const scoreEventualCompatibility = (
-      intersectSyntactical: boolean = false
-    ): number => {
-      return (
-        _.sum(
-          _.map(
-            intersectSyntactical
-              ? rsKnown.filter((r) => r.syntacticallyCompatible)
-              : rsKnown,
-            (r) => r.eventuallyCompatibleCount as number
+    const rsScriptsTotal = _.uniqBy(
+      rs.flatMap((r) => r.scripts),
+      "hash"
+    ).length;
+    const syntacticallyCompatibleScore =
+      _.uniqBy(
+        rs.flatMap((r) => r.syntacticallyCompatibleScripts),
+        "hash"
+      ).length / rsScriptsTotal;
+    const rsKnownScriptsTotal = _.uniqBy(
+      rsKnown.flatMap((r) => r.scripts),
+      "hash"
+    ).length;
+    const compatibleScore =
+      _.uniqBy(
+        rsKnown.flatMap((r) =>
+          _.intersection(
+            r.eventuallyCompatibleScripts,
+            r.syntacticallyCompatibleScripts
           )
-        ) / _.sum(_.map(rsKnown, (r) => r.eventuallyCompatibleTotal))
-      );
-    };
+        ),
+        "hash"
+      ).length / rsKnownScriptsTotal;
+    const eventuallyCompatibleScore =
+      _.uniqBy(
+        rsKnown.flatMap((r) => r.eventuallyCompatibleScripts),
+        "hash"
+      ).length / rsKnownScriptsTotal;
+    const crashErrorCount = count(
+      rs,
+      (r) => r.compatibilityIssue === CompatibilityIssue.CrashError
+    );
+    const transpileErrorCount = count(
+      rs,
+      (r) => r.compatibilityIssue === CompatibilityIssue.TranspileError
+    );
+    const parseErrorCount = _.uniqBy(
+      rsKnown.flatMap((r) => r.parseErrorScripts),
+      "hash"
+    ).length;
+    const analysisErrorCount = _.uniqBy(
+      rsKnown.flatMap((r) => r.analysisErrorScripts),
+      "hash"
+    ).length;
 
     const toolFlows = rs.flatMap((r) => r.flows);
     const othersFlows = toolSiteReportMatrix
@@ -43,35 +74,34 @@ export const getToolReport = (
       toolFlows,
       othersFlows,
       _.isEqual
+    ).map((flow) =>
+      setMeta(flow, { ...getMeta(flow), cooperativeAgreement: true })
     );
     const syntacticalAgreementFlows = _.intersectionWith(
       toolFlows,
       matchingFlows,
       _.isEqual
+    ).map((flow) =>
+      setMeta(flow, { ...getMeta(flow), syntacticalAgreement: true })
+    );
+    const unionAgreementFlows = _.union(
+      cooperativeAgreementFlows,
+      syntacticalAgreementFlows
     );
 
     return {
       toolName,
       all: rs.length,
-      syntacticallyCompatibleScore:
-        count(rs, (r) => r.syntacticallyCompatible) / rs.length,
-      compatibleScore: scoreEventualCompatibility(true),
-      eventuallyCompatibleScore: scoreEventualCompatibility(),
-      unknownCompatible: count(
-        rs,
-        (r) => r.syntacticallyCompatible && r.eventuallyCompatibleCount === null
-      ),
-      unknownEventuallyCompatible: count(
-        rs,
-        (r) => r.eventuallyCompatibleCount === null
-      ),
-      compatibilityIssues: _.countBy(
-        rs.filter(
-          (r): r is typeof r & { compatibilityIssue: CompatibilityIssue } =>
-            Boolean(r.compatibilityIssue)
-        ),
-        (r) => r.compatibilityIssue
-      ),
+      syntacticallyCompatibleScore,
+      compatibleScore,
+      eventuallyCompatibleScore,
+      unknowns: count(rs, (r) => r.eventuallyCompatibleScripts === null),
+      compatibilityIssues: {
+        [CompatibilityIssue.CrashError]: crashErrorCount,
+        [CompatibilityIssue.TranspileError]: transpileErrorCount,
+        [CompatibilityIssue.ParseError]: parseErrorCount,
+        [CompatibilityIssue.AnalysisError]: analysisErrorCount,
+      },
       unclassifiedTransformErrors: _.uniq(
         rs.flatMap((r) => r.unclassifiedTransformErrors ?? [])
       ),
@@ -87,16 +117,21 @@ export const getToolReport = (
       matchingFlows: matchingFlows.length,
       cooperativeAgreementFlows: cooperativeAgreementFlows.length,
       syntacticalAgreementFlows: syntacticalAgreementFlows.length,
-      unionAgreementFlows: _.union(
-        cooperativeAgreementFlows,
-        syntacticalAgreementFlows
-      ).length,
+      unionAgreementFlows: unionAgreementFlows.length,
       overhead: avg(
         rsTransparencyAnalyzable
           .filter((r): r is typeof r & { transparent: true } => r.transparent)
           .map((r) => r.overhead)
       ),
       // _flows: toolFlows,
+      _unionAgreementFlows: unionAgreementFlows.map((flow) => {
+        return { ...flow, meta: getMeta(flow) };
+      }),
+      _falsePositiveFlows: _.difference(toolFlows, unionAgreementFlows).map(
+        (flow) => {
+          return { ...flow, meta: getMeta(flow) };
+        }
+      ),
     };
   });
 };

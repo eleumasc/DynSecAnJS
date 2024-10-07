@@ -1,5 +1,5 @@
 import { Flow } from "./Flow";
-import { propagateMeta } from "../../util/meta";
+import { getMeta, setMeta } from "../../util/meta";
 
 export interface DetailedFlow {
   source: { type: "cookie" } | { type: "localStorage"; key: string };
@@ -22,7 +22,7 @@ export const simplifyFlow = (
     ...rest
   } = detailedFlow;
 
-  return propagateMeta(
+  return setMeta(
     {
       ...rest,
       sink: {
@@ -31,7 +31,10 @@ export const simplifyFlow = (
       },
       site,
     },
-    detailedFlow
+    {
+      ...getMeta(detailedFlow),
+      targetUrl,
+    }
   );
 };
 

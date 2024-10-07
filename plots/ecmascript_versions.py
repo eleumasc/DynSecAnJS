@@ -4,16 +4,17 @@ from core import output, syntax_report
 
 plt.rcParams.update({"font.size": 12})
 
-keys = [tool_data[0] for tool_data in syntax_report]
-values = [tool_data[1] for tool_data in syntax_report]
+version_ranking = syntax_report["versionRankingScripts"]
+keys = [row[0] for row in version_ranking]
+values = [row[1] for row in version_ranking]
 
 total = sum(values)
 percentages = [(value / total) * 100 for value in values]
 
 plt.bar(keys, values)
 plt.xlabel("ECMAScript version")
-plt.ylabel("Number of websites")
-plt.title("Website distribution with respect to ECMAScript versions")
+plt.ylabel("Number of scripts")
+plt.title("Script distribution with respect to ECMAScript versions")
 plt.xticks(rotation=45, ha="right")
 
 for i, value in enumerate(values):

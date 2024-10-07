@@ -22,10 +22,12 @@ import {
 
 export type ToolSiteReport = {
   site: string;
-  syntacticallyCompatible: boolean;
-  eventuallyCompatibleTotal: number;
-  eventuallyCompatibleCount: number | null;
+  scripts: SyntaxScript[];
+  syntacticallyCompatibleScripts: SyntaxScript[];
+  eventuallyCompatibleScripts: SyntaxScript[] | null;
   errorScripts: SyntaxScript[] | null;
+  parseErrorScripts: SyntaxScript[] | null;
+  analysisErrorScripts: SyntaxScript[] | null;
   compatibilityIssue?: CompatibilityIssue;
   unclassifiedTransformErrors?: string[];
   flows: Flow[];
@@ -65,17 +67,19 @@ export const getToolSiteReport = (
 ): ToolSiteReport => {
   // Compatibility & Security
 
-  const eventuallyCompatibleTotal = syntax.scripts.length;
+  const scripts = syntax.scripts;
+  const syntacticallyCompatibleScripts = scripts.filter((script) =>
+    isSyntacticallyCompatible(toolName, script.minimumESVersion)
+  );
+
   const badCompatibilityBase = {
     site,
-    // TODO: implement syntacticallyCompatible* similarly to eventuallyCompatible*
-    syntacticallyCompatible: isSyntacticallyCompatible(
-      toolName,
-      syntax.minimumESVersion
-    ),
-    eventuallyCompatibleTotal,
-    eventuallyCompatibleCount: 0,
+    scripts,
+    syntacticallyCompatibleScripts,
+    eventuallyCompatibleScripts: [] as SyntaxScript[],
     errorScripts: [] as SyntaxScript[],
+    parseErrorScripts: [] as SyntaxScript[],
+    analysisErrorScripts: [] as SyntaxScript[],
     flows: [] as Flow[],
     transparencyAnalyzable: false as false,
   };
@@ -104,15 +108,39 @@ export const getToolSiteReport = (
     };
   }
 
+  const getScriptByScriptId = (scriptId: number): SyntaxScript => {
+    const script = scripts.find((script) => script.id === scriptId);
+    assert(script);
+    return script;
+  };
   const errorScriptIds = _.uniq(
     toolReport.scriptTransformLogs.flatMap((logRecord) => logRecord.scriptIds)
   );
-  const errorScripts = errorScriptIds.map((scriptId) => {
-    const script = syntax.scripts.find((script) => script.id === scriptId);
-    assert(script);
-    return script;
-  });
-  const eventuallyCompatibleCount = syntax.scripts.length - errorScripts.length;
+  const errorScripts = errorScriptIds.map(getScriptByScriptId);
+  const eventuallyCompatibleScripts = _.difference(scripts, errorScripts);
+
+  const parseErrorScriptIds: number[] = [];
+  const analysisErrorScriptIds: number[] = [];
+  const unclassifiedTransformErrors: string[] = [];
+  for (const logRecord of toolReport.scriptTransformLogs) {
+    const involvedScriptIds = logRecord.scriptIds;
+    const errorMessage = logRecord.error.message;
+    const compatibilityIssue = findParseOrAnalysisError(toolName, [
+      errorMessage,
+    ]);
+    if (compatibilityIssue === CompatibilityIssue.ParseError) {
+      parseErrorScriptIds.push(...involvedScriptIds);
+    } else if (compatibilityIssue === CompatibilityIssue.AnalysisError) {
+      analysisErrorScriptIds.push(...involvedScriptIds);
+    } else {
+      unclassifiedTransformErrors.push(errorMessage);
+    }
+  }
+  const parseErrorScripts =
+    _.uniq(parseErrorScriptIds).map(getScriptByScriptId);
+  const analysisErrorScripts = _.uniq(analysisErrorScriptIds).map(
+    getScriptByScriptId
+  );
 
   const { value: toolRunDetails } = toolReport.runsCompletion;
 
@@ -122,33 +150,13 @@ export const getToolSiteReport = (
     )
   );
 
-  let transformErrorsDetail = null;
-  const transformErrors = toolReport.scriptTransformLogs.flatMap(
-    (logRecord) => logRecord.error.message
-  );
-  if (transformErrors.length > 0) {
-    const compatibilityIssue = findParseOrAnalysisError(
-      toolName,
-      transformErrors
-    );
-    if (compatibilityIssue) {
-      transformErrorsDetail = {
-        compatibilityIssue,
-      };
-    } else {
-      transformErrorsDetail = {
-        compatibilityIssue: CompatibilityIssue.UnknownError,
-        unclassifiedTransformErrors: transformErrors,
-      };
-    }
-  }
-
   const compatibilityBase = {
     ...badCompatibilityBase,
-    eventuallyCompatibleCount,
+    eventuallyCompatibleScripts,
     errorScripts,
+    parseErrorScripts,
+    analysisErrorScripts,
     flows,
-    ...transformErrorsDetail,
   };
 
   if (
@@ -156,8 +164,10 @@ export const getToolSiteReport = (
   ) {
     return {
       ...compatibilityBase,
-      eventuallyCompatibleCount: null,
+      eventuallyCompatibleScripts: null,
       errorScripts: null,
+      parseErrorScripts: null,
+      analysisErrorScripts: null,
     };
   }
 
@@ -172,7 +182,7 @@ export const getToolSiteReport = (
   // understand the transparency of analysis in websites that tools can analyze
   // in some measure, we discard from transparency evaluation those websites
   // which the tool is completely unable to analyze.
-  if (eventuallyCompatibleCount === 0) {
+  if (eventuallyCompatibleScripts.length === 0) {
     return { ...transparencyBase };
   }
 

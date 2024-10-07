@@ -56,7 +56,7 @@ for i, rect_group in enumerate(rects):
         )
 
 ax.set_xlabel("Tool")
-ax.set_ylabel("Number of websites")
+ax.set_ylabel("Number of occurrences")
 ax.set_title("Eventual compatibility issues")
 ax.set_xticks(x + 2 * bar_width)
 ax.set_xticklabels(issues.keys(), rotation=45, ha="right")
