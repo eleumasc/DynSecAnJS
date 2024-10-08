@@ -1,29 +1,27 @@
-export const delay = (ms: number): Promise<void> => {
+export const delay = (timeoutMs: number): Promise<void> => {
   return new Promise((resolve) => {
-    setTimeout(resolve, ms);
+    setTimeout(resolve, timeoutMs);
   });
 };
 
 export const timeBomb = async <T>(
-  promise: Promise<T>,
-  ms: number
+  callback: () => Promise<T>,
+  timeoutMs: number
 ): Promise<T> => {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => {
-      const timeoutId = setTimeout(() => {
-        reject(new TimeoutError(`Promise timed out after ${ms} ms`));
-      }, ms);
+  let promise: Promise<void>;
 
-      promise.then(
-        () => {
-          clearTimeout(timeoutId);
-        },
-        (err) => {
-          clearTimeout(timeoutId);
-          reject(err);
-        }
-      );
+  return Promise.race([
+    new Promise<T>((res, rej) => {
+      promise = callback().then(res, rej);
+    }),
+    new Promise<T>((_, rej) => {
+      const timeoutId = setTimeout(() => {
+        rej(new TimeoutError(`Promise timed out after ${timeoutMs} ms`));
+      }, timeoutMs);
+
+      promise!.finally(() => {
+        clearTimeout(timeoutId);
+      });
     }),
   ]);
 };

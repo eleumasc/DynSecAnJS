@@ -81,7 +81,7 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
     } catch {}
     const executionTime = unixTime() - startTime;
     const monitorState = (await timeBomb(
-      page.evaluate(`$__monitor()`),
+      () => page.evaluate(`$__monitor()`),
       15_000
     )) as MonitorState | undefined;
     assert(monitorState);
