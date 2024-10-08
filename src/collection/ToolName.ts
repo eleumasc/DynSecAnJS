@@ -6,7 +6,8 @@ export type ToolName =
   | "GIFC"
   | "LinvailTaint"
   | "JalangiTT"
-  | "ProjectFoxhound";
+  | "ProjectFoxhound"
+  | "PanoptiChrome";
 
 export type BrowserOrToolName = BrowserName | ToolName;
 
@@ -18,6 +19,7 @@ export const isToolName = (value: any): value is ToolName => {
     case "LinvailTaint":
     case "JalangiTT":
     case "ProjectFoxhound":
+    case "PanoptiChrome":
       return true;
     default:
       return false;
@@ -34,6 +36,8 @@ export const getBrowserNameByToolName = (toolName: ToolName): BrowserName => {
       return "Chromium-ES5";
     case "ProjectFoxhound":
       return "Firefox";
+    case "PanoptiChrome":
+      return "Chromium";
     default:
       throw new Error(`Unknown tool: ${toolName}`);
   }

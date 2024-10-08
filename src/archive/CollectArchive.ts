@@ -16,6 +16,7 @@ export interface CollectReport {
   transpiled: boolean;
   scriptTransformLogs: ScriptTransformErrorLog[];
   runsCompletion: Completion<RunDetail[]>;
+  crashRawFlows?: string[];
 }
 
 export interface RunDetail {

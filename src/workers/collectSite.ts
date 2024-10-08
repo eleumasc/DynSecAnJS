@@ -11,6 +11,7 @@ import { jalangiPath } from "../env";
 import { MonitorState } from "../collection/MonitorBundle";
 import { Page } from "playwright";
 import { PreanalyzeArchive } from "../archive/PreanalyzeArchive";
+import { readDirFiles } from "../util/readDirFiles";
 import { RecordArchive } from "../archive/RecordArchive";
 import { retryOnce } from "../util/retryOnce";
 import { SiteResult } from "../archive/Archive";
@@ -23,6 +24,7 @@ import { transpile } from "../collection/transpile";
 import { unixTime } from "../util/time";
 import { useBrowserOrToolPage } from "../collection/BrowserOrToolPage";
 import { useForwardedWebPageReplay } from "../tools/WebPageReplay";
+import { useTempDirectory } from "../util/TempDirectory";
 import { useTransformedWPRArchive } from "../collection/TransformedWPRArchive";
 import {
   ScriptTransformErrorLog,
@@ -110,6 +112,7 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
           path.resolve(jalangiPath, "src", "js", "runtime", "JalangiTT.js")
         );
       case "ProjectFoxhound":
+      case "PanoptiChrome":
         return null;
       default:
         throw new Error(`Unsupported tool for transform: ${toolName}`);
@@ -143,6 +146,8 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
       scriptTransformLogs = toolScriptTransformLogs;
     }
 
+    let crashRawFlows: string[] = [];
+
     const runsCompletion = await useTransformedWPRArchive(
       originalWPRArchivePath,
       originalWPRArchive,
@@ -159,12 +164,30 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
                   archivePath: wprArchivePath,
                   injectScripts: [bundlePath],
                 },
-                (forwardProxy) =>
-                  useBrowserOrToolPage(
+                (forwardProxy) => {
+                  if (browserOrToolName === "PanoptiChrome") {
+                    return useTempDirectory((panoptiChromeLogsPath) => {
+                      try {
+                        return useBrowserOrToolPage(
+                          browserOrToolName,
+                          { forwardProxy, panoptiChromeLogsPath },
+                          navigate
+                        );
+                      } finally {
+                        crashRawFlows = [
+                          ...crashRawFlows,
+                          ...readDirFiles(panoptiChromeLogsPath),
+                        ];
+                      }
+                    });
+                  }
+
+                  return useBrowserOrToolPage(
                     browserOrToolName,
                     { forwardProxy },
                     navigate
-                  )
+                  );
+                }
               )
             );
 
@@ -179,6 +202,7 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
       transpiled,
       scriptTransformLogs,
       runsCompletion,
+      crashRawFlows,
     };
   });
 

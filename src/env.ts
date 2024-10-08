@@ -37,8 +37,7 @@ export const ifTranspilerPath = path.join(toolsPath, "if-transpiler");
 export const jalangiPath = path.join(toolsPath, "jalangi2");
 export const gifcPath = path.join(toolsPath, "gifc");
 export const linvailTaintPath = path.join(toolsPath, "linvail-taint");
-export const geckoDriverPath = toolsPath;
 export const projectFoxhoundPath = path.join(toolsPath, "foxhound");
-export const firefoxPath = path.join(toolsPath, "firefox");
+export const panoptiChromePath = path.join(toolsPath, "panoptichrome");
 
 export const localhost = "127.0.0.1";

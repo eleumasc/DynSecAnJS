@@ -28,6 +28,7 @@ function selectExport() {
     case "ProjectFoxhound":
       return collectFlowsFromProjectFoxhound;
     case "JEST":
+    case "PanoptiChrome":
     default:
       return function () {
         return null;

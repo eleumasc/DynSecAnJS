@@ -1,7 +1,8 @@
+import assert from "assert";
 import path from "path";
 import { chromium, firefox, Page } from "playwright";
 import { ForwardProxy } from "../util/ForwardProxy";
-import { headless, projectFoxhoundPath } from "../env";
+import { headless, panoptiChromePath, projectFoxhoundPath } from "../env";
 import { usePlaywrightPage } from "./PlaywrightPage";
 import {
   BrowserOrToolName,
@@ -11,7 +12,10 @@ import {
 
 export const useBrowserOrToolPage = async <T>(
   browserOrToolName: BrowserOrToolName,
-  options: { forwardProxy?: ForwardProxy },
+  options: {
+    forwardProxy?: ForwardProxy;
+    panoptiChromeLogsPath?: string;
+  },
   use: (page: Page) => Promise<T>
 ): Promise<T> => {
   const { forwardProxy } = options;
@@ -22,6 +26,7 @@ export const useBrowserOrToolPage = async <T>(
 
   const browserLauncher = (() => {
     switch (browserName) {
+      case "Chromium":
       case "Chromium-ES5":
         return chromium;
       case "Firefox":
@@ -46,6 +51,33 @@ export const useBrowserOrToolPage = async <T>(
         browserLauncher.launch({
           ...defaultLaunchOptions,
           executablePath: path.join(projectFoxhoundPath, "foxhound"),
+        });
+    } else if (browserOrToolName === "PanoptiChrome") {
+      const { panoptiChromeLogsPath } = options;
+      assert(panoptiChromeLogsPath);
+      return () =>
+        browserLauncher.launch({
+          ...defaultLaunchOptions,
+          executablePath: path.join(panoptiChromePath, "chrome"),
+          args: [
+            "--incognito",
+            "--no-sandbox",
+            "--no-default-browser-check",
+            "--disable-translate",
+            "--disable-hang-monitor",
+            "--disable-gpu",
+            '--js-flags="--jitless"',
+            "--disable-client-side-phishing-detection",
+            "--disable-extensions",
+            "--disable-ipc-flooding-protection",
+            "--disable-renderer-backgrounding",
+            "--disable-features=BackForwardCache",
+            "--disable-breakpad",
+            "--disable-component-extensions-with-background-page",
+          ],
+          env: {
+            LOG_DIR: panoptiChromeLogsPath,
+          },
         });
     }
 
