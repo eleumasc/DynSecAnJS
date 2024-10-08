@@ -166,9 +166,9 @@ const collectSite = async (args: CollectSiteArgs): Promise<void> => {
                 },
                 (forwardProxy) => {
                   if (browserOrToolName === "PanoptiChrome") {
-                    return useTempDirectory((panoptiChromeLogsPath) => {
+                    return useTempDirectory(async (panoptiChromeLogsPath) => {
                       try {
-                        return useBrowserOrToolPage(
+                        return await useBrowserOrToolPage(
                           browserOrToolName,
                           { forwardProxy, panoptiChromeLogsPath },
                           navigate
