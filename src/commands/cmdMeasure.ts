@@ -26,6 +26,7 @@ export type MeasureArgs = Args<
   {
     preanalyzeArchivePath: string;
     collectArchivePaths: string[];
+    enableMatchingFlows: boolean;
   },
   {}
 >;
@@ -43,9 +44,9 @@ export const cmdMeasure = (args: MeasureArgs) => {
           type: "MeasureLogfile",
           preanalyzeArchiveName: parentArchiveName,
           collectArchiveNames: requireArgs.collectArchivePaths.map(
-            (collectArchivePath) =>
-              path.dirname(path.resolve(collectArchivePath))
+            (collectArchivePath) => path.basename(collectArchivePath)
           ),
+          enableMatchingFlows: requireArgs.enableMatchingFlows,
         };
       }
     )
@@ -100,13 +101,17 @@ export const cmdMeasure = (args: MeasureArgs) => {
     siteSyntaxEntries
   );
 
-  const matchingFlows = getMatchingFlows(siteSyntaxEntries, recordArchive);
-  writeFileSync(
-    path.join(archive.archivePath, "matchingFlows.json"),
-    JSON.stringify(
-      matchingFlows.map((flow) => ({ ...flow, meta: getMeta(flow) }))
-    )
-  );
+  const matchingFlows = archive.logfile.enableMatchingFlows
+    ? getMatchingFlows(siteSyntaxEntries, recordArchive)
+    : undefined;
+  if (matchingFlows) {
+    writeFileSync(
+      path.join(archive.archivePath, "matchingFlows.json"),
+      JSON.stringify(
+        matchingFlows.map((flow) => ({ ...flow, meta: getMeta(flow) }))
+      )
+    );
+  }
 
   // Syntax measurement
 

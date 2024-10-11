@@ -8,7 +8,7 @@ import { ToolSiteReportMatrix } from "../measurement/ToolSiteReportMatrix";
 
 export const getToolReport = (
   toolSiteReportMatrix: ToolSiteReportMatrix,
-  matchingFlows: Flow[]
+  matchingFlows?: Flow[]
 ) => {
   return toolSiteReportMatrix.map(({ toolName, toolSiteReports: rs }) => {
     const rsTransparencyAnalyzable = rs.filter(
@@ -79,7 +79,7 @@ export const getToolReport = (
     );
     const syntacticalAgreementFlows = _.intersectionWith(
       toolFlows,
-      matchingFlows,
+      matchingFlows ?? [],
       _.isEqual
     ).map((flow) =>
       setMeta(flow, { ...getMeta(flow), syntacticalAgreement: true })
@@ -118,7 +118,7 @@ export const getToolReport = (
           .flatMap((r) => r.jsErrors)
       ),
       flows: toolFlows.length,
-      matchingFlows: matchingFlows.length,
+      matchingFlows: matchingFlows?.length,
       cooperativeAgreementFlows: cooperativeAgreementFlows.length,
       syntacticalAgreementFlows: syntacticalAgreementFlows.length,
       unionAgreementFlows: unionAgreementFlows.length,
