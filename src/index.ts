@@ -163,10 +163,7 @@ yargs(process.argv.slice(2))
         .option("collect", {
           type: "array",
         })
-        .option("disableMatchingFlows", {
-          type: "boolean",
-          default: false,
-        });
+        .boolean("disableMatchingFlows");
     },
     ({
       preanalyzeArchivePath,
@@ -178,7 +175,7 @@ yargs(process.argv.slice(2))
         requireArgs: {
           preanalyzeArchivePath,
           collectArchivePaths: collectArchivePaths?.map(String) ?? [],
-          enableMatchingFlows: !disableMatchingFlows,
+          enableMatchingFlows: !(disableMatchingFlows ?? false),
         },
         processArgs: {},
       });
