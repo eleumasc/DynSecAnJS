@@ -1,10 +1,10 @@
 import _ from "lodash";
-import { avg } from "../util/math";
 import { CompatibilityIssue } from "../measurement/CompatibilityIssue";
 import { count } from "../measurement/util";
 import { Flow } from "../measurement/flow/Flow";
 import { getMeta, setMeta } from "../util/meta";
 import { ToolSiteReportMatrix } from "../measurement/ToolSiteReportMatrix";
+import { ToolSiteReportPerformanceData } from "./ToolSiteReport";
 
 export const getToolReport = (
   toolSiteReportMatrix: ToolSiteReportMatrix,
@@ -18,6 +18,11 @@ export const getToolReport = (
         transparencyAnalyzable: true;
       } => r.transparencyAnalyzable
     );
+    const rsPerformanceAnalyzable = rsTransparencyAnalyzable.filter(
+      (r): r is typeof r & { performanceData: ToolSiteReportPerformanceData } =>
+        r.transparent && r.performanceData !== null
+    );
+
     const rsKnown = rs.filter((r) => r.eventuallyCompatibleScripts !== null);
 
     const rsScriptsTotal = _.uniqBy(
@@ -122,11 +127,18 @@ export const getToolReport = (
       cooperativeAgreementFlows: cooperativeAgreementFlows.length,
       syntacticalAgreementFlows: syntacticalAgreementFlows.length,
       unionAgreementFlows: unionAgreementFlows.length,
-      overhead: avg(
-        rsTransparencyAnalyzable
-          .filter((r): r is typeof r & { transparent: true } => r.transparent)
-          .map((r) => r.overhead)
-      ),
+      performanceAnalyzable: rsPerformanceAnalyzable.length,
+      overhead:
+        _.sum(
+          rsPerformanceAnalyzable.map(
+            (r) => r.performanceData.toolExecutionTimeAvg
+          )
+        ) /
+        _.sum(
+          rsPerformanceAnalyzable.map(
+            (r) => r.performanceData.browserExecutionTimeAvg
+          )
+        ),
       // _flows: toolFlows,
       _unionAgreementFlows: unionAgreementFlows.map((flow) => {
         return { ...flow, meta: getMeta(flow) };

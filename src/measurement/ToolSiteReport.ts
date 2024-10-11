@@ -45,18 +45,18 @@ type ToolSiteReportTransparencyPart =
           transparent: false;
           jsErrors: JSError[];
         }
-      | ({
+      | {
           transparent: true;
-        } & ToolSiteReportPerformancePart)
+          performanceData: ToolSiteReportPerformanceData | null;
+        }
     ));
 
-type ToolSiteReportPerformancePart = {
+export interface ToolSiteReportPerformanceData {
   browserExecutionTimeAvg: number;
   browserExecutionTimeStdev: number;
   toolExecutionTimeAvg: number;
   toolExecutionTimeStdev: number;
-  overhead: number;
-};
+}
 
 export const getToolSiteReport = (
   site: string,
@@ -247,6 +247,13 @@ export const getToolSiteReport = (
     transparent,
   };
 
+  if (eventuallyCompatibleScripts.length !== scripts.length) {
+    return {
+      ...performanceBase,
+      performanceData: null,
+    };
+  }
+
   const browserExecutionTimes = browserRunDetails.map(
     (runDetail) => runDetail.executionTime
   );
@@ -257,14 +264,14 @@ export const getToolSiteReport = (
   const browserExecutionTimeStdev = stdev(browserExecutionTimes);
   const toolExecutionTimeAvg = avg(toolExecutionTimes);
   const toolExecutionTimeStdev = stdev(toolExecutionTimes);
-  const overhead = toolExecutionTimeAvg / browserExecutionTimeAvg;
 
   return {
     ...performanceBase,
-    browserExecutionTimeAvg,
-    browserExecutionTimeStdev,
-    toolExecutionTimeAvg,
-    toolExecutionTimeStdev,
-    overhead,
+    performanceData: {
+      browserExecutionTimeAvg,
+      browserExecutionTimeStdev,
+      toolExecutionTimeAvg,
+      toolExecutionTimeStdev,
+    },
   };
 };
