@@ -34,26 +34,24 @@ bar_positions = np.arange(len(issues))  # Positions for each group of bars
 rects = []
 
 for i, (error_type, _) in enumerate(labels.items()):
-    heights = [
+    values = [
         tool_data[error_type] if error_type in tool_data else 0
         for tool_data in issues.values()
     ]
+    percentages = [value / total_issues[j] * 100 for j, value in enumerate(values)]
+    heights = percentages
     rect_group = ax.bar(
         x + i * bar_width, heights, width=bar_width, label=error_type, color=colors[i]
     )
-    rects.append(rect_group)
-
-# Loop through rectangles to add annotations
-for i, rect_group in enumerate(rects):
     for j, rect in enumerate(rect_group):
-        height = rect.get_height()
         ax.annotate(
-            f"{height}\n({height / total_issues[j] * 100:.0f}%)",
-            xy=(rect.get_x() + rect.get_width() / 2, height),
+            f"{values[j]}\n({percentages[j]:.0f}%)",
+            xy=(rect.get_x() + rect.get_width() / 2, percentages[j]),
             xytext=(0, 3),
             textcoords="offset points",
             ha="center",
         )
+    rects.append(rect_group)
 
 ax.set_xlabel("Tool")
 ax.set_ylabel("Number of websites")
