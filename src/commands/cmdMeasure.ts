@@ -1,7 +1,7 @@
 import path from "path";
 import { Args } from "../archive/Args";
 import { CollectArchive } from "../archive/CollectArchive";
-import { Flow } from "../measurement/flow/Flow";
+import { Flow, uniqFlow } from "../measurement/flow/Flow";
 import { getLibraryRanking } from "../measurement/LibraryRanking";
 import { getMatchingFlows } from "../measurement/flow/MatchingFlows";
 import { getMeta } from "../util/meta";
@@ -106,20 +106,22 @@ export const cmdMeasure = (args: MeasureArgs) => {
     if (processArgs.matchingFlowsPath) {
       const matchingFlowsPath = path.resolve(processArgs.matchingFlowsPath);
 
-      return (
-        JSON.parse(readFileSync(matchingFlowsPath).toString()) as any[]
-      ).map((data): Flow => {
-        const {
-          source: { type: sourceType },
-          sink: { type: sinkType, targetDomain },
-          site,
-        } = data;
-        return {
-          source: { type: sourceType },
-          sink: { type: sinkType, targetDomain },
-          site,
-        };
-      });
+      return uniqFlow(
+        (JSON.parse(readFileSync(matchingFlowsPath).toString()) as any[]).map(
+          (data): Flow => {
+            const {
+              source: { type: sourceType },
+              sink: { type: sinkType, targetDomain },
+              site,
+            } = data;
+            return {
+              source: { type: sourceType },
+              sink: { type: sinkType, targetDomain },
+              site,
+            };
+          }
+        )
+      );
     }
 
     const matchingFlows = getMatchingFlows(siteSyntaxEntries, recordArchive);
