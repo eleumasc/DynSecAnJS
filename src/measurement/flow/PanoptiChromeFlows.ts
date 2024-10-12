@@ -5,18 +5,18 @@ export const getPanoptiChromeFlows = (rawFlows: any): DetailedFlow[] => {
   assert(typeof rawFlows === "string");
 
   let flows: DetailedFlow[] = [];
+  let currentOrigin;
   for (const match of rawFlows.matchAll(
     /^(ORIGIN)@("[^"]*")$|^(SINKPC)\$\{Window\}:("fetch"):("[^"]+")(?:\{.*\})?\n^(LEAK)\$[0-9]+:\{Window\}:("fetch"):(.*)$/gm
   )) {
-    let origin;
     if (match[1]) {
       // Set origin
-      origin = JSON.parse(match[2]);
+      currentOrigin = JSON.parse(match[2]);
     } else {
       // Build flow
       assert(match[3]);
-      assert(typeof origin === "string");
-      const targetUrl = new URL(JSON.parse(match[5]), origin).toString();
+      assert(typeof currentOrigin === "string");
+      const targetUrl = new URL(JSON.parse(match[5]), currentOrigin).toString();
       const sources = match[8].split(",");
 
       if (sources.includes("Document.cookie")) {
