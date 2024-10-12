@@ -45,7 +45,7 @@ for i, (error_type, _) in enumerate(labels.items()):
     )
     for j, rect in enumerate(rect_group):
         ax.annotate(
-            f"{values[j]}\n({percentages[j]:.0f}%)",
+            f"{percentages[j]:.0f}%",
             xy=(rect.get_x() + rect.get_width() / 2, percentages[j]),
             xytext=(0, 3),
             textcoords="offset points",
@@ -54,7 +54,7 @@ for i, (error_type, _) in enumerate(labels.items()):
     rects.append(rect_group)
 
 ax.set_xlabel("Tool")
-ax.set_ylabel("Number of websites")
+ax.set_ylabel("% occurrences")
 ax.set_title("Transparency issues")
 ax.set_xticks(x + 2 * bar_width)
 ax.set_xticklabels(issues.keys(), rotation=45, ha="right")

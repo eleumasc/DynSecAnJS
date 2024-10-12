@@ -46,7 +46,6 @@ const getSiteMatchingFlows = (
                 {
                   source: { type: "cookie" },
                   sink: { type: "network", targetUrl: url.toString() },
-                  isExplicit: true,
                 },
                 { match }
               ),
@@ -70,7 +69,6 @@ const getSiteMatchingFlows = (
                 {
                   source: { type: "localStorage", key: storageItem.name },
                   sink: { type: "network", targetUrl: url.toString() },
-                  isExplicit: true,
                 },
                 { match }
               ),

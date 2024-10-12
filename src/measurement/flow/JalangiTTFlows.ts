@@ -34,14 +34,14 @@ export const getJalangiTTFlows = (rawFlows: any): DetailedFlow[] => {
         }
       })
       .map((source): DetailedFlow => {
-        return { source, sink, isExplicit: true };
+        return { source, sink };
       });
   });
 };
 
 const isNetworkSinkType = (type: string): boolean => {
   switch (type) {
-    case "XMLHttpRequest_2":
+    // case "XMLHttpRequest_2":
     case "fetch_2":
       return true;
     default:

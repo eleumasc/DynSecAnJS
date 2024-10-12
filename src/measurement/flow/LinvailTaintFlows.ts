@@ -27,7 +27,7 @@ export const getLinvailTaintFlows = (rawFlows: any): DetailedFlow[] => {
         }
       })
       .map((source): DetailedFlow => {
-        return { source, sink, isExplicit: true };
+        return { source, sink };
       });
   });
 };
@@ -46,10 +46,10 @@ interface TaintElement {
 
 const isNetworkSinkType = (type: string): boolean => {
   switch (type) {
-    case "XMLHttpRequest.prototype.open":
-    case "XMLHttpRequest.prototype.send":
+    // case "XMLHttpRequest.prototype.open":
+    // case "XMLHttpRequest.prototype.send":
     case "fetch.url":
-    case "fetch.body":
+    // case "fetch.body":
       return true;
     default:
       return false;
@@ -60,10 +60,10 @@ const getTargetUrl = (taintReport: TaintReport): string => {
   const { name: sinkType, argument } = taintReport;
 
   switch (sinkType) {
-    case "XMLHttpRequest.prototype.open":
-    case "XMLHttpRequest.prototype.send":
+    // case "XMLHttpRequest.prototype.open":
+    // case "XMLHttpRequest.prototype.send":
     case "fetch.url":
-    case "fetch.body":
+    // case "fetch.body":
       assert(typeof argument === "string");
       return argument;
     default:

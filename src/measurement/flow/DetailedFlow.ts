@@ -2,9 +2,8 @@ import { Flow } from "./Flow";
 import { getMeta, setMeta } from "../../util/meta";
 
 export interface DetailedFlow {
-  source: { type: "cookie" } | { type: "localStorage"; key: string };
+  source: { type: "cookie" } | { type: "localStorage"; key?: string };
   sink: { type: "network"; targetUrl: string };
-  isExplicit: boolean;
 }
 
 export const simplifyFlow = (
@@ -18,13 +17,13 @@ export const simplifyFlow = (
   };
 
   const {
+    source: { type: sourceType },
     sink: { targetUrl },
-    ...rest
   } = detailedFlow;
 
   return setMeta(
     {
-      ...rest,
+      source: { type: sourceType },
       sink: {
         type: "network",
         targetDomain: simplifyTargetUrl(targetUrl),

@@ -72,7 +72,7 @@ export const getToolSiteReport = (
     isSyntacticallyCompatible(toolName, script.minimumESVersion)
   );
 
-  const badCompatibilityBase = {
+  let initialBase = {
     site,
     scripts,
     syntacticallyCompatibleScripts,
@@ -88,12 +88,12 @@ export const getToolSiteReport = (
     const { error } = toolSiteResult;
     if (typeof error === "object" && error.type === "TranspileError") {
       return {
-        ...badCompatibilityBase,
+        ...initialBase,
         compatibilityIssue: CompatibilityIssue.TranspileError,
       };
     } else {
       return {
-        ...badCompatibilityBase,
+        ...initialBase,
         compatibilityIssue: CompatibilityIssue.CrashError,
       };
     }
@@ -101,9 +101,20 @@ export const getToolSiteReport = (
 
   const { value: toolReport } = toolSiteResult;
 
+  if (toolReport.crashRawFlows) {
+    const crashFlows = toolReport.crashRawFlows.flatMap((rawFlows) =>
+      getToolFlows(site, toolName, rawFlows)
+    );
+
+    initialBase = {
+      ...initialBase,
+      flows: uniqFlow([...initialBase.flows, ...crashFlows]),
+    };
+  }
+
   if (isFailure(toolReport.runsCompletion)) {
     return {
-      ...badCompatibilityBase,
+      ...initialBase,
       compatibilityIssue: CompatibilityIssue.CrashError,
     };
   }
@@ -146,19 +157,17 @@ export const getToolSiteReport = (
 
   const { value: toolRunDetails } = toolReport.runsCompletion;
 
-  const flows = uniqFlow(
-    toolRunDetails.flatMap((runDetail) =>
-      getToolFlows(site, toolName, runDetail.monitorState.rawFlows)
-    )
+  const toolFlows = toolRunDetails.flatMap((runDetail) =>
+    getToolFlows(site, toolName, runDetail.monitorState.rawFlows)
   );
 
   const compatibilityBase = {
-    ...badCompatibilityBase,
+    ...initialBase,
     eventuallyCompatibleScripts,
     errorScripts,
     parseErrorScripts,
     analysisErrorScripts,
-    flows,
+    flows: uniqFlow([...initialBase.flows, ...toolFlows]),
   };
 
   if (

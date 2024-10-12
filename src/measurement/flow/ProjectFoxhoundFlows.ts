@@ -28,7 +28,7 @@ export const getProjectFoxhoundFlows = (rawFlows: any): DetailedFlow[] => {
         }
       })
       .map((source): DetailedFlow => {
-        return { source, sink, isExplicit: true };
+        return { source, sink };
       });
   });
 };
@@ -50,10 +50,10 @@ interface FlowElement {
 
 const isNetworkSinkType = (type: string): boolean => {
   switch (type) {
-    case "XMLHttpRequest.open(url)":
-    case "XMLHttpRequest.send":
+    // case "XMLHttpRequest.open(url)":
+    // case "XMLHttpRequest.send":
     case "fetch.url":
-    case "fetch.body":
+      // case "fetch.body":
       return true;
     default:
       return false;
@@ -66,12 +66,12 @@ const getTargetUrl = (taintReport: TaintReport): string => {
   const { arguments: sinkArguments } = sinkFlowElement;
 
   switch (sinkType) {
-    case "XMLHttpRequest.open(url)":
+    // case "XMLHttpRequest.open(url)":
     case "fetch.url":
       return str; // TODO: fix using document.baseURI
-    case "XMLHttpRequest.send":
-    case "fetch.body":
-      return sinkArguments[0];
+    // case "XMLHttpRequest.send":
+    // case "fetch.body":
+    //   return sinkArguments[0];
     default:
       throw new Error(`Unknown NetworkSinkType: ${sinkType}`); // This should never happen
   }

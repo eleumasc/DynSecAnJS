@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { avg } from "../util/math";
 import { CompatibilityIssue } from "../measurement/CompatibilityIssue";
 import { count } from "../measurement/util";
 import { Flow } from "../measurement/flow/Flow";
@@ -128,17 +129,13 @@ export const getToolReport = (
       syntacticalAgreementFlows: syntacticalAgreementFlows.length,
       unionAgreementFlows: unionAgreementFlows.length,
       performanceAnalyzable: rsPerformanceAnalyzable.length,
-      overhead:
-        _.sum(
-          rsPerformanceAnalyzable.map(
-            (r) => r.performanceData.toolExecutionTimeAvg
-          )
-        ) /
-        _.sum(
-          rsPerformanceAnalyzable.map(
-            (r) => r.performanceData.browserExecutionTimeAvg
-          )
-        ),
+      overhead: avg(
+        rsPerformanceAnalyzable.map(
+          (r) =>
+            r.performanceData.toolExecutionTimeAvg /
+            r.performanceData.browserExecutionTimeAvg
+        )
+      ),
       // _flows: toolFlows,
       _unionAgreementFlows: unionAgreementFlows.map((flow) => {
         return { ...flow, meta: getMeta(flow) };
