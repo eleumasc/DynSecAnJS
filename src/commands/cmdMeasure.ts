@@ -1,6 +1,7 @@
 import path from "path";
 import { Args } from "../archive/Args";
 import { CollectArchive } from "../archive/CollectArchive";
+import { Flow } from "../measurement/flow/Flow";
 import { getLibraryRanking } from "../measurement/LibraryRanking";
 import { getMatchingFlows } from "../measurement/flow/MatchingFlows";
 import { getMeta } from "../util/meta";
@@ -10,9 +11,9 @@ import { getToolSiteReportMatrix } from "../measurement/ToolSiteReportMatrix";
 import { isSuccess, Success } from "../util/Completion";
 import { MeasureArchive, MeasureLogfile } from "../archive/MeasureArchive";
 import { pairToolBrowserCollectArchives } from "../measurement/ToolBrowserCollectArchivePair";
+import { readFileSync, writeFileSync } from "fs";
 import { RecordArchive } from "../archive/RecordArchive";
 import { SiteSyntaxEntry } from "../measurement/SiteSyntaxEntry";
-import { writeFileSync } from "fs";
 import {
   PreanalyzeArchive,
   PreanalyzeReport,
@@ -26,13 +27,14 @@ export type MeasureArgs = Args<
   {
     preanalyzeArchivePath: string;
     collectArchivePaths: string[];
-    enableMatchingFlows: boolean;
   },
-  {}
+  {
+    matchingFlowsPath?: string;
+  }
 >;
 
 export const cmdMeasure = (args: MeasureArgs) => {
-  const { archive, resolveArchivePath } = initCommand(
+  const { archive, processArgs, resolveArchivePath } = initCommand(
     args,
     MeasureArchive,
     new DerivedInitCommandController(
@@ -46,7 +48,6 @@ export const cmdMeasure = (args: MeasureArgs) => {
           collectArchiveNames: requireArgs.collectArchivePaths.map(
             (collectArchivePath) => path.basename(collectArchivePath)
           ),
-          enableMatchingFlows: requireArgs.enableMatchingFlows,
         };
       }
     )
@@ -101,17 +102,27 @@ export const cmdMeasure = (args: MeasureArgs) => {
     siteSyntaxEntries
   );
 
-  const matchingFlows = archive.logfile.enableMatchingFlows
-    ? getMatchingFlows(siteSyntaxEntries, recordArchive)
-    : undefined;
-  if (matchingFlows) {
+  const matchingFlows = ((): Flow[] => {
+    if (processArgs.matchingFlowsPath) {
+      return JSON.parse(
+        readFileSync(processArgs.matchingFlowsPath).toString()
+      ).map((data: any): Flow => {
+        const { meta, ...flow } = data;
+        return flow;
+      });
+    }
+
+    const matchingFlows = getMatchingFlows(siteSyntaxEntries, recordArchive);
+
     writeFileSync(
       path.join(archive.archivePath, "matchingFlows.json"),
       JSON.stringify(
         matchingFlows.map((flow) => ({ ...flow, meta: getMeta(flow) }))
       )
     );
-  }
+
+    return matchingFlows;
+  })();
 
   // Syntax measurement
 

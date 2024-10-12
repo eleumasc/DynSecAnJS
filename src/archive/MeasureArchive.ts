@@ -5,7 +5,6 @@ export interface MeasureLogfile extends Logfile {
   type: "MeasureLogfile";
   preanalyzeArchiveName: string;
   collectArchiveNames: string[];
-  enableMatchingFlows: boolean;
   syntaxReport?: any;
   toolReport?: any;
   libraryRanking?: any;

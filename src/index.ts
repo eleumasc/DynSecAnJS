@@ -163,21 +163,24 @@ yargs(process.argv.slice(2))
         .option("collect", {
           type: "array",
         })
-        .boolean("disableMatchingFlows");
+        .option("matchingFlowsPath", {
+          type: "string",
+        });
     },
     ({
       preanalyzeArchivePath,
       collect: collectArchivePaths,
-      disableMatchingFlows,
+      matchingFlowsPath,
     }) => {
       cmdMeasure({
         type: "normal",
         requireArgs: {
           preanalyzeArchivePath,
           collectArchivePaths: collectArchivePaths?.map(String) ?? [],
-          enableMatchingFlows: !(disableMatchingFlows ?? false),
         },
-        processArgs: {},
+        processArgs: {
+          matchingFlowsPath,
+        },
       });
     }
   )
