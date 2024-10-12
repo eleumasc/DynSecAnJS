@@ -24,6 +24,8 @@ export const getToolSiteReportMatrix = (
       const toolSiteReports = siteSyntaxEntries
         .filter(({ syntax }) => syntax.scripts.length > 0)
         .map(({ site, syntax }): ToolSiteReport => {
+          console.log(`[getToolSiteReport] ${site}@${toolName}`);
+
           const getSiteResult = (collectArchive: CollectArchive) =>
             collectArchive.readSiteResult(site);
 

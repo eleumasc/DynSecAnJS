@@ -11,9 +11,9 @@ import { getToolSiteReportMatrix } from "../measurement/ToolSiteReportMatrix";
 import { isSuccess, Success } from "../util/Completion";
 import { MeasureArchive, MeasureLogfile } from "../archive/MeasureArchive";
 import { pairToolBrowserCollectArchives } from "../measurement/ToolBrowserCollectArchivePair";
-import { readFileSync, writeFileSync } from "fs";
 import { RecordArchive } from "../archive/RecordArchive";
 import { SiteSyntaxEntry } from "../measurement/SiteSyntaxEntry";
+import { writeFileSync } from "fs";
 import {
   PreanalyzeArchive,
   PreanalyzeReport,
@@ -28,13 +28,11 @@ export type MeasureArgs = Args<
     preanalyzeArchivePath: string;
     collectArchivePaths: string[];
   },
-  {
-    matchingFlowsPath?: string;
-  }
+  {}
 >;
 
 export const cmdMeasure = (args: MeasureArgs) => {
-  const { archive, processArgs, resolveArchivePath } = initCommand(
+  const { archive, resolveArchivePath } = initCommand(
     args,
     MeasureArchive,
     new DerivedInitCommandController(
@@ -102,39 +100,16 @@ export const cmdMeasure = (args: MeasureArgs) => {
     siteSyntaxEntries
   );
 
-  const matchingFlows = ((): Flow[] => {
-    if (processArgs.matchingFlowsPath) {
-      const matchingFlowsPath = path.resolve(processArgs.matchingFlowsPath);
+  const matchingFlows = getMatchingFlows(siteSyntaxEntries, recordArchive);
 
-      return uniqFlow(
-        (JSON.parse(readFileSync(matchingFlowsPath).toString()) as any[]).map(
-          (data): Flow => {
-            const {
-              source: { type: sourceType },
-              sink: { type: sinkType, targetDomain },
-              site,
-            } = data;
-            return {
-              source: { type: sourceType },
-              sink: { type: sinkType, targetDomain },
-              site,
-            };
-          }
-        )
-      );
-    }
-
-    const matchingFlows = getMatchingFlows(siteSyntaxEntries, recordArchive);
-
-    writeFileSync(
-      path.join(archive.archivePath, "matchingFlows.json"),
-      JSON.stringify(
-        matchingFlows.map((flow) => ({ ...flow, meta: getMeta(flow) }))
-      )
-    );
-
-    return matchingFlows;
-  })();
+  console.log("Writing matchingFlows.json");
+  writeFileSync(
+    path.join(archive.archivePath, "matchingFlows.json"),
+    JSON.stringify(
+      matchingFlows.map((flow) => ({ ...flow, meta: getMeta(flow) }))
+    )
+  );
+  console.log("Written matchingFlows.json");
 
   // Syntax measurement
 

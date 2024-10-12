@@ -162,25 +162,16 @@ yargs(process.argv.slice(2))
         })
         .option("collect", {
           type: "array",
-        })
-        .option("matchingFlowsPath", {
-          type: "string",
         });
     },
-    ({
-      preanalyzeArchivePath,
-      collect: collectArchivePaths,
-      matchingFlowsPath,
-    }) => {
+    ({ preanalyzeArchivePath, collect: collectArchivePaths }) => {
       cmdMeasure({
         type: "normal",
         requireArgs: {
           preanalyzeArchivePath,
           collectArchivePaths: collectArchivePaths?.map(String) ?? [],
         },
-        processArgs: {
-          matchingFlowsPath,
-        },
+        processArgs: {},
       });
     }
   )

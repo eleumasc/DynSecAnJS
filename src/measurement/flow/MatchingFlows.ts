@@ -16,6 +16,8 @@ export const getMatchingFlows = (
   return siteSyntaxEntries
     .filter(({ syntax }) => syntax.scripts.length > 0)
     .flatMap(({ site }) => {
+      console.log(`[getMatchingFlows] ${site}`);
+
       const siteResult = recordArchive.readSiteResult(site);
       assert(isSuccess(siteResult));
       const { value: recordReport } = siteResult;
