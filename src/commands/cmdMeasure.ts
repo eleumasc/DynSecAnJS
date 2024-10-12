@@ -104,12 +104,18 @@ export const cmdMeasure = (args: MeasureArgs) => {
 
   const matchingFlows = ((): Flow[] => {
     if (processArgs.matchingFlowsPath) {
-      return JSON.parse(
-        readFileSync(processArgs.matchingFlowsPath).toString()
-      ).map((data: any): Flow => {
-        const { meta, ...flow } = data;
-        return flow;
-      });
+      const matchingFlowsPath = path.resolve(processArgs.matchingFlowsPath);
+
+      console.error(
+        `WARNING: Using pre-computed matching flows from ${matchingFlowsPath}`
+      );
+
+      return JSON.parse(readFileSync(matchingFlowsPath).toString()).map(
+        (data: any): Flow => {
+          const { meta, ...flow } = data;
+          return flow;
+        }
+      );
     }
 
     const matchingFlows = getMatchingFlows(siteSyntaxEntries, recordArchive);
