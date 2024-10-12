@@ -11,12 +11,12 @@ export const getPanoptiChromeFlows = (rawFlows: any): DetailedFlow[] => {
   )) {
     if (match[1]) {
       // Set origin
-      currentOrigin = JSON.parse(match[2]);
+      currentOrigin = parseData(match[2]);
     } else {
       // Build flow
       assert(match[3]);
       assert(typeof currentOrigin === "string");
-      const targetUrl = new URL(JSON.parse(match[5]), currentOrigin).toString();
+      const targetUrl = new URL(parseData(match[5]), currentOrigin).toString();
       const sources = match[8].split(",");
 
       if (sources.includes("Document.cookie")) {
@@ -46,3 +46,6 @@ export const getPanoptiChromeFlows = (rawFlows: any): DetailedFlow[] => {
 
   return flows;
 };
+
+const parseData = (data: string): string =>
+  JSON.parse(data.replace("\\:", ":"));
