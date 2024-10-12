@@ -106,12 +106,20 @@ export const cmdMeasure = (args: MeasureArgs) => {
     if (processArgs.matchingFlowsPath) {
       const matchingFlowsPath = path.resolve(processArgs.matchingFlowsPath);
 
-      return JSON.parse(readFileSync(matchingFlowsPath).toString()).map(
-        (data: any): Flow => {
-          const { meta, ...flow } = data;
-          return flow;
-        }
-      );
+      return (
+        JSON.parse(readFileSync(matchingFlowsPath).toString()) as any[]
+      ).map((data): Flow => {
+        const {
+          source: { type: sourceType },
+          sink: { type: sinkType, targetDomain },
+          site,
+        } = data;
+        return {
+          source: { type: sourceType },
+          sink: { type: sinkType, targetDomain },
+          site,
+        };
+      });
     }
 
     const matchingFlows = getMatchingFlows(siteSyntaxEntries, recordArchive);
