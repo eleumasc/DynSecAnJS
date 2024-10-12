@@ -3,6 +3,7 @@ import { Flow, uniqFlow } from "./Flow";
 import { getEmptyFlows } from "./EmptyFlows";
 import { getJalangiTTFlows } from "./JalangiTTFlows";
 import { getLinvailTaintFlows } from "./LinvailTaintFlows";
+import { getPanoptiChromeFlows } from "./PanoptiChromeFlows";
 import { getProjectFoxhoundFlows } from "./ProjectFoxhoundFlows";
 import { ToolName } from "../../collection/ToolName";
 
@@ -31,6 +32,8 @@ const getToolDetailedFlows = (
       return getJalangiTTFlows(rawFlows);
     case "ProjectFoxhound":
       return getProjectFoxhoundFlows(rawFlows);
+    case "PanoptiChrome":
+      return getPanoptiChromeFlows(rawFlows);
     default:
       throw new Error(`Unsupported tool: ${toolName}`);
   }
