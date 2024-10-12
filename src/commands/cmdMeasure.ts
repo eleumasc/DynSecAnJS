@@ -106,10 +106,6 @@ export const cmdMeasure = (args: MeasureArgs) => {
     if (processArgs.matchingFlowsPath) {
       const matchingFlowsPath = path.resolve(processArgs.matchingFlowsPath);
 
-      console.error(
-        `WARNING: Using pre-computed matching flows from ${matchingFlowsPath}`
-      );
-
       return JSON.parse(readFileSync(matchingFlowsPath).toString()).map(
         (data: any): Flow => {
           const { meta, ...flow } = data;

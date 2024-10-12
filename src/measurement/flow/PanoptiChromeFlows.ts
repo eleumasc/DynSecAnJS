@@ -48,4 +48,4 @@ export const getPanoptiChromeFlows = (rawFlows: any): DetailedFlow[] => {
 };
 
 const parseData = (data: string): string =>
-  JSON.parse(data.replace("\\:", ":"));
+  JSON.parse(data.replace(/\\:/g, ":"));
