@@ -41,11 +41,7 @@ for i, tool_data in enumerate(tool_reports):
 axs[-1].axis("off")
 
 # Adding legend
-fig.legend(
-    legend_labels,
-    loc="center",
-    bbox_to_anchor=(3 / 4, 1 / 6),
-)
+fig.legend(legend_labels, loc="lower center", ncol=2)
 
 # Adding common title
 fig.suptitle("Transparency analysis")
