@@ -32,7 +32,7 @@ for i, tool_data in enumerate(tool_reports):
         labels=None,
         startangle=150,
         colors=colors,
-        autopct=lambda p: "{:.0f} ({:.0f}%)".format(p * sum(sizes) / 100, p),
+        autopct=lambda p: "{:.0f}%".format(p),
     )
 
     axs[i].axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle

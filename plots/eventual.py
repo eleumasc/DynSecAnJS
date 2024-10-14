@@ -26,9 +26,9 @@ bar_width = 0.3  # Width of each bar
 main_rects = []
 
 # Drawing main bars
-for i, (error_type, label) in enumerate(labels.items()):
+for i, (score_type, label) in enumerate(labels.items()):
     heights = [
-        tool_data[error_type] if error_type in tool_data else 0
+        tool_data[score_type] if score_type in tool_data else 0
         for tool_data in tool_reports
     ]
     main_rect_group = ax.bar(

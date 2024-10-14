@@ -27,6 +27,7 @@ export type MeasureArgs = Args<
   {
     preanalyzeArchivePath: string;
     collectArchivePaths: string[];
+    matchingFlowsEnabled: boolean;
   },
   {}
 >;
@@ -46,6 +47,7 @@ export const cmdMeasure = (args: MeasureArgs) => {
           collectArchiveNames: requireArgs.collectArchivePaths.map(
             (collectArchivePath) => path.basename(collectArchivePath)
           ),
+          matchingFlowsEnabled: requireArgs.matchingFlowsEnabled,
         };
       }
     )
@@ -100,16 +102,20 @@ export const cmdMeasure = (args: MeasureArgs) => {
     siteSyntaxEntries
   );
 
-  const matchingFlows = getMatchingFlows(siteSyntaxEntries, recordArchive);
+  const matchingFlows = archive.logfile.matchingFlowsEnabled
+    ? getMatchingFlows(siteSyntaxEntries, recordArchive)
+    : undefined;
 
-  console.log("Writing matchingFlows.json");
-  writeFileSync(
-    path.join(archive.archivePath, "matchingFlows.json"),
-    JSON.stringify(
-      matchingFlows.map((flow) => ({ ...flow, meta: getMeta(flow) }))
-    )
-  );
-  console.log("Written matchingFlows.json");
+  if (matchingFlows) {
+    console.log("Writing matchingFlows.json");
+    writeFileSync(
+      path.join(archive.archivePath, "matchingFlows.json"),
+      JSON.stringify(
+        matchingFlows.map((flow) => ({ ...flow, meta: getMeta(flow) }))
+      )
+    );
+    console.log("Written matchingFlows.json");
+  }
 
   // Syntax measurement
 

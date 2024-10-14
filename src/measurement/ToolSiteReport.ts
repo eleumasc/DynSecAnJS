@@ -84,6 +84,13 @@ export const getToolSiteReport = (
     transparencyAnalyzable: false as false,
   };
 
+  const unknownBase = {
+    eventuallyCompatibleScripts: null,
+    errorScripts: null,
+    parseErrorScripts: null,
+    analysisErrorScripts: null,
+  };
+
   if (isFailure(toolSiteResult)) {
     const { error } = toolSiteResult;
     if (typeof error === "object" && error.type === "TranspileError") {
@@ -113,6 +120,14 @@ export const getToolSiteReport = (
   }
 
   if (isFailure(toolReport.runsCompletion)) {
+    if (toolReport.runsCompletion.error.type === "TimeoutError") {
+      // Evaluation timeout
+      return {
+        ...initialBase,
+        ...unknownBase,
+      };
+    }
+
     return {
       ...initialBase,
       compatibilityIssue: CompatibilityIssue.CrashError,
@@ -175,10 +190,7 @@ export const getToolSiteReport = (
   ) {
     return {
       ...compatibilityBase,
-      eventuallyCompatibleScripts: null,
-      errorScripts: null,
-      parseErrorScripts: null,
-      analysisErrorScripts: null,
+      ...unknownBase,
     };
   }
 
