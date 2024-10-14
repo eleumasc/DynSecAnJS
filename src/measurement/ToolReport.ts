@@ -42,7 +42,7 @@ export const getToolReport = (
                 r.eventuallyCompatibleScripts,
                 r.syntacticallyCompatibleScripts
               )
-            : r.scripts
+            : r.syntacticallyCompatibleScripts
         ),
         "hash"
       ).length / rsScriptsTotal;
