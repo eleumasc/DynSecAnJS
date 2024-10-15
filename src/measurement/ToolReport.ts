@@ -147,6 +147,7 @@ export const getToolReport = (
           return { ...flow, meta: getMeta(flow) };
         }
       ),
+      _performanceSites: rsPerformanceAnalyzable.map((r) => r.site),
     };
   });
 };
