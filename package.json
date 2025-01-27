@@ -26,7 +26,6 @@
     "@babel/plugin-transform-modules-commonjs": "^7.24.8",
     "@babel/preset-env": "^7.24.0",
     "@browserify/envify": "^6.0.0",
-    "@playwright/test": "^1.44.1",
     "acorn": "^8.11.3",
     "acorn-walk": "^8.3.2",
     "async": "^3.2.5",
