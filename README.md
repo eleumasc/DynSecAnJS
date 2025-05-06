@@ -1,6 +1,6 @@
 # DynSecAnJS (Dynamic Security Analysis of JavaScript)
 
-A framework for automated evaluation of tools for dynamic analysis (in particular, information flow analysis) of JavaScript.
+A framework for automated evaluation of tools for dynamic information flow analysis of JavaScript.
 
 ## System requirements
 
