@@ -7,7 +7,7 @@ A framework for automated evaluation of tools for dynamic information flow analy
 - Ubuntu 22.04 LTS
 - Node.js 20 or above
 
-## Build
+## Setup
 
 1. Build the default toolset: https://github.com/eleumasc/DynSecAnJS-tools
 2. Clone this repository: `git clone https://github.com/eleumasc/DynSecAnJS && cd DynSecAnJS`
