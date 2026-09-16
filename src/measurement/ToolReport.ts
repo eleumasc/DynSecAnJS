@@ -136,6 +136,7 @@ export const getToolReport = (
       syntacticalAgreementFlows: syntacticalAgreementFlows.length,
       unionAgreementFlows: unionAgreementFlows.length,
       performanceAnalyzable: rsPerformanceAnalyzable.length,
+      overheads,
       overheadAvg: avg(overheads),
       overheadStdev: stdev(overheads),
       // _flows: toolFlows,
