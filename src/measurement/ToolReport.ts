@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { avg } from "../util/math";
+import { avg, stdev } from "../util/math";
 import { CompatibilityIssue } from "../measurement/CompatibilityIssue";
 import { count } from "../measurement/util";
 import { Flow } from "../measurement/flow/Flow";
@@ -22,6 +22,11 @@ export const getToolReport = (
     const rsPerformanceAnalyzable = rsTransparencyAnalyzable.filter(
       (r): r is typeof r & { performanceData: ToolSiteReportPerformanceData } =>
         r.transparent && r.performanceData !== null
+    );
+    const overheads = rsPerformanceAnalyzable.map(
+      (r) =>
+        r.performanceData.toolExecutionTimeAvg /
+        r.performanceData.browserExecutionTimeAvg
     );
 
     const rsScriptsTotal = _.uniqBy(
@@ -131,13 +136,8 @@ export const getToolReport = (
       syntacticalAgreementFlows: syntacticalAgreementFlows.length,
       unionAgreementFlows: unionAgreementFlows.length,
       performanceAnalyzable: rsPerformanceAnalyzable.length,
-      overhead: avg(
-        rsPerformanceAnalyzable.map(
-          (r) =>
-            r.performanceData.toolExecutionTimeAvg /
-            r.performanceData.browserExecutionTimeAvg
-        )
-      ),
+      overheadAvg: avg(overheads),
+      overheadStdev: stdev(overheads),
       // _flows: toolFlows,
       _unionAgreementFlows: unionAgreementFlows.map((flow) => {
         return { ...flow, meta: getMeta(flow) };
