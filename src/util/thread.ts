@@ -1,29 +1,15 @@
-import assert from "assert";
-import { Agent } from "port_agent";
+import workerpool from "workerpool";
 import { Completion, toCompletion } from "./Completion";
-import { isMainThread, parentPort, Worker } from "worker_threads";
 
 export const threadExec = async (
-  filename: string,
-  args: any[]
+  method: (...args: any[]) => Promise<any>,
+  args: any[],
 ): Promise<Completion<any>> => {
-  const worker = new Worker(filename);
-  const agent = new Agent(worker);
+  const pool = workerpool.pool(`${__dirname}/../workers/__thread.js`);
 
   try {
-    return await toCompletion(() => agent.call("callback", ...args));
+    return await toCompletion(() => pool.exec(method.name, args));
   } finally {
-    await worker.terminate();
+    await pool.terminate();
   }
-};
-
-export const threadRegister = (
-  callback: (...args: any[]) => Promise<any>
-): void => {
-  if (isMainThread) return;
-
-  assert(parentPort);
-  const agent = new Agent(parentPort);
-
-  agent.register("callback", callback);
 };

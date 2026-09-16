@@ -2,10 +2,7 @@ import { Args } from "../archive/Args";
 import { isFailure, toCompletion } from "../util/Completion";
 import { RecordArchive } from "../archive/RecordArchive";
 import { threadExec } from "../util/thread";
-import {
-  PreanalyzeSiteArgs,
-  preanalyzeSiteFilename,
-} from "../workers/preanalyzeSite";
+import { PreanalyzeSiteArgs, preanalyzeSite } from "../workers/preanalyzeSite";
 import {
   initCommand,
   DerivedInitCommandController,
@@ -43,19 +40,19 @@ export const cmdPreanalyze = async (args: PreanalyzeArgs) => {
       () => "Preanalyze",
       (
         _requireArgs,
-        { parentArchive, parentArchiveName }
+        { parentArchive, parentArchiveName },
       ): PreanalyzeLogfile => {
         return {
           type: "PreanalyzeLogfile",
           recordArchiveName: parentArchiveName,
           sitesState: deriveSitesState(parentArchive),
         };
-      }
-    )
+      },
+    ),
   );
 
   const recordArchive = RecordArchive.open(
-    resolveArchivePath(archive.logfile.recordArchiveName)
+    resolveArchivePath(archive.logfile.recordArchiveName),
   );
 
   await processSites(
@@ -64,7 +61,7 @@ export const cmdPreanalyze = async (args: PreanalyzeArgs) => {
     async (site) => {
       const { archivePath } = archive;
       const outerCompletion = await toCompletion(async () => {
-        const innerCompletion = await threadExec(preanalyzeSiteFilename, [
+        const innerCompletion = await threadExec(preanalyzeSite, [
           {
             site,
             archivePath,
@@ -78,7 +75,7 @@ export const cmdPreanalyze = async (args: PreanalyzeArgs) => {
       if (isFailure(outerCompletion)) {
         archive.writeSiteResult(site, outerCompletion);
       }
-    }
+    },
   );
 
   process.exit(0);

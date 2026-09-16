@@ -36,8 +36,8 @@
     "parse5": "^7.1.2",
     "playwright": "^1.44.1",
     "playwright-extra": "^4.3.6",
-    "port_agent": "^1.4.0",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "workerpool": "^10.0.3",
     "yargs": "^17.7.2"
   }
 }

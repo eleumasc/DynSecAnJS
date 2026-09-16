@@ -4,7 +4,6 @@ import { getSyntax } from "../syntax/getSyntax";
 import { isSuccess, toCompletion } from "../util/Completion";
 import { RecordArchive } from "../archive/RecordArchive";
 import { SiteResult } from "../archive/Archive";
-import { threadRegister } from "../util/thread";
 import {
   PreanalyzeArchive,
   PreanalyzeReport,
@@ -16,9 +15,9 @@ export interface PreanalyzeSiteArgs {
   recordArchivePath: string;
 }
 
-export const preanalyzeSiteFilename = __filename;
-
-const preanalyzeSite = async (args: PreanalyzeSiteArgs): Promise<void> => {
+export const preanalyzeSite = async (
+  args: PreanalyzeSiteArgs,
+): Promise<void> => {
   const { site, archivePath, recordArchivePath } = args;
 
   const archive = PreanalyzeArchive.open(archivePath, true);
@@ -31,7 +30,7 @@ const preanalyzeSite = async (args: PreanalyzeSiteArgs): Promise<void> => {
     const { value: recordReport } = recordSiteResult;
 
     const wprArchive = WPRArchive.fromFile(
-      recordArchive.getFilePath(`${site}-archive.wprgo`)
+      recordArchive.getFilePath(`${site}-archive.wprgo`),
     );
 
     return getSyntax(wprArchive, recordReport);
@@ -39,5 +38,3 @@ const preanalyzeSite = async (args: PreanalyzeSiteArgs): Promise<void> => {
 
   archive.writeSiteResult(site, result satisfies SiteResult<PreanalyzeReport>);
 };
-
-threadRegister(preanalyzeSite);
